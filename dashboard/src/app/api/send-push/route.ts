@@ -3,6 +3,10 @@ import { adminMessaging, adminDb } from '@/lib/firebase-admin';
 
 export async function POST(request: Request) {
   try {
+    if (!adminDb || !adminMessaging) {
+      return NextResponse.json({ error: 'Firebase Admin not initialized' }, { status: 500 });
+    }
+    
     const { title, body, link, targetRole } = await request.json();
 
     if (!title || !body) {
