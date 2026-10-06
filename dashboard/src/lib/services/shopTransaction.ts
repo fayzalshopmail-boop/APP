@@ -14,6 +14,7 @@ import { db } from '../firebase';
 import { Customer, PartUsed } from './customer';
 import { Transaction } from './transaction';
 import { InventoryItem } from './inventory';
+import { notificationService } from './notification';
 
 /**
  * Service for compound, atomic financial and inventory operations.
@@ -49,6 +50,18 @@ export const shopTransactionService = {
       }
     });
 
+    try {
+      await notificationService.add({
+        title: 'New Customer Added',
+        message: `${customerData.name} was added by ${userEmail}.`,
+        type: 'info',
+        targetRole: 'Owner',
+        link: '/customers'
+      });
+    } catch (e) {
+      console.error("Failed to add notification", e);
+    }
+
     return newId;
   },
 
@@ -68,6 +81,7 @@ export const shopTransactionService = {
     if (!db) throw new Error('Firebase DB is not initialized');
 
     const customerRef = doc(db, 'customers', customerId);
+    let lowStockAlerts: { name: string, stock: number, min: number }[] = [];
     
     await runTransaction(db, async (transaction) => {
       const customerSnap = await transaction.get(customerRef);
@@ -111,6 +125,11 @@ export const shopTransactionService = {
           throw new Error('Not enough stock for ' + itemData.name);
         }
         stockUpdates.push({ ref: snap.ref, newStock });
+
+        const minLevel = itemData.minStockLevel || 5;
+        if (newStock <= minLevel && req.delta > 0) { // Only alert if stock was deducted
+          lowStockAlerts.push({ name: itemData.name, stock: newStock, min: minLevel });
+        }
       }
 
       // 2. Perform Writes
@@ -151,6 +170,21 @@ export const shopTransactionService = {
         });
       }
     });
+
+    // Dispatch notifications outside transaction
+    for (const alert of lowStockAlerts) {
+      try {
+        await notificationService.add({
+          title: 'Low Stock Alert',
+          message: `${alert.name} stock has dropped to ${alert.stock} (Min: ${alert.min}). Please restock!`,
+          type: 'warning',
+          targetRole: 'Owner',
+          link: '/inventory'
+        });
+      } catch (e) {
+        console.error("Failed to add low stock notification", e);
+      }
+    }
   },
 
   /**
@@ -219,6 +253,7 @@ export const shopTransactionService = {
 
     const inventoryRef = doc(db, 'inventory', inventoryId);
     let newStockResult = 0;
+    let lowStockAlert: { name: string, stock: number, min: number } | null = null;
 
     await runTransaction(db, async (transaction) => {
       const snap = await transaction.get(inventoryRef);
@@ -229,6 +264,12 @@ export const shopTransactionService = {
       
       if (newStock < 0) {
         throw new Error(`Not enough stock. Available: ${itemData.stock}, Requested: ${quantity}`);
+      }
+
+      // Check for low stock
+      const minLevel = itemData.minStockLevel || 5;
+      if (newStock <= minLevel && quantity > 0) {
+        lowStockAlert = { name: itemData.name, stock: newStock, min: minLevel };
       }
 
       // 2. Writes
@@ -246,6 +287,20 @@ export const shopTransactionService = {
 
       newStockResult = newStock;
     });
+
+    if (lowStockAlert) {
+      try {
+        await notificationService.add({
+          title: 'Low Stock Alert',
+          message: `${lowStockAlert.name} stock has dropped to ${lowStockAlert.stock} (Min: ${lowStockAlert.min}). Please restock!`,
+          type: 'warning',
+          targetRole: 'Owner',
+          link: '/inventory'
+        });
+      } catch (e) {
+        console.error("Failed to add low stock notification", e);
+      }
+    }
 
     return { newStock: newStockResult };
   }

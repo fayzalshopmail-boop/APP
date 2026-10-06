@@ -7,6 +7,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { auth, googleProvider } from '@/lib/firebase';
 import { signInWithPopup } from 'firebase/auth';
 import { userService } from '@/lib/services/user';
+import { requestNotificationPermission } from '@/lib/services/fcm';
 
 import { useRouter } from 'next/navigation';
 
@@ -99,7 +100,11 @@ export function AuthScreen() {
           throw new Error('You are not authorized to access this dashboard. Contact the Admin to add your email.');
         }
       }
-    } catch (err: unknown) {
+      
+      // Request FCM Push Notification Permission
+      requestNotificationPermission(firebaseUser.email);
+      
+    } catch (err: any) {
       console.error(err);
       setError(err.message || 'Login failed');
     } finally {

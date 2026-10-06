@@ -80,7 +80,7 @@ export default function CustomersPage() {
         setCustomers(customers.map(c => c.id === editingCustomer.id ? { ...c, ...data } : c));
       } else {
         // Add Atomically
-        const newId = await shopTransactionService.createCustomer(data, user?.email || 'Unknown');
+        const newId = await shopTransactionService.createCustomer(data, user?.name || user?.email || 'Unknown');
         const newCustomerData = { ...data, status: 'Received' as const };
 
         const newCustomer: Customer = {

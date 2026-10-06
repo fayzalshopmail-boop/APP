@@ -22,3 +22,5 @@ if (typeof window !== 'undefined' && firebaseConfig.apiKey) {
 export const auth = app ? getAuth(app) : null;
 export const googleProvider = app ? new GoogleAuthProvider() : null;
 export const db = app ? getFirestore(app) : null;
+
+
