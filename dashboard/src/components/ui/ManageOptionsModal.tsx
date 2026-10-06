@@ -85,7 +85,7 @@ export function ManageOptionsModal({ isOpen, onClose, category, title, parentKey
               </Button>
             </form>
 
-            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
               {options.map((opt) => (
                 <div key={opt} className="flex items-center justify-between bg-secondary border border-gray-800 rounded-lg p-3">
                   <span className="text-sm text-gray-200">{opt}</span>
@@ -119,3 +119,4 @@ export function ManageOptionsModal({ isOpen, onClose, category, title, parentKey
     </>
   );
 }
+

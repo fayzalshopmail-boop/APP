@@ -107,7 +107,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  {/* Gradient Header Background */}
  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500" />
  
- <div className="p-5 sm:p-6 overflow-y-auto max-h-[85vh]">
+ <div className="p-5 sm:p-6 overflow-y-auto custom-scrollbar max-h-[85vh]">
  <DialogHeader className="mb-6">
  <DialogTitle className="text-xl font-bold tracking-tight">
  {initialData ? 'Edit Customer Details' : 'Add New Customer'}

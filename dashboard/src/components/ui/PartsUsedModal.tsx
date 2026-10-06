@@ -190,7 +190,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  {/* Top Gradient Highlight Bar */}
  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500" />
  
- <div className="p-5 sm:p-7 max-h-[88vh] overflow-y-auto">
+ <div className="p-5 sm:p-7 max-h-[88vh] overflow-y-auto custom-scrollbar">
  {/* Header */}
  <DialogHeader className="mb-6">
  <div className="flex items-center justify-between">
@@ -519,5 +519,6 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  </Dialog>
  );
 }
+
 
 
