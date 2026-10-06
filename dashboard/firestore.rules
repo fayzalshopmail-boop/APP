@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isActiveUser() {
+      return isAuthenticated() 
+        && exists(/databases/$(database)/documents/users/$(request.auth.token.email)) 
+        && get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.isActive == true;
+    }
+
+    function isManagerOrOwner() {
+      return isActiveUser() 
+        && (get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'Owner' 
+            || get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'Manager');
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isManagerOrOwner();
+    }
+
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isManagerOrOwner();
+    }
+
+    match /customers/{customerId} {
+      allow read: if isActiveUser();
+      allow create, update: if isActiveUser();
+      allow delete: if isManagerOrOwner();
+    }
+    
+    match /inventory/{itemId} {
+      allow read: if isActiveUser();
+      allow create, update: if isActiveUser();
+      allow delete: if isManagerOrOwner();
+    }
+
+    match /transactions/{transactionId} {
+      allow read: if isActiveUser();
+      allow create: if isActiveUser();
+      allow update, delete: if isManagerOrOwner();
+    }
+
+    match /expenses/{expenseId} {
+      allow read: if isActiveUser();
+      allow create: if isActiveUser();
+      allow update, delete: if isManagerOrOwner();
+    }
+
+    match /suppliers/{supplierId} {
+      allow read: if isActiveUser();
+      allow create, update: if isActiveUser();
+      allow delete: if isManagerOrOwner();
+    }
+
+    match /loans/{loanId} {
+      allow read: if isActiveUser();
+      allow create, update: if isManagerOrOwner();
+      allow delete: if isManagerOrOwner();
+    }
+
+    match /mechanics/{mechanicId} {
+      allow read: if isActiveUser();
+      allow create, update: if isActiveUser();
+      allow delete: if isManagerOrOwner();
+    }
+  }
+}
+

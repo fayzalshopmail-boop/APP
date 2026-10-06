@@ -1,0 +1,30 @@
+
+> dashboard@0.1.0 build
+> next build
+
+▲ Next.js 16.3.6 (Turbopack)
+- Environments: .env.local
+✓ Running next.config.ts took 27.1s
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 1 error:
+./src/app/globals.css
+Error: Error evaluating Node.js code
+Error: Node.js subprocess crashed while evaluating loaders [postcss]: failed to receive message
+
+Caused by:
+- Node.js process exited with exit code: 0xc0000409
+- reading packet length
+- An existing connection was forcibly closed by the remote host. (os error 10054)
+
+Import trace:
+  Client Component Browser:
+    ./src/app/globals.css [Client Component Browser]
+    ./src/app/layout.tsx [Server Component]
+
+
+    at ignore-listed frames

@@ -1,0 +1,139 @@
+
+> dashboard@0.1.0 lint
+> eslint
+
+
+D:\APP\dashboard\fix.js
+  1:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+D:\APP\dashboard\next.config.ts
+  3:17  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+D:\APP\dashboard\src\app\api\sms\balance\route.ts
+  18:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\APP\dashboard\src\app\api\sms\route.ts
+  38:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\APP\dashboard\src\app\customers\page.tsx
+   4:24  warning  'MoreVertical' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+  40:50  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  60:5   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\APP\dashboard\src\app\customers\page.tsx:60:5
+  58 |
+  59 |   useEffect(() => {
+> 60 |     fetchCustomers();
+     |     ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  61 |   }, []);
+  62 |
+  63 |   const handleSaveCustomer = async (data: Omit<Customer, 'id' | 'createdAt' | 'points'>) => {  react-hooks/set-state-in-effect
+
+D:\APP\dashboard\src\app\inventory\page.tsx
+  48:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\APP\dashboard\src\app\inventory\page.tsx:48:5
+  46 |
+  47 |   useEffect(() => {
+> 48 |     fetchData();
+     |     ^^^^^^^^^ Avoid calling setState() directly within an effect
+  49 |   }, []);
+  50 |
+  51 |   const handleManageCategories = async () => {  react-hooks/set-state-in-effect
+
+D:\APP\dashboard\src\app\settings\page.tsx
+   49:5   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\APP\dashboard\src\app\settings\page.tsx:49:5
+  47 |
+  48 |   useEffect(() => {
+> 49 |     loadData();
+     |     ^^^^^^^^ Avoid calling setState() directly within an effect
+  50 |   }, []);
+  51 |
+  52 |   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {  react-hooks/set-state-in-effect
+   50:6   warning  React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 react-hooks/exhaustive-deps
+   75:19  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @typescript-eslint/no-explicit-any
+  126:19  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @typescript-eslint/no-explicit-any
+  320:45  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @next/next/no-img-element
+  320:45  warning  img elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   jsx-a11y/alt-text
+  419:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @next/next/no-img-element
+
+D:\APP\dashboard\src\app\sms\page.tsx
+   35:50  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+   35:82  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+   65:21  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+   89:18  warning  'e' is defined but never used                                    @typescript-eslint/no-unused-vars
+   95:14  warning  'error' is defined but never used                                @typescript-eslint/no-unused-vars
+   95:21  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  132:15  error    'personalizedMsg' is never reassigned. Use 'const' instead       prefer-const
+  162:21  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  191:13  error    'personalizedMsg' is never reassigned. Use 'const' instead       prefer-const
+  201:21  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  310:86  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+D:\APP\dashboard\src\components\auth\AuthScreen.tsx
+   39:7  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\APP\dashboard\src\components\auth\AuthScreen.tsx:39:7
+  37 |   useEffect(() => {
+  38 |     if (user && inputPin.length === 4) {
+> 39 |       handlePinSubmit();
+     |       ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  40 |     }
+  41 |   }, [inputPin]);
+  42 |  react-hooks/set-state-in-effect
+   41:6  warning  React Hook useEffect has missing dependencies: 'handlePinSubmit' and 'user'. Either include them or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      react-hooks/exhaustive-deps
+  184:9  warning  Expected an assignment or function call and instead saw an expression                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-unused-expressions
+  216:6  warning  React Hook useEffect has a missing dependency: 'handleKeyClick'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    react-hooks/exhaustive-deps
+
+D:\APP\dashboard\src\components\layout\Sidebar.tsx
+    6:21  warning  'Clock' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+    6:28  warning  'CreditCard' is defined but never used                                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+    6:40  warning  'Star' is defined but never used                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+    7:3   warning  'Wrench' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+    7:11  warning  'Truck' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+    7:18  warning  'Receipt' is defined but never used                                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+    7:27  warning  'BarChart2' is defined but never used                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+   70:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  114:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\APP\dashboard\src\components\ui\BarcodeScannerModal.tsx
+  48:10  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\APP\dashboard\src\components\ui\CustomerModal.tsx
+  67:7  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/set-state-in-effect')
+
+D:\APP\dashboard\src\lib\services\user.ts
+  1:27  warning  'getDoc' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\APP\dashboard\src\lib\sms.ts
+  20:14  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 43 problems (20 errors, 23 warnings)
+  2 errors and 1 warning potentially fixable with the `--fix` option.
+
