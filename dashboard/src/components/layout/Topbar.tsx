@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Lock, Menu, CheckCircle2, AlertTriangle, Info, BellRing, X } from 'lucide-react';
+import { Bell, Lock, Menu, CheckCircle2, AlertTriangle, Info, BellRing, X, UserPlus } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
@@ -8,6 +8,9 @@ import { notificationService, AppNotification } from '@/lib/services/notificatio
 import { systemTasksService } from '@/lib/services/systemTasks';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CustomerModal } from '@/components/ui/CustomerModal';
+import { shopTransactionService } from '@/lib/services/shopTransaction';
+import { Customer } from '@/lib/services/customer';
 
 const routeTitles: Record<string, string> = {
   '/': 'Dashboard',
@@ -30,6 +33,7 @@ export function Topbar() {
   const { setUnlocked, user, toggleSidebar } = useAppStore();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   
   const basePath = '/' + pathname.split('/')[1];
@@ -88,6 +92,18 @@ export function Topbar() {
     }
   };
 
+  const handleSaveNewCustomer = async (data: Omit<Customer, 'id' | 'createdAt' | 'points'>) => {
+    if (!user) return;
+    try {
+      await shopTransactionService.createCustomer(data, user.name || user.email || 'Unknown');
+      setIsCustomerModalOpen(false);
+      // If we are not on customers page, maybe route there, or just show success?
+      // Since it's a global action, just closing is fine. The user can go to customers page if they want.
+    } catch (e) {
+      console.error("Failed to add customer globally", e);
+    }
+  };
+
   return (
     <header className="h-16 md:h-20 px-4 md:px-8 flex items-center justify-between bg-background sticky top-0 z-40 border-b border-gray-800 md:border-none">
       <div className="flex items-center gap-4">
@@ -100,7 +116,17 @@ export function Topbar() {
         <h1 className="text-xl md:text-2xl font-bold text-white truncate max-w-[200px] md:max-w-none">{title}</h1>
       </div>
 
-      <div className="flex items-center gap-4 relative" ref={notifRef}>
+      <div className="flex items-center gap-2 sm:gap-4 relative" ref={notifRef}>
+        
+        {/* ADD CUSTOMER BUTTON */}
+        <button
+          onClick={() => setIsCustomerModalOpen(true)}
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg text-sm font-medium transition-colors shadow-lg shadow-blue-500/20 mr-1 sm:mr-0"
+        >
+          <UserPlus className="w-4 h-4 md:w-5 md:h-5" />
+          <span className="hidden sm:inline">Add Customer</span>
+        </button>
+
         {user?.role === 'Owner' && (
           <button 
             onClick={() => setUnlocked(false)}
@@ -118,7 +144,6 @@ export function Topbar() {
           <Bell className="w-5 h-5" />
           {notifications.length > 0 && (
             <span className="absolute top-1.5 right-1.5 w-3 h-3 bg-red-500 border-2 border-background rounded-full flex items-center justify-center">
-              {/* Note: Red dot is enough, or we can add number if > 0 */}
             </span>
           )}
         </button>
@@ -189,6 +214,13 @@ export function Topbar() {
           )}
         </AnimatePresence>
       </div>
+
+      <CustomerModal 
+        isOpen={isCustomerModalOpen}
+        onClose={() => setIsCustomerModalOpen(false)}
+        onSave={handleSaveNewCustomer}
+        existingAddresses={[]}
+      />
     </header>
   );
 }
