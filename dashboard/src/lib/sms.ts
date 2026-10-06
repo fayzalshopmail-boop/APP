@@ -24,6 +24,6 @@ export const sendSMS = async (number: string | string[], message: string, apiKey
     return { success: true, data: data.result };
   } catch (error: unknown) {
     console.error("Failed to send SMS:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: (error as any).message };
   }
 };

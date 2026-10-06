@@ -80,8 +80,8 @@ export const shopTransactionService = {
   ): Promise<void> {
     if (!db) throw new Error('Firebase DB is not initialized');
 
-    const customerRef = doc(db, 'customers', customerId);
-    let lowStockAlerts: { name: string, stock: number, min: number }[] = [];
+    const customerRef = doc(db as any, 'customers', customerId);
+    let lowStockAlerts: any[] = [];
     
     await runTransaction(db, async (transaction) => {
       const customerSnap = await transaction.get(customerRef);
@@ -251,9 +251,9 @@ export const shopTransactionService = {
   ): Promise<{ newStock: number }> {
     if (!db) throw new Error('Firebase DB is not initialized');
 
-    const inventoryRef = doc(db, 'inventory', inventoryId);
+    const inventoryRef = doc(db as any, 'inventory', inventoryId);
     let newStockResult = 0;
-    let lowStockAlert: { name: string, stock: number, min: number } | null = null;
+    let lowStockAlert: any = null;
 
     await runTransaction(db, async (transaction) => {
       const snap = await transaction.get(inventoryRef);

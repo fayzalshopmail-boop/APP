@@ -112,7 +112,7 @@ export const useAppStore = create<AppState>()(
         
         return {
           ...currentState,
-          ...persistedState,
+          ...(persistedState as any),
           deviceBrands: migratedBrands,
           deviceProblems: migratedProblems
         };
