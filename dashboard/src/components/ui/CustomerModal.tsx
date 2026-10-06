@@ -49,8 +49,9 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  const [manageCategory, setManageCategory] = useState<'deviceBrands' | 'deviceTypes' | 'deviceProblems' | null>(null);
 
  const currentType = formData.deviceType;
+ const currentBrand = formData.deviceBrand;
  const currentBrands = currentType ? (storeBrands[currentType] || []) : [];
- const currentProblems = currentType ? (storeProblems[currentType] || []) : [];
+ const currentProblems = currentBrand ? (storeProblems[currentBrand] || []) : [];
 
  useEffect(() => {
  if (initialData) {
@@ -388,7 +389,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  category={manageCategory || 'deviceBrands'}
  
  title={manageCategory === 'deviceBrands' ? 'Device Brands' : manageCategory === 'deviceTypes' ? 'Device Types' : 'Device Problems'}
- parentKey={formData.deviceType}
+ parentKey={manageCategory === 'deviceProblems' ? formData.deviceBrand : formData.deviceType}
  />
 
  <BarcodeScannerModal 
@@ -399,6 +400,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  </Dialog>
  );
 }
+
 
 
 
