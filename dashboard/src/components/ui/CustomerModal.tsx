@@ -191,59 +191,63 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  
  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
  {/* Device Type */}
- <div className="space-y-1.5">
- <div className="flex items-center justify-between">
- <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Device Type</label>
- <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceTypes')} className="h-6 w-6 text-gray-500 hover:text-blue-400">
- <Settings2 className="w-3.5 h-3.5" />
- </Button>
- </div>
- <CustomSelect 
- value={formData.deviceType}
- onChange={(val) => setFormData({ ...formData, deviceType: val })}
- options={deviceTypes}
- placeholder="Select Type"
- icon={<Tv className="w-4 h-4" />}
- />
- </div>
+   <div className="space-y-1.5">
+   <div className="flex items-center justify-between">
+   <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Device Type</label>
+   <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceTypes')} className="h-6 w-6 text-gray-500 hover:text-blue-400">
+   <Settings2 className="w-3.5 h-3.5" />
+   </Button>
+   </div>
+   <CustomSelect 
+   value={formData.deviceType}
+   onChange={(val) => setFormData({ ...formData, deviceType: val })}
+   options={deviceTypes}
+   placeholder="Select Type"
+   icon={<Tv className="w-4 h-4" />}
+   />
+   </div>
 
- {/* Device Brand */}
- <div className="space-y-1.5">
- <div className="flex items-center justify-between">
- <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Device Brand</label>
- <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceBrands')} className="h-6 w-6 text-gray-500 hover:text-blue-400">
- <Settings2 className="w-3.5 h-3.5" />
- </Button>
- </div>
- <CustomSelect 
- value={formData.deviceBrand}
- onChange={(val) => setFormData({ ...formData, deviceBrand: val })}
- options={currentBrands}
- placeholder="Select Brand"
- icon={<Tag className="w-4 h-4" />}
- />
- </div>
- </div>
+   {/* Device Brand */}
+   {formData.deviceType && (
+     <div className="space-y-1.5">
+     <div className="flex items-center justify-between">
+     <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Device Brand</label>
+     <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceBrands')} className="h-6 w-6 text-gray-500 hover:text-blue-400">
+     <Settings2 className="w-3.5 h-3.5" />
+     </Button>
+     </div>
+     <CustomSelect 
+     value={formData.deviceBrand}
+     onChange={(val) => setFormData({ ...formData, deviceBrand: val })}
+     options={currentBrands}
+     placeholder="Select Brand"
+     icon={<Tag className="w-4 h-4" />}
+     />
+     </div>
+   )}
+   </div>
 
- <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
- {/* Device Problem */}
- <div className="space-y-1.5">
- <div className="flex items-center justify-between">
- <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Primary Issue</label>
- <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceProblems')} className="h-6 w-6 text-gray-500 hover:text-blue-400">
- <Settings2 className="w-3.5 h-3.5" />
- </Button>
- </div>
- <CustomSelect 
- value={formData.deviceProblem}
- onChange={(val) => setFormData({ ...formData, deviceProblem: val })}
- options={currentProblems}
- placeholder="Select Problem"
- icon={<Wrench className="w-4 h-4" />}
- />
- </div>
+   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   {/* Device Problem */}
+   {formData.deviceBrand && (
+     <div className="space-y-1.5">
+     <div className="flex items-center justify-between">
+     <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Primary Issue</label>
+     <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceProblems')} className="h-6 w-6 text-gray-500 hover:text-blue-400">
+     <Settings2 className="w-3.5 h-3.5" />
+     </Button>
+     </div>
+     <CustomSelect 
+     value={formData.deviceProblem}
+     onChange={(val) => setFormData({ ...formData, deviceProblem: val })}
+     options={currentProblems}
+     placeholder="Select Problem"
+     icon={<Wrench className="w-4 h-4" />}
+     />
+     </div>
+   )}
 
- {/* Device Details */}
+   {/* Device Details */}
  <div className="space-y-1.5">
  <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Device Details / Model</label>
  <div className="relative">
@@ -399,4 +403,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  </Dialog>
  );
 }
+
+
+
 
