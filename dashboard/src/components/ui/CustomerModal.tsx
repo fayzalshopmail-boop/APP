@@ -48,9 +48,9 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  const [isSubmitting, setIsSubmitting] = useState(false);
  const [manageCategory, setManageCategory] = useState<'deviceBrands' | 'deviceTypes' | 'deviceProblems' | null>(null);
 
- const currentType = formData.deviceType || deviceTypes[0] || '';
- const currentBrands = storeBrands[currentType] || [];
- const currentProblems = storeProblems[currentType] || [];
+ const currentType = formData.deviceType;
+ const currentBrands = currentType ? (storeBrands[currentType] || []) : [];
+ const currentProblems = currentType ? (storeProblems[currentType] || []) : [];
 
  useEffect(() => {
  if (initialData) {
@@ -74,9 +74,9 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  name: '', 
  phone: '+880', 
  address: '', 
- deviceType: currentType,
- deviceProblem: currentProblems[0] || '',
- deviceBrand: currentBrands[0] || '',
+ deviceType: '',
+ deviceProblem: '',
+ deviceBrand: '',
  deviceDetails: '', 
  serialNumber: '',
  totalBill: 0, 
@@ -85,7 +85,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  });
  }
  // eslint-disable-next-line react-hooks/exhaustive-deps
- }, [initialData, isOpen, storeBrands, deviceTypes, storeProblems]);
+ }, [initialData, isOpen]);
 
  const handleSubmit = async (e: React.FormEvent) => {
  e.preventDefault();
@@ -399,3 +399,4 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  </Dialog>
  );
 }
+
