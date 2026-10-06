@@ -3,12 +3,12 @@ import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDo3aboTNS8cPOMkES-njM93C4uKS7h0f4",
-  authDomain: "shop-management-19fcd.firebaseapp.com",
-  projectId: "shop-management-19fcd",
-  storageBucket: "shop-management-19fcd.firebasestorage.app",
-  messagingSenderId: "156009696120",
-  appId: "1:156009696120:web:054f408aaa26c6f81cd68d",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
 // Only initialize if we have at least the API key
