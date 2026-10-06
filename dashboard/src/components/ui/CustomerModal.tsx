@@ -208,8 +208,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
    </div>
 
    {/* Device Brand */}
-   {formData.deviceType && (
-     <div className="space-y-1.5">
+   <div className="space-y-1.5">
      <div className="flex items-center justify-between">
      <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Device Brand</label>
      <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceBrands')} className="h-6 w-6 text-gray-500 hover:text-blue-400">
@@ -224,13 +223,11 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
      icon={<Tag className="w-4 h-4" />}
      />
      </div>
-   )}
    </div>
 
    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
    {/* Device Problem */}
-   {formData.deviceBrand && (
-     <div className="space-y-1.5">
+   <div className="space-y-1.5">
      <div className="flex items-center justify-between">
      <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Primary Issue</label>
      <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceProblems')} className="h-6 w-6 text-gray-500 hover:text-blue-400">
@@ -245,7 +242,6 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
      icon={<Wrench className="w-4 h-4" />}
      />
      </div>
-   )}
 
    {/* Device Details */}
  <div className="space-y-1.5">
@@ -403,6 +399,8 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  </Dialog>
  );
 }
+
+
 
 
 
