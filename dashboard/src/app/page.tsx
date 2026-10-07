@@ -44,22 +44,25 @@ export default function Dashboard() {
 
         // 2. Total Revenue (Transactions)
         let totalRevenue = 0;
-        let qTransactions = collection(db, 'transactions') as any;
         
         if (startDate) {
           // If filtering by date, fetch docs and sum locally to avoid Firebase Composite Index requirement
-          qTransactions = query(qTransactions, where('createdAt', '>=', startDate));
+          const qTransactions = query(collection(db, 'transactions'), where('createdAt', '>=', startDate));
           const docsSnap = await getDocs(qTransactions);
           docsSnap.forEach(doc => {
             const data = doc.data();
-            if (data.type !== 'Refund') {
+            if (['Advance Payment', 'Due Collection', 'Direct Sell'].includes(data.type)) {
               totalRevenue += Number(data.amount) || 0;
             }
           });
         } else {
-          // For All Time, we can use server aggregation since there is no where() filter
-          const snapRevenue = await getAggregateFromServer(qTransactions, { total: sum('amount') });
-          totalRevenue = snapRevenue.data().total || 0;
+          // For All Time, we can use server aggregation (multiple queries to avoid fetching all docs)
+          const revenueTypes = ['Advance Payment', 'Due Collection', 'Direct Sell'];
+          for (const rType of revenueTypes) {
+            const qType = query(collection(db, 'transactions'), where('type', '==', rType));
+            const snapRevenue = await getAggregateFromServer(qType, { total: sum('amount') });
+            totalRevenue += snapRevenue.data().total || 0;
+          }
         }
 
         // 3. Pending Jobs (Live snapshot, ignores date filter)
@@ -205,3 +208,4 @@ return (
     </div>
   );
 }
+

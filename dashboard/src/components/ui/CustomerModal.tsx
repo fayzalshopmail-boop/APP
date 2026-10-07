@@ -42,8 +42,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  serialNumber: '',
  totalBill: 0,
  advance: 0,
- warrantyMonths: '',
- });
+ warrantyMonths: '', expectedDeliveryDate: '' });
  const [isScannerOpen, setIsScannerOpen] = useState(false);
  const [isSubmitting, setIsSubmitting] = useState(false);
  const [manageCategory, setManageCategory] = useState<'deviceBrands' | 'deviceTypes' | 'deviceProblems' | null>(null);
@@ -67,8 +66,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  serialNumber: initialData.serialNumber || '',
  totalBill: initialData.totalBill,
  advance: initialData.advance || 0,
- warrantyMonths: initialData.warrantyMonths ? String(initialData.warrantyMonths) : '',
- });
+ warrantyMonths: initialData.warrantyMonths ? String(initialData.warrantyMonths) : '', expectedDeliveryDate: initialData.expectedDeliveryDate || '' });
  } else {
  // eslint-disable-next-line react-hooks/set-state-in-effect
  setFormData({ 
@@ -82,8 +80,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  serialNumber: '',
  totalBill: 0, 
  advance: 0,
- warrantyMonths: '',
- });
+ warrantyMonths: '', expectedDeliveryDate: '' });
  }
  // eslint-disable-next-line react-hooks/exhaustive-deps
  }, [initialData, isOpen]);
@@ -338,7 +335,20 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  </div>
  </div>
 
- {/* Status Row */}
+ {/* Expected Delivery Date */}
+   {!instantDelivery && (
+   <div className="space-y-1.5 pt-2 pb-2">
+   <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Expected Delivery Date</label>
+   <Input 
+   type="date"
+   value={formData.expectedDeliveryDate}
+   onChange={(e) => setFormData({ ...formData, expectedDeliveryDate: e.target.value })}
+   className="bg-secondary text-gray-200"
+   />
+   </div>
+   )}
+
+   {/* Status Row */}
  <div className="flex flex-col sm:flex-row gap-4 items-center justify-between pt-2">
  <label className="flex items-center gap-2 cursor-pointer bg-blue-500/10 hover:bg-blue-500/20 px-3 py-2 rounded-lg border border-blue-500/20 transition-colors w-full sm:w-auto">
  <input type="checkbox" 
@@ -400,6 +410,10 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  </Dialog>
  );
 }
+
+
+
+
 
 
 

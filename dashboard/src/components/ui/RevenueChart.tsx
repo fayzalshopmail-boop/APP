@@ -51,7 +51,7 @@ export function RevenueChart() {
             
             if (tDate) {
               const dayObj = last7Days.find(d => d.dateStr === tDate);
-              if (dayObj && t.type !== 'Refund') {
+              if (dayObj && ['Advance Payment', 'Due Collection', 'Direct Sell'].includes(t.type)) {
                 dayObj.revenue += Number(t.amount) || 0;
               }
             }
@@ -133,3 +133,4 @@ export function RevenueChart() {
     </motion.div>
   );
 }
+

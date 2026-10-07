@@ -42,16 +42,44 @@ export const systemTasksService = {
       });
 
       if (overdueCustomers.length > 0) {
-        // We can send one summary notification to avoid spamming if there are 50 overdue customers
         const names = overdueCustomers.slice(0, 3).map(c => c.name).join(', ');
         const more = overdueCustomers.length > 3 ? ` and ${overdueCustomers.length - 3} others` : '';
-        
         await notificationService.add({
           title: 'Overdue Payments Alert',
           message: `${names}${more} have crossed their payment due dates!`,
           type: 'alert',
           targetRole: 'Owner',
           link: '/due'
+        });
+      }
+
+      // Run Approaching Delivery Dates Check
+      const qDeliveries = query(collection(db, 'customers'));
+      const delSnap = await getDocs(qDeliveries);
+      
+      const tomorrowMs = nowMs + (24 * 60 * 60 * 1000); // Now + 24 hours
+      let upcomingDeliveries: {name: string, date: string}[] = [];
+
+      delSnap.forEach(doc => {
+        const c = doc.data();
+        if (c.expectedDeliveryDate && c.status !== 'Delivered' && c.status !== 'Returned (Unrepaired)') {
+          const expectedMs = new Date(c.expectedDeliveryDate).getTime();
+          // If expected date is today or tomorrow (or passed but not delivered)
+          if (expectedMs <= tomorrowMs) {
+            upcomingDeliveries.push({name: c.name, date: c.expectedDeliveryDate});
+          }
+        }
+      });
+
+      if (upcomingDeliveries.length > 0) {
+        const names = upcomingDeliveries.slice(0, 3).map(c => c.name).join(', ');
+        const more = upcomingDeliveries.length > 3 ? ` and ${upcomingDeliveries.length - 3} others` : '';
+        await notificationService.add({
+          title: 'Upcoming Deliveries',
+          message: `Product delivery due for ${names}${more} today/tomorrow!`,
+          type: 'warning',
+          targetRole: 'Owner',
+          link: '/customers'
         });
       }
 
@@ -62,3 +90,4 @@ export const systemTasksService = {
     }
   }
 };
+

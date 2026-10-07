@@ -26,6 +26,7 @@ export interface Customer {
   due: number;
   discount?: number;
   dueDate?: string;
+  expectedDeliveryDate?: string;
   points: number;
   status?: CustomerStatus;
   warrantyMonths?: string | number;
@@ -98,4 +99,6 @@ export const customerService = {
     }
   }
 };
+
+
 
