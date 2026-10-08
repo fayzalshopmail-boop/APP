@@ -9,6 +9,7 @@ import { shopSettingsService } from '@/lib/services/shopSettings';
 import { dropdownConfigService } from '@/lib/services/dropdownConfig';
 import { usePathname } from 'next/navigation';
 import { AutoBackupTrigger } from './AutoBackupTrigger';
+import { requestNotificationPermission } from '@/lib/services/fcm';
 
 function TitleUpdater({ title }: { title: string }) {
   const pathname = usePathname();
@@ -40,6 +41,12 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (user && user.email) {
+      requestNotificationPermission(user.email);
+    }
+  }, [user?.email]);
 
   if (!mounted) {
     // Prevent hydration mismatch

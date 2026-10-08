@@ -39,6 +39,8 @@ export function Topbar() {
   const basePath = '/' + pathname.split('/')[1];
   const title = routeTitles[basePath] || routeTitles[pathname] || 'Dashboard';
 
+  const prevCountRef = useRef(-1);
+
   useEffect(() => {
     if (!user) return;
     
@@ -48,6 +50,13 @@ export function Topbar() {
     }
 
     const unsubscribe = notificationService.subscribeToUnread(user.role, (notifs) => {
+      if (prevCountRef.current !== -1 && notifs.length > prevCountRef.current) {
+        try {
+          const audio = new Audio('/notification.mp3');
+          audio.play().catch(e => console.log('Audio play failed', e));
+        } catch (e) {}
+      }
+      prevCountRef.current = notifs.length;
       setNotifications(notifs);
     });
     return () => unsubscribe();
@@ -224,3 +233,4 @@ export function Topbar() {
     </header>
   );
 }
+
