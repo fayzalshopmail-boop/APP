@@ -423,7 +423,7 @@ export default function SettingsPage() {
                         )}
                       </td>
                       <td className="py-4 text-right">
-                        {staff.role !== 'Owner' && staff.email !== currentUser?.email && (
+                        {staff.email !== currentUser?.email && (currentUser?.role === 'Owner' || staff.role !== 'Owner') && (
                           <div className="flex items-center justify-end gap-2">
                             <button 
                               onClick={() => toggleAccess(staff.email, staff.isActive)}
@@ -652,6 +652,7 @@ export default function SettingsPage() {
     </div>
   );
 }
+
 
 
 
