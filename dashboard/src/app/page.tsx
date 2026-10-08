@@ -101,9 +101,9 @@ export default function Dashboard() {
 return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
       {/* Header section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-blue-500/10 rounded-xl hidden sm:block">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 sm:mb-8">
+        <div className="hidden sm:flex items-center gap-3">
+          <div className="p-3 bg-blue-500/10 rounded-xl">
             <LayoutDashboard className="w-8 h-8 text-blue-500" />
           </div>
           <div>
