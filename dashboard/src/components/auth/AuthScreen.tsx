@@ -146,7 +146,7 @@ export function AuthScreen() {
         await auth.signOut();
         throw new Error('You are not authorized to access this dashboard. Contact the Admin to add your email.');
       }
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error(err);
       setError(err.message || 'Invalid Email or Password');
     } finally {
@@ -379,3 +379,4 @@ export function AuthScreen() {
     </div>
   );
 }
+

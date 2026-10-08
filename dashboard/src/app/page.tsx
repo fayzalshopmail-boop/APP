@@ -52,7 +52,7 @@ export default function Dashboard() {
         
         const docsSnap = await getDocs(qTransactions);
         docsSnap.forEach(doc => {
-          const data = doc.data();
+          const data = doc.data() as any;
           if (['Advance Payment', 'Due Collection', 'Direct Sell'].includes(data.type)) {
             totalRevenue += Number(data.amount) || 0;
           }
@@ -199,6 +199,7 @@ return (
     </div>
   );
 }
+
 
 
 

@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
@@ -26,24 +28,23 @@ const navItems = [
 ];
 
 export function Sidebar() {
-  const pathname = usePathname();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);  const pathname = usePathname();
   const router = useRouter();
   const { user, setUser, setUnlocked, isSidebarOpen, toggleSidebar, setSidebarOpen, shop } = useAppStore();
 
-  const handleLogout = async () => {
-    if (window.confirm("Are you sure you want to completely log out?")) {
-      try {
-        if (auth) {
-          await auth.signOut();
-        }
-      } catch (err) {
+  const handleLogoutRequest = () => setShowLogoutConfirm(true);
+
+  const handleConfirmLogout = async () => {
+    try {
+      if (auth) {
+        await auth.signOut();
+      } } catch (err) {
         console.error("Firebase logout error:", err);
       }
       setUser(null);
       // We do not clear the PIN here so the Owner doesn't have to set it up again
       setUnlocked(false);
       router.push('/');
-    }
   };
 
   return (
@@ -122,7 +123,7 @@ export function Sidebar() {
         </div>
         
         <button 
-          onClick={handleLogout}
+          onClick={handleLogoutRequest}
           className="absolute right-4 text-gray-500 hover:text-red-400 transition-colors bg-[#1b1f30] p-1.5 rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100"
           title="Log Out"
         >
@@ -130,7 +131,23 @@ export function Sidebar() {
         </button>
       </div>
     </aside>
+
+      <ConfirmModal 
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={handleConfirmLogout}
+        title="Log Out?"
+        message="Are you sure you want to log out of your account? You will need your credentials and PIN to access the dashboard again."
+        confirmText="Log Out"
+        variant="warning"
+      />
     </>
   );
 }
+
+
+
+
+
+
 

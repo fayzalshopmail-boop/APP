@@ -322,7 +322,7 @@ export default function SuppliersPage() {
             {editingSupplier && (
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1.5">Status</label>
-                <Select value={formData.status} onValueChange={(v: 'Active'|'Inactive') => setFormData({...formData, status: v})}>
+                <Select value={formData.status} onValueChange={(v: any) => setFormData({...formData, status: v || 'Active'})}>
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
@@ -424,5 +424,6 @@ export default function SuppliersPage() {
     </div>
   );
 }
+
 
 

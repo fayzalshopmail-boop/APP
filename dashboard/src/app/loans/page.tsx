@@ -421,12 +421,13 @@ export default function LoansPage() {
       <ConfirmModal 
         isOpen={!!deleteId}
         onClose={() => setDeleteId(null)}
-        onConfirm={() => deleteId && handleDelete(deleteId)}
+        onConfirm={() => { if (deleteId) handleDelete(deleteId); }}
         title="Delete Record"
         message="Are you sure you want to delete this loan record? This cannot be undone."
       />
     </div>
   );
 }
+
 
 

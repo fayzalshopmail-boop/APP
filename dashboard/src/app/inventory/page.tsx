@@ -1,4 +1,5 @@
 'use client';
+import { shopTransactionService } from '@/lib/services/shopTransaction';
 
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
@@ -35,7 +36,7 @@ export default function InventoryPage() {
   const [sellData, setSellData] = useState({ quantity: 1, price: 0, customerName: 'Walk-in Customer' });
   const [restockItem, setRestockItem] = useState<InventoryItem | null>(null);
   const [restockData, setRestockData] = useState({ addQuantity: 0, newPurchasePrice: 0, newSellingPrice: 0,
-    supplierId: '', });
+    });
   const [manageCategoryModal, setManageCategoryModal] = useState(false);
   const [manageProductModal, setManageProductModal] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
@@ -46,9 +47,8 @@ export default function InventoryPage() {
     unit: 'Pcs',
     purchasePrice: 0,
     sellingPrice: 0,
-    supplierId: '',
-    minStockLevel: 5
-  });
+    supplierId: '', minStockLevel: 5
+        });
 
   const fetchData = async () => {
     try {
@@ -143,8 +143,9 @@ export default function InventoryPage() {
     setRestockData({
       addQuantity: 0,
       newPurchasePrice: item.purchasePrice,
-      newSellingPrice: item.sellingPrice
-    });
+      newSellingPrice: item.sellingPrice,
+        supplierId: item.supplierId || ''
+      });
     setIsRestockModalOpen(true);
   };
 
@@ -244,9 +245,8 @@ export default function InventoryPage() {
         stock: item.stock,
         unit: item.unit || 'Pcs',
         purchasePrice: item.purchasePrice,
-      supplierId: item.supplierId || '',
-        sellingPrice: item.sellingPrice,
-        minStockLevel: item.minStockLevel || 5
+      sellingPrice: item.sellingPrice,
+        supplierId: item.supplierId || '', minStockLevel: item.minStockLevel || 5
       });
     } else {
       setEditingItem(null);
@@ -257,8 +257,8 @@ export default function InventoryPage() {
         unit: 'Pcs',
         purchasePrice: 0,
         sellingPrice: 0,
-        minStockLevel: 5
-      });
+        supplierId: '', minStockLevel: 5
+        });
     }
     setIsModalOpen(true);
   };
@@ -944,6 +944,14 @@ export default function InventoryPage() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
 
 
 

@@ -116,7 +116,7 @@ export function RevenueChart() {
                 }}
                 itemStyle={{ color: '#fff', fontWeight: 600 }}
                 labelStyle={{ color: '#9ca3af', marginBottom: '4px' }}
-                formatter={(value: number) => [formatCurrency(value), 'Revenue']}
+                formatter={(value: any) => [formatCurrency(value), 'Revenue']}
               />
               <Line 
                 type="monotone" 
@@ -133,4 +133,5 @@ export function RevenueChart() {
     </motion.div>
   );
 }
+
 

@@ -349,7 +349,7 @@ export default function SmsMarketingPage() {
                   </button>
                   {balance && (
                     <div className="text-sm font-semibold text-emerald-400 bg-emerald-500/10 px-4 py-2 rounded-lg border border-emerald-500/20">
-                      Balance: {formatCurrency(balance)}
+                      Balance: {formatCurrency(Number(balance))}
                     </div>
                   )}
                 </div>
@@ -583,4 +583,5 @@ export default function SmsMarketingPage() {
     </div>
   );
 }
+
 

@@ -42,10 +42,7 @@ export default function CustomersPage() {
   const [profileSidebarCustomer, setProfileSidebarCustomer] = useState<Customer | null>(null);
 
   // Confirm Modal State
-  const [confirmModal, setConfirmModal] = useState<{
-    isOpen: boolean;
-    id: string | null;
-  }>({ isOpen: false, id: null });
+  const [confirmModal, setConfirmModal] = useState<{isOpen: boolean; actionType: 'delete' | 'return' | null; id: string | null;}>({isOpen: false, actionType: null, id: null});
 
   const [smsSettings, setSmsSettings] = useState<any>(null);
 
@@ -144,7 +141,7 @@ export default function CustomersPage() {
         // Also fire sms
         const smsSettings = await smsConfigService.getSettings();
         if (smsSettings.enabled && smsSettings.apiKey && smsSettings.senderId && c.phone) {
-          await sendSMS(c.phone, `Your device ${c.deviceBrand} ${c.deviceType} has been returned unrepaired. Please collect it from ${settings?.shopName || 'our shop'}.`);
+          await sendSMS(c.phone, `Your device   has been returned unrepaired. Please collect it from .`, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
         }
         return;
       } catch (err: any) {
@@ -204,8 +201,8 @@ export default function CustomersPage() {
         const config = await loyaltyConfigService.getSettings();
         if (config.enabled && partsModalCustomer.pendingStatus === 'Delivered') {
            let newPoints = c.points || 0;
-           if (redeemPoints && newPoints >= config.pointsRequired) {
-              const redeemable = Math.floor(newPoints / config.pointsRequired) * config.pointsRequired;
+           if (redeemPoints && newPoints >= config.spendRequiredForOnePoint) {
+              const redeemable = Math.floor(newPoints / config.spendRequiredForOnePoint) * config.spendRequiredForOnePoint;
               newPoints -= redeemable;
            }
            if (paymentReceived > 0 && config.spendRequiredForOnePoint > 0) {
@@ -308,18 +305,56 @@ export default function CustomersPage() {
   };
 
   const handleDeleteRequest = (id: string) => {
-    setConfirmModal({ isOpen: true, id });
+    setConfirmModal({ isOpen: true, actionType: 'delete', id });
   };
 
-  const handleConfirmDelete = async () => {
-    const id = confirmModal.id;
-    if (!id) return;
-
+  const executeDelete = async (id: string) => {
     try {
       await customerService.delete(id);
       setCustomers(customers.filter(c => c.id !== id));
-    } catch (error) { console.error("Firebase error", error); alert("Error: Failed to delete customer. Please check your internet connection."); } finally {
-      setConfirmModal({ isOpen: false, id: null });
+    } catch (error) { 
+      console.error("Firebase error", error); 
+      alert("Error: Failed to delete customer. Please check your internet connection."); 
+    }
+  };
+
+  const handleConfirmAction = async () => {
+    const id = confirmModal.id;
+    if (!id || !confirmModal.actionType) return;
+    try {
+      if (confirmModal.actionType === 'delete') {
+        await executeDelete(id);
+      } else if (confirmModal.actionType === 'return') {
+        await executeMarkAsReturned(id);
+      }
+    } finally {
+      setConfirmModal({ isOpen: false, actionType: null, id: null });
+    }
+  };
+
+    const executeMarkAsReturned = async (id: string) => {
+    try {
+      await shopTransactionService.markAsReturned(id, user?.email || 'Unknown');
+      setCustomers(customers.map(cust => cust.id === id ? { 
+        ...cust, 
+        status: 'Returned (Unrepaired)', 
+        partsUsed: [], 
+        totalCost: 0, 
+        advance: 0, 
+        due: 0, 
+        totalBill: 0, 
+        discount: 0, 
+        dueDate: '' 
+      } : cust));
+      
+      const c = customers.find(x => x.id === id);
+      const smsSettings = await smsConfigService.getSettings();
+      if (smsSettings.enabled && smsSettings.apiKey && smsSettings.senderId && c?.phone) {
+        await sendSMS(c.phone, `Your device   has been returned unrepaired. Please collect it from .`, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
+      }
+    } catch (err: any) {
+      console.error('Error marking as returned', err);
+      alert(err.message || 'Failed to mark as returned');
     }
   };
 
@@ -570,15 +605,28 @@ export default function CustomersPage() {
 
       <ConfirmModal 
         isOpen={confirmModal.isOpen}
-        onClose={() => setConfirmModal({ isOpen: false, id: null })}
-        onConfirm={handleConfirmDelete}
-        title="Delete Customer?"
-        message="Are you sure you want to delete this customer? This action cannot be undone and all data will be permanently lost."
-        confirmText="Delete Customer"
+        onClose={() => setConfirmModal({ isOpen: false, actionType: null, id: null })}
+        onConfirm={handleConfirmAction}
+        title={confirmModal.actionType === 'return' ? "Mark as Returned?" : "Delete Customer?"}
+        message={confirmModal.actionType === 'return' 
+          ? "Are you sure you want to mark this as Returned? Any advance will be logged as Refunded and parts will be restocked." 
+          : "Are you sure you want to delete this customer? This action cannot be undone and all data will be permanently lost."}
+        confirmText={confirmModal.actionType === 'return' ? "Confirm Return" : "Delete Customer"}
       />
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 

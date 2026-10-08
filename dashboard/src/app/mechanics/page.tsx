@@ -327,11 +327,12 @@ export default function MechanicsPage() {
       <ConfirmModal 
         isOpen={!!deleteId}
         onClose={() => setDeleteId(null)}
-        onConfirm={() => deleteId && handleDelete(deleteId)}
+        onConfirm={() => { if (deleteId) handleDelete(deleteId); }}
         title="Delete Mechanic"
         message="Are you sure you want to delete this mechanic? This cannot be undone."
       />
     </div>
   );
 }
+
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { motion } from 'framer-motion';
 import { Wallet, Plus, Trash2, Calendar, Coffee, Plug, Car, UserCircle, ShoppingBag } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,7 @@ const EXPENSE_CATEGORIES = [
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmModal, setConfirmModal] = useState<{isOpen: boolean, id: string | null}>({isOpen: false, id: null});
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -66,13 +68,19 @@ export default function ExpensesPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Delete this expense?")) return;
+  const handleDeleteRequest = (id: string) => {
+    setConfirmModal({isOpen: true, id});
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmModal.id) return;
     try {
-      await expenseService.delete(id);
-      setExpenses(expenses.filter(e => e.id !== id));
+      await expenseService.delete(confirmModal.id as string);
+      setExpenses(expenses.filter(e => e.id !== (confirmModal.id as string)));
     } catch (err) {
       console.error(err);
+    } finally {
+      setConfirmModal({isOpen: false, id: null});
     }
   };
 
@@ -226,7 +234,7 @@ export default function ExpensesPage() {
                         <Button 
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDelete(expense.id)}
+                          onClick={() => handleDeleteRequest(expense.id)}
                           className="text-red-500 hover:text-red-400 hover:bg-red-500/10"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -310,8 +318,22 @@ export default function ExpensesPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmModal 
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({isOpen: false, id: null})}
+        onConfirm={handleConfirmDelete}
+        title="Delete Expense?"
+        message="Are you sure you want to delete this expense record? This action cannot be undone."
+        confirmText="Delete Expense"
+      />
     </div>
   );
 }
+
+
+
+
+
 
 

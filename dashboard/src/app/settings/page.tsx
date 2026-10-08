@@ -7,10 +7,35 @@ import { useAppStore } from '@/store/useAppStore';
 import { AppUser, UserRole, userService } from '@/lib/services/user';
 import { ShopSettings, shopSettingsService, defaultShopSettings } from '@/lib/services/shopSettings';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { backupService } from '@/lib/services/backup';
 
 export default function SettingsPage() {
   const { user: currentUser, shop: globalShop, setShop: setGlobalShop } = useAppStore();
+    const handleConfirmAction = async () => {
+    const { actionType, payload } = confirmModal;
+    if (!actionType) return;
+    try {
+      if (actionType === 'merge') {
+        await executeMergeBackup(payload);
+      } else if (actionType === 'wipe') {
+        await executeWipeDatabase();
+      } else if (actionType === 'deleteStaff') {
+        await executeDeleteStaff(payload);
+      }
+    } finally {
+      setConfirmModal({isOpen: false, actionType: null, payload: null});
+    }
+  };
+
+  const getModalProps = () => {
+    switch (confirmModal.actionType) {
+      case 'wipe': return { title: "Wipe All Data?", message: "CRITICAL WARNING: This will PERMANENTLY DELETE ALL shop data.", confirmText: "Wipe Database" };
+      case 'merge': return { title: "Merge Backup?", message: "WARNING: This will merge data from the backup file into your database.", confirmText: "Merge Data" };
+      case 'deleteStaff': return { title: "Delete Staff Member?", message: "Are you sure you want to completely DELETE this staff member?", confirmText: "Delete Staff" };
+      default: return { title: "Confirm", message: "Are you sure?", confirmText: "Confirm" };
+    }
+  };
   const [activeTab, setActiveTab] = useState<'shop' | 'staff' | 'data'>('shop');
   
   // Shop State
@@ -28,6 +53,7 @@ export default function SettingsPage() {
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{isOpen: boolean, actionType: 'wipe'|'merge'|'deleteStaff'|null, payload: any}>({isOpen: false, actionType: null, payload: null});
   const [backupLoading, setBackupLoading] = useState(false);
 
   const loadData = async () => {
@@ -81,10 +107,10 @@ export default function SettingsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!window.confirm("WARNING: This will merge data from the backup file into your database. Existing records with matching IDs will be overwritten. Are you sure you want to proceed?")) {
-      e.target.value = '';
-      return;
-    }
+    setConfirmModal({isOpen: true, actionType: 'merge', payload: file});
+  };
+
+  const executeMergeBackup = async (file: File) => {
 
     try {
       setBackupLoading(true);
@@ -109,9 +135,10 @@ export default function SettingsPage() {
   };
 
     const handleClearData = async () => {
-    if (!window.confirm("CRITICAL WARNING: This will PERMANENTLY DELETE ALL shop data (Customers, Inventory, Transactions, etc.). Only settings and user accounts will remain. This action CANNOT be undone! Are you absolutely sure?")) {
-      return;
-    }
+      setConfirmModal({isOpen: true, actionType: 'wipe', payload: null});
+    };
+
+    const executeWipeDatabase = async () => {
     
     if (prompt("Type 'DELETE' to confirm:") !== 'DELETE') {
       alert('Operation cancelled.');
@@ -218,21 +245,26 @@ export default function SettingsPage() {
     }
   };
 
-  const handleDeleteStaff = async (email: string) => {
+  const handleDeleteStaff = (email: string) => {
     if (currentUser?.email === email) {
       alert("You cannot delete your own account.");
       return;
     }
-    
-    if (window.confirm(`Are you sure you want to completely DELETE this staff member (${email})?`)) {
-      try {
+    setConfirmModal({
+      isOpen: true,
+      actionType: 'deleteStaff',
+      payload: email
+    });
+  };
+
+  const executeDeleteStaff = async (email: string) => {
+    try {
         await userService.deleteUser(email);
         setStaffList(prev => prev.filter(s => s.email !== email));
       } catch (err) {
         console.error("Failed to delete user", err);
         alert("Failed to delete user. Please try again.");
       }
-    }
   };
 
   if (currentUser?.role !== 'Owner' && currentUser?.role !== 'Manager') {
@@ -649,9 +681,22 @@ export default function SettingsPage() {
         </motion.div>
       )}
 
+      <ConfirmModal 
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({isOpen: false, actionType: null, payload: null})}
+        onConfirm={handleConfirmAction}
+        title={getModalProps().title}
+        message={getModalProps().message}
+        confirmText={getModalProps().confirmText}
+        variant={confirmModal.actionType === 'wipe' ? 'danger' : 'warning'}
+      />
     </div>
   );
 }
+
+
+
+
 
 
 
