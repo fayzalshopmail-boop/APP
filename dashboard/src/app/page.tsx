@@ -13,7 +13,7 @@ import { formatCurrency } from '@/lib/currency';
 import { useAppStore } from '@/store/useAppStore';
 
 export default function Dashboard() {
-  const [timeFilter, setTimeFilter] = useState<'Today' | 'This Week' | 'This Month' | 'This Year' | 'All Time'>('Today');
+  const [timeFilter, setTimeFilter] = useState<'Today' | 'This Week' | 'This Month' | 'This Year' | 'All Time'>('This Week');
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({ totalCustomers: 0, totalRevenue: 0, pendingJobs: 0, completedRepairs: 0 });
 
@@ -119,10 +119,10 @@ return (
             </div>
           )}
           <Select value={timeFilter} onValueChange={(val: any) => setTimeFilter(val)}>
-            <SelectTrigger className="w-[140px] h-10 bg-secondary border-gray-800 text-gray-200 shadow-sm focus:ring-1 focus:ring-blue-500">
+            <SelectTrigger className="w-[140px] bg-secondary border-gray-800 text-gray-100 rounded-lg focus:ring-1 focus:ring-blue-500/50">
               <SelectValue placeholder="Select timeframe" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent alignItemWithTrigger={false}>
               <SelectItem value="Today">Today</SelectItem>
               <SelectItem value="This Week">This Week</SelectItem>
               <SelectItem value="This Month">This Month</SelectItem>
@@ -133,7 +133,7 @@ return (
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <StatCard 
           title="Total Customers" 
           value={isLoading ? '...' : filteredStats.totalCustomers.toString()} 
@@ -199,6 +199,7 @@ return (
     </div>
   );
 }
+
 
 
 
