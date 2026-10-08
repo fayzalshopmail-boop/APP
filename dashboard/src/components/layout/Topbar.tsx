@@ -146,14 +146,18 @@ export function Topbar() {
 
       <div className="flex items-center gap-2 sm:gap-4 relative" ref={notifRef}>
         
-        {/* ADD CUSTOMER BUTTON */}
-        <button
-          onClick={() => setIsCustomerModalOpen(true)}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg text-sm font-medium transition-colors shadow-lg shadow-blue-500/20 mr-1 sm:mr-0"
-        >
-          <UserPlus className="w-4 h-4 md:w-5 md:h-5" />
-          <span className="hidden sm:inline">Add Customer</span>
-        </button>
+        {pathname === '/' && (
+          <div className="flex items-center">
+            {/* ADD CUSTOMER BUTTON */}
+            <button
+              onClick={() => setIsCustomerModalOpen(true)}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg text-sm font-medium transition-colors shadow-lg shadow-blue-500/20 mr-1 sm:mr-0"
+            >
+              <UserPlus className="w-4 h-4 md:w-5 md:h-5" />
+              <span className="hidden sm:inline">Add Customer</span>
+            </button>
+          </div>
+        )}
         
         <button 
           onClick={() => setIsNotifOpen(!isNotifOpen)}

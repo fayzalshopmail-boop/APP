@@ -14,6 +14,8 @@ export interface SmsSettings {
   followupTemplate: string; // 6-Month Reminder
   pointsRedeemedTemplate: string;
   returnedTemplate?: string;
+  loanGivenTemplate?: string;
+  loanTakenTemplate?: string;
 }
 
 export const defaultSmsSettings: SmsSettings = {
@@ -27,8 +29,10 @@ export const defaultSmsSettings: SmsSettings = {
   whatsappTemplate: 'হ্যালো {name}, VISC তে আপনার {brand} {type} মেরামতের ইনভয়েস: মোট বিল: {total} টাকা, অগ্রিম: {advance} টাকা, বকেয়া: {due} টাকা।',
   paymentReminderTemplate: 'প্রিয় {name}, VISC তে আপনার {brand} {type} মেরামতের বকেয়া {due} টাকা এখনও পরিশোধ করা হয়নি। অনুগ্রহ করে দ্রুত বকেয়া পরিশোধ করুন। ধন্যবাদ!',
   followupTemplate: 'হ্যালো {name}, VISC থেকে আপনার {brand} {type} মেরামতের ৬ মাস পূর্ণ হয়েছে। আশা করি এটি ঠিকঠাক চলছে! কোনো চেকাপের প্রয়োজন হলে আমাদের সাথে যোগাযোগ করুন।',
-  pointsRedeemedTemplate: '',
-  returnedTemplate: 'প্রিয় {name}, আপনার {brand} {type} ডিভাইসটি চেক করা হয়েছে এবং আনরিপেয়ার্ড অবস্থায় ফেরত দেওয়া হচ্ছে। VISC এ আসার জন্য ধন্যবাদ!'
+  pointsRedeemedTemplate: 'সম্মানিত {name}, আপনি আমাদের শপ থেকে সফলভাবে {points} পয়েন্ট ব্যবহার করেছেন। আমাদের সাথে থাকার জন্য ধন্যবাদ!',
+  returnedTemplate: 'প্রিয় {name}, আপনার {brand} {type} ডিভাইসটি চেক করা হয়েছে এবং আনরিপেয়ার্ড অবস্থায় ফেরত দেওয়া হচ্ছে। VISC এ আসার জন্য ধন্যবাদ!',
+  loanGivenTemplate: 'সম্মানিত {name}, আমাদের শপ {shop} থেকে আপনার নেওয়া ধারের {due} টাকা বকেয়া রয়েছে। অনুগ্রহ করে আপনার বকেয়াটি পরিশোধ করুন। ধন্যবাদ।',
+  loanTakenTemplate: 'সম্মানিত {name}, আপনি আমাদের শপ {shop} এর কাছে {due} টাকা পান। আপনার পাওনাটি দ্রুত পরিশোধের ব্যবস্থা করা হচ্ছে। ধন্যবাদ।'
 };
 
 export const smsConfigService = {

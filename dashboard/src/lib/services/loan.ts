@@ -9,13 +9,22 @@ import {
   deleteDoc,
   serverTimestamp,
   query,
-  orderBy
+  orderBy,
+  arrayUnion
 } from 'firebase/firestore';
 import { db } from '../firebase';
+
+export interface LoanHistoryEntry {
+  amount: number;
+  date: string;
+  type: 'Payment' | 'Given' | 'Taken';
+  note?: string;
+}
 
 export interface Loan {
   id: string;
   personName: string;
+  phone?: string;
   type: 'Given' | 'Taken';
   amount: number;
   paidAmount?: number;
@@ -23,6 +32,7 @@ export interface Loan {
   status: 'Pending' | 'Paid';
   notes?: string;
   nextPaymentDate?: string;
+  history?: LoanHistoryEntry[];
   createdAt?: any;
   updatedAt?: any;
 }
@@ -47,9 +57,17 @@ export const loanService = {
 
   add: async (loan: Omit<Loan, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> => {
     if (!db) throw new Error('Firebase DB is not initialized');
+    const historyEntry: LoanHistoryEntry = {
+      amount: loan.amount,
+      date: new Date().toISOString(),
+      type: loan.type,
+      note: 'Initial entry'
+    };
+    
     const docRef = await addDoc(collection(db, COLLECTION_NAME), {
       ...loan,
       paidAmount: 0,
+      history: [historyEntry],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
@@ -86,9 +104,17 @@ export const loanService = {
     const newPaid = (currentPaid || 0) + payment;
     const newStatus = newPaid >= totalAmount ? 'Paid' : 'Pending';
     
+    const historyEntry: LoanHistoryEntry = {
+      amount: payment,
+      date: new Date().toISOString(),
+      type: 'Payment',
+      note: 'Partial payment received'
+    };
+
     const updateData: any = {
       paidAmount: newPaid,
       status: newStatus,
+      history: arrayUnion(historyEntry),
       updatedAt: serverTimestamp()
     };
     
@@ -104,3 +130,4 @@ export const loanService = {
     return { newPaid, status: newStatus };
   }
 };
+

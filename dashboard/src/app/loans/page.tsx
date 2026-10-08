@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CreditCard, Plus, ArrowUpRight, ArrowDownRight, Edit2, Trash2, CheckCircle, Coins, CalendarClock } from 'lucide-react';
+import { CreditCard, Plus, ArrowUpRight, ArrowDownRight, Edit2, Trash2, CheckCircle, Coins, CalendarClock, History, MessageSquare, Send } from 'lucide-react';
 import { loanService, Loan } from '@/lib/services/loan';
 import { formatCurrency } from '@/lib/currency';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,8 @@ export default function LoansPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLoan, setEditingLoan] = useState<Loan | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [historyModalData, setHistoryModalData] = useState<Loan | null>(null);
+  const [sendingSmsId, setSendingSmsId] = useState<string | null>(null);
 
   // Partial Payment Modal State
   const [paymentModalData, setPaymentModalData] = useState<Loan | null>(null);
@@ -26,6 +28,7 @@ export default function LoansPage() {
 
   const [formData, setFormData] = useState({
     personName: '',
+    phone: '',
     type: 'Given' as 'Given' | 'Taken',
     amount: 0,
     paidAmount: 0,
@@ -56,6 +59,7 @@ export default function LoansPage() {
       setEditingLoan(loan);
       setFormData({
         personName: loan.personName,
+        phone: loan.phone || '',
         type: loan.type,
         amount: loan.amount,
         paidAmount: loan.paidAmount || 0,
@@ -68,6 +72,7 @@ export default function LoansPage() {
       setEditingLoan(null);
       setFormData({
         personName: '',
+        phone: '',
         type: 'Given',
         amount: 0,
         paidAmount: 0,
@@ -144,6 +149,69 @@ export default function LoansPage() {
     } catch (error) {
       console.error(error);
       toast.error("Failed to add payment.");
+    }
+  };
+
+  
+  const handleSendSms = async (loan: Loan) => {
+    try {
+      setSendingSmsId(loan.id);
+      const { smsConfigService } = await import('@/lib/services/smsConfig');
+      const { sendSMS } = await import('@/lib/sms');
+      const { useAppStore } = await import('@/store/useAppStore');
+      const shopName = useAppStore.getState().shop?.shopName || 'আমাদের শপ';
+      
+      const smsSettings = await smsConfigService.getSettings();
+      if (!smsSettings.enabled || !smsSettings.apiKey || !smsSettings.senderId) {
+        toast.error("SMS is disabled or not configured.");
+        return;
+      }
+      
+      // We need a phone number. We don't store phone numbers in loans currently!
+      // Wait, we can ask for a phone number using a prompt.
+      let phone = loan.phone;
+      if (phone && !phone.startsWith('+880') && phone.length === 11) {
+        phone = '+880' + phone.substring(1); // convert 017... to +88017...
+      } else if (phone && !phone.startsWith('+880') && phone.length === 10) {
+        phone = '+880' + phone;
+      }
+      
+      if (!phone || phone.length < 11) {
+        const manualPhone = window.prompt(`Enter mobile number for ${loan.personName} to send SMS:`, loan.phone || "");
+        if (!manualPhone || manualPhone.length < 11) {
+          toast.error("Valid phone number required.");
+          return;
+        }
+        phone = manualPhone;
+      }
+      if (!phone || phone.length < 11) {
+        toast.error("Valid phone number required.");
+        return;
+      }
+
+      const dueAmount = loan.amount - (loan.paidAmount || 0);
+      let template = loan.type === 'Given' ? smsSettings.loanGivenTemplate : smsSettings.loanTakenTemplate;
+      
+      if (!template) {
+        template = 'Dear {name}, your unpaid loan of {due} TK at {shop} is due. Please clear it ASAP. Thank you.';
+      }
+      
+      const msg = template
+        .replace(/{name}/g, loan.personName || '')
+        .replace(/{due}/g, `${dueAmount}`)
+        .replace(/{shop}/g, shopName || '');
+      
+      const result = await sendSMS([phone], msg, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
+      if (result.success) {
+        toast.success("SMS Reminder sent!");
+      } else {
+        toast.error("Failed to send SMS.");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Error sending SMS.");
+    } finally {
+      setSendingSmsId(null);
     }
   };
 
@@ -244,16 +312,37 @@ export default function LoansPage() {
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
                       {l.status === 'Pending' && (
+                          <>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => { setPaymentModalData(l); setNextDate(''); }} 
+                              className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10" 
+                              title="Add Payment (আংশিক পরিশোধ)"
+                            >
+                              <Coins className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => handleSendSms(l)} 
+                              disabled={sendingSmsId === l.id}
+                              className="h-8 w-8 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-400/10" 
+                              title="Send SMS Reminder"
+                            >
+                              <MessageSquare className="w-4 h-4" />
+                            </Button>
+                          </>
+                        )}
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          onClick={() => { setPaymentModalData(l); setNextDate(''); }} 
-                          className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10" 
-                          title="Add Payment (ধাপে ধাপে পরিশোধ)"
+                          onClick={() => setHistoryModalData(l)} 
+                          className="h-8 w-8 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-400/10" 
+                          title="View History"
                         >
-                          <Coins className="w-4 h-4" />
+                          <History className="w-4 h-4" />
                         </Button>
-                      )}
                       <Button variant="ghost" size="icon" onClick={() => handleOpenModal(l)} className="h-8 w-8 text-gray-400 hover:text-white" title="Edit">
                         <Edit2 className="w-4 h-4" />
                       </Button>
@@ -339,13 +428,35 @@ export default function LoansPage() {
           <form onSubmit={handleSave} className="space-y-4 mt-4">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-gray-400">Person / Entity Name <span className="text-red-400">*</span></label>
-              <Input 
-                required
-                value={formData.personName}
-                onChange={(e) => setFormData({...formData, personName: e.target.value})}
-                placeholder="Name..."
-              />
-            </div>
+                <Input 
+                  required
+                  value={formData.personName}
+                  onChange={(e) => setFormData({...formData, personName: e.target.value})}
+                  placeholder="Name..."
+                />
+              </div>
+              
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-400">Phone Number (Optional)</label>
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-border bg-gray-800 text-gray-400 text-sm font-medium">
+                    +880
+                  </span>
+                  <Input 
+                    type="tel"
+                    maxLength={11}
+                    value={formData.phone || ''}
+                    onChange={(e) => {
+                      // Allow max 11 digits
+                      let val = e.target.value.replace(/\D/g, '');
+                      if (val.length > 11) val = val.substring(0, 11);
+                      setFormData({...formData, phone: val})
+                    }}
+                    placeholder="1XXXXXXXXX"
+                    className="rounded-l-none"
+                  />
+                </div>
+              </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
@@ -422,9 +533,42 @@ export default function LoansPage() {
         title="Delete Record"
         message="Are you sure you want to delete this loan record? This cannot be undone."
       />
+    
+      {/* History Modal */}
+      <Dialog open={!!historyModalData} onOpenChange={(open) => !open && setHistoryModalData(null)}>
+        <DialogContent className="sm:max-w-[500px] bg-popover border-border max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-white">Loan History</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Transaction history for {historyModalData?.personName}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 space-y-4">
+            {historyModalData?.history && historyModalData.history.length > 0 ? (
+              <div className="space-y-3">
+                {historyModalData.history.map((h, i) => (
+                  <div key={i} className="flex justify-between items-center p-3 rounded-lg bg-background border border-gray-800">
+                    <div>
+                      <p className="text-sm font-medium text-gray-200">{h.type === 'Payment' ? 'Partial Payment' : 'Initial Entry'}</p>
+                      <p className="text-xs text-gray-500">{new Date(h.date).toLocaleString()}</p>
+                    </div>
+                    <div className={`font-bold ${h.type === 'Payment' ? 'text-emerald-400' : 'text-orange-400'}`}>
+                      {h.type === 'Payment' ? '+' : ''}{formatCurrency(h.amount)}
+                    </div>
+                  </div>
+                ))}
+                <div className="flex justify-between items-center p-3 rounded-lg bg-gray-800/50 mt-4 border border-gray-700">
+                  <span className="text-sm font-bold text-white">Total Due</span>
+                  <span className="text-lg font-bold text-red-400">{formatCurrency((historyModalData.amount || 0) - (historyModalData.paidAmount || 0))}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-6 text-gray-500 text-sm">No detailed history found for this record.</div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-
-
 

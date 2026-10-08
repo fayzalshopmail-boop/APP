@@ -46,7 +46,19 @@ export default function SmsMarketingPage() {
           smsConfigService.getSettings(),
           customerService.getAll()
         ]);
-        setSettings(data);
+        
+        const updatedData = { ...data };
+        if (!updatedData.loanGivenTemplate) {
+          updatedData.loanGivenTemplate = 'সম্মানিত {name}, আমাদের শপ {shop} থেকে আপনার নেওয়া ধারের {due} টাকা বকেয়া রয়েছে। অনুগ্রহ করে আপনার বকেয়াটি পরিশোধ করুন। ধন্যবাদ।';
+        }
+        if (!updatedData.loanTakenTemplate) {
+          updatedData.loanTakenTemplate = 'সম্মানিত {name}, আপনি আমাদের শপ {shop} এর কাছে {due} টাকা পান। আপনার পাওনাটি দ্রুত পরিশোধের ব্যবস্থা করা হচ্ছে। ধন্যবাদ।';
+        }
+        if (!updatedData.pointsRedeemedTemplate) {
+          updatedData.pointsRedeemedTemplate = 'সম্মানিত {name}, আপনি আমাদের শপ থেকে সফলভাবে {points} পয়েন্ট ব্যবহার করেছেন। আমাদের সাথে থাকার জন্য ধন্যবাদ!';
+        }
+        setSettings(updatedData);
+
         setCustomers(custData);
         setFollowupMessage(data.followupTemplate || '');
       } catch (error) {
@@ -239,7 +251,7 @@ export default function SmsMarketingPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex space-x-2 border-b border-gray-800 pb-px mb-6">
+        <div className="flex overflow-x-auto whitespace-nowrap space-x-2 border-b border-gray-800 pb-px mb-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <button
           onClick={() => setActiveTab('api')}
           className={`flex items-center gap-2 px-5 py-3 rounded-t-xl font-medium text-sm transition-all ${activeTab === 'api' ? 'bg-card text-white border-t border-x border-gray-800 shadow-lg' : 'text-gray-500 hover:text-gray-300 hover:bg-card/50'}`}
@@ -325,18 +337,18 @@ export default function SmsMarketingPage() {
               </div>
             </div>
 
-              <div className="pt-8 border-t border-gray-800 flex justify-between items-center">
-                <div className="flex items-center gap-4">
+              <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
                   <button 
                     onClick={handleCheckBalance}
                     disabled={checkingBalance || !settings.apiKey}
-                    className="bg-popover hover:bg-gray-800 border border-gray-700 text-gray-300 px-5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 disabled:opacity-50"
+                    className="w-full sm:w-auto justify-center bg-popover hover:bg-gray-800 border border-gray-700 text-gray-300 px-5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 disabled:opacity-50"
                   >
                     {checkingBalance ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wallet className="w-4 h-4" />}
                     Check Balance
                   </button>
                   {balance && (
-                    <div className="text-sm font-semibold text-emerald-400 bg-emerald-500/10 px-4 py-2 rounded-lg border border-emerald-500/20">
+                    <div className="text-sm font-semibold text-emerald-400 bg-emerald-500/10 px-4 py-2.5 rounded-xl border border-emerald-500/20 text-center w-full sm:w-auto">
                       Balance: {formatCurrency(Number(balance))}
                     </div>
                   )}
@@ -428,6 +440,24 @@ export default function SmsMarketingPage() {
                   className="w-full bg-popover border border-gray-800 text-gray-200 rounded-xl p-4 text-sm focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all min-h-[120px] resize-none leading-relaxed"
                 />
               </div>
+                <div className="space-y-3">
+                  <h2 className="text-lg font-bold text-white">Loan Reminder Template (Money Given)</h2>
+                  <p className="text-xs text-gray-400">Sent to people who owe you money. Variables: {'{name}'}, {'{shop}'}, {'{due}'}</p>
+                  <textarea 
+                    value={settings.loanGivenTemplate || ''}
+                    onChange={(e) => setSettings({ ...settings, loanGivenTemplate: e.target.value })}
+                    className="w-full bg-popover border border-gray-800 text-gray-200 rounded-xl p-4 text-sm focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all min-h-[120px] resize-none leading-relaxed"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <h2 className="text-lg font-bold text-white">Loan Reminder Template (Money Taken)</h2>
+                  <p className="text-xs text-gray-400">Sent to people you owe money to. Variables: {'{name}'}, {'{shop}'}, {'{due}'}</p>
+                  <textarea 
+                    value={settings.loanTakenTemplate || ''}
+                    onChange={(e) => setSettings({ ...settings, loanTakenTemplate: e.target.value })}
+                    className="w-full bg-popover border border-gray-800 text-gray-200 rounded-xl p-4 text-sm focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all min-h-[120px] resize-none leading-relaxed"
+                  />
+                </div>
             </div>
 
             <div className="pt-4 border-t border-gray-800 flex justify-end">
