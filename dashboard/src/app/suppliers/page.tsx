@@ -28,7 +28,7 @@ export default function SuppliersPage() {
   const [formData, setFormData] = useState({
     name: '',
     company: '',
-    phone: '',
+    phone: '+880',
     address: '',
     status: 'Active' as 'Active' | 'Inactive'
   });
@@ -52,7 +52,7 @@ export default function SuppliersPage() {
 
   const openAddModal = () => {
     setEditingSupplier(null);
-    setFormData({ name: '', company: '', phone: '', address: '', status: 'Active' });
+    setFormData({ name: '', company: '', phone: '+880', address: '', status: 'Active' });
     setIsModalOpen(true);
   };
 
@@ -312,9 +312,25 @@ export default function SuppliersPage() {
               <Input required value={formData.company} onChange={e => setFormData({...formData, company: e.target.value})} placeholder="e.g. Rahim Telecom" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1.5">Phone Number</label>
-              <Input required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} placeholder="01XXX-XXXXXX" />
-            </div>
+                <label className="block text-sm font-medium text-gray-400 mb-1.5 uppercase tracking-wider">Phone Number</label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  <span className="absolute left-9 top-1/2 -translate-y-1/2 font-medium text-gray-300 pointer-events-none">+880</span>
+                  <Input 
+                    required 
+                    value={formData.phone ? formData.phone.replace(/^\+880/, '') : ''} 
+                    onChange={e => {
+                      let digits = e.target.value.replace(/\D/g, ''); 
+                      if (digits.startsWith('0')) digits = digits.substring(1);
+                      if (digits.length > 10) digits = digits.substring(0, 10);
+                      setFormData({ ...formData, phone: '+880' + digits });
+                    }} 
+                    className="pl-[76px]"
+                    placeholder="1711000000"
+                    maxLength={11}
+                  />
+                </div>
+              </div>
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1.5">Address (Optional)</label>
               <Input value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} placeholder="Shop address..." />

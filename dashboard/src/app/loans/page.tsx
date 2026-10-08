@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CreditCard, Plus, ArrowUpRight, ArrowDownRight, Edit2, Trash2, CheckCircle, Coins, CalendarClock, History, MessageSquare, Send } from 'lucide-react';
+import { CreditCard, Plus, ArrowUpRight, ArrowDownRight, Edit2, Trash2, CheckCircle, Coins, CalendarClock, History, MessageSquare, Send, Phone } from 'lucide-react';
 import { loanService, Loan } from '@/lib/services/loan';
 import { formatCurrency } from '@/lib/currency';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,16 @@ export default function LoansPage() {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const closePaymentModal = () => {
+    setPaymentModalData(null);
+    if (window.history.state?.modal === 'loans-modal') window.history.back();
+  };
+  const closeHistoryModal = () => {
+    setHistoryModalData(null);
+    if (window.history.state?.modal === 'loans-modal') window.history.back();
+  };
+
   const [editingLoan, setEditingLoan] = useState<Loan | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [historyModalData, setHistoryModalData] = useState<Loan | null>(null);
@@ -26,9 +36,30 @@ export default function LoansPage() {
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
   const [nextDate, setNextDate] = useState<string>('');
 
+  useEffect(() => {
+    const handlePopState = () => {
+      if (isModalOpen) setIsModalOpen(false);
+      if (paymentModalData) setPaymentModalData(null);
+      if (historyModalData) setHistoryModalData(null);
+    };
+    
+    if (isModalOpen || paymentModalData || historyModalData) {
+      window.history.pushState({ modal: 'loans-modal' }, '');
+      window.addEventListener('popstate', handlePopState);
+    }
+    
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isModalOpen, paymentModalData, historyModalData]);
+
+  const closeLoanModal = () => {
+    setIsModalOpen(false);
+    if (window.history.state?.modal === 'loans-modal') window.history.back();
+  };
+
+
   const [formData, setFormData] = useState({
-    personName: '',
-    phone: '',
+      personName: '',
+      phone: '+880',
     type: 'Given' as 'Given' | 'Taken',
     amount: 0,
     paidAmount: 0,
@@ -58,21 +89,8 @@ export default function LoansPage() {
     if (loan) {
       setEditingLoan(loan);
       setFormData({
-        personName: loan.personName,
-        phone: loan.phone || '',
-        type: loan.type,
-        amount: loan.amount,
-        paidAmount: loan.paidAmount || 0,
-        status: loan.status,
-        notes: loan.notes || '',
-        nextPaymentDate: loan.nextPaymentDate || '',
-        date: typeof loan.date === 'string' ? loan.date : new Date().toISOString().split('T')[0]
-      });
-    } else {
-      setEditingLoan(null);
-      setFormData({
-        personName: '',
-        phone: '',
+          personName: '',
+          phone: '+880',
         type: 'Given',
         amount: 0,
         paidAmount: 0,
@@ -100,7 +118,7 @@ export default function LoansPage() {
         setLoans([newLoan, ...loans]);
         toast.success("Loan recorded!");
       }
-      setIsModalOpen(false);
+      closeLoanModal();
     } catch (error) {
       console.error(error);
       toast.error("Failed to save loan.");
@@ -143,7 +161,7 @@ export default function LoansPage() {
       } : l));
       
       toast.success("Payment recorded!");
-      setPaymentModalData(null);
+      closePaymentModal();
       setPaymentAmount(0);
       setNextDate('');
     } catch (error) {
@@ -359,7 +377,7 @@ export default function LoansPage() {
       </div>
 
       {/* Partial Payment Modal */}
-      <Dialog open={!!paymentModalData} onOpenChange={(open) => !open && setPaymentModalData(null)}>
+      <Dialog open={!!paymentModalData} onOpenChange={(open) => !open && closePaymentModal()}>
         <DialogContent className="sm:max-w-[400px] bg-popover border-border">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">Add Payment (পরিশোধ)</DialogTitle>
@@ -406,7 +424,7 @@ export default function LoansPage() {
             )}
 
             <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={() => setPaymentModalData(null)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => closePaymentModal()}>Cancel</Button>
               <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white">Save Payment</Button>
             </DialogFooter>
           </form>
@@ -414,7 +432,7 @@ export default function LoansPage() {
       </Dialog>
 
       {/* Add/Edit Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      <Dialog open={isModalOpen} onOpenChange={(v) => !v && closeLoanModal()}>
         <DialogContent className="sm:max-w-[425px] bg-popover border-border">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">
@@ -437,23 +455,22 @@ export default function LoansPage() {
               </div>
               
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-400">Phone Number (Optional)</label>
-                <div className="flex">
-                  <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-border bg-gray-800 text-gray-400 text-sm font-medium">
-                    +880
-                  </span>
+                <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Phone Number (Optional)</label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  <span className="absolute left-9 top-1/2 -translate-y-1/2 font-medium text-gray-300 pointer-events-none">+880</span>
                   <Input 
                     type="tel"
                     maxLength={11}
-                    value={formData.phone || ''}
+                    value={formData.phone ? formData.phone.replace(/^\+880/, '') : ''}
                     onChange={(e) => {
-                      // Allow max 11 digits
-                      let val = e.target.value.replace(/\D/g, '');
-                      if (val.length > 11) val = val.substring(0, 11);
-                      setFormData({...formData, phone: val})
+                      let digits = e.target.value.replace(/\D/g, ''); 
+                      if (digits.startsWith('0')) digits = digits.substring(1);
+                      if (digits.length > 10) digits = digits.substring(0, 10);
+                      setFormData({ ...formData, phone: '+880' + digits });
                     }}
-                    placeholder="1XXXXXXXXX"
-                    className="rounded-l-none"
+                    className="pl-[76px]" 
+                    placeholder="1711000000"
                   />
                 </div>
               </div>
@@ -519,7 +536,7 @@ export default function LoansPage() {
             </div>
 
             <div className="pt-4 flex justify-end gap-3">
-              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => closeLoanModal()}>Cancel</Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">Save Record</Button>
             </div>
           </form>
@@ -535,7 +552,7 @@ export default function LoansPage() {
       />
     
       {/* History Modal */}
-      <Dialog open={!!historyModalData} onOpenChange={(open) => !open && setHistoryModalData(null)}>
+      <Dialog open={!!historyModalData} onOpenChange={(open) => !open && closeHistoryModal()}>
         <DialogContent className="sm:max-w-[500px] bg-popover border-border max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">Loan History</DialogTitle>

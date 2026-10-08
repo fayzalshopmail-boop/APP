@@ -165,7 +165,7 @@ export default function DuePage() {
                           <Calendar className="w-3.5 h-3.5" />
                           {new Date(c.dueDate).toLocaleDateString()}
                           {new Date(c.dueDate) < new Date() && (
-                            <AlertCircle className="w-3.5 h-3.5 ml-1 text-red-500" title="Overdue!" />
+                            <span title="Overdue!"><AlertCircle className="w-3.5 h-3.5 ml-1 text-red-500" /></span>
                           )}
                         </div>
                       ) : (

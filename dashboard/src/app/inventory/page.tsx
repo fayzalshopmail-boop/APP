@@ -32,12 +32,39 @@ export default function InventoryPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
   const [isSellModalOpen, setIsSellModalOpen] = useState(false);
+  useEffect(() => {
+    const handlePopState = () => {
+      if (isModalOpen) setIsModalOpen(false);
+      if (isRestockModalOpen) setIsRestockModalOpen(false);
+      if (isSellModalOpen) setIsSellModalOpen(false);
+    };
+    
+    if (isModalOpen || isRestockModalOpen || isSellModalOpen) {
+      window.history.pushState({ modal: 'inventory-modal' }, '');
+      window.addEventListener('popstate', handlePopState);
+    }
+    
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isModalOpen, isRestockModalOpen, isSellModalOpen]);
+
+  const closeInvModal = () => {
+    setIsModalOpen(false);
+    if (window.history.state?.modal === 'inventory-modal') window.history.back();
+  };
+  const closeRestockModal = () => {
+    setIsRestockModalOpen(false);
+    if (window.history.state?.modal === 'inventory-modal') window.history.back();
+  };
+  const closeSellModal = () => {
+    setIsSellModalOpen(false);
+    if (window.history.state?.modal === 'inventory-modal') window.history.back();
+  };
+
   const [deleteConfirm, setDeleteConfirm] = useState<{isOpen: boolean, id: string | null}>({isOpen: false, id: null});
   const [sellItem, setSellItem] = useState<InventoryItem | null>(null);
   const [sellData, setSellData] = useState({ quantity: 1, price: 0, customerName: 'Walk-in Customer' });
   const [restockItem, setRestockItem] = useState<InventoryItem | null>(null);
-  const [restockData, setRestockData] = useState({ addQuantity: 0, newPurchasePrice: 0, newSellingPrice: 0,
-    });
+  const [restockData, setRestockData] = useState({ addQuantity: 1, newPurchasePrice: 0, newSellingPrice: 0, supplierId: '' });
   const [manageCategoryModal, setManageCategoryModal] = useState(false);
   const [manageProductModal, setManageProductModal] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
@@ -191,7 +218,7 @@ export default function InventoryPage() {
       }
       
       setItems(items.map(item => item.id === restockItem.id ? { ...item, ...updates } : item));
-      setIsRestockModalOpen(false);
+      closeRestockModal();
     } catch (error) {
       console.error("Error restocking item", error);
       toast.error("Failed to restock item.");
@@ -229,7 +256,7 @@ export default function InventoryPage() {
 
       // 3. Update UI
       setItems(items.map(item => item.id === sellItem.id ? { ...item, stock: newStock } : item));
-      setIsSellModalOpen(false);
+      closeSellModal();
       toast.success('Direct sell successful!');
     } catch (error: any) {
       console.error("Error direct selling", error);
@@ -295,7 +322,7 @@ export default function InventoryPage() {
           toast.success("Item added successfully");
         }
       }
-      setIsModalOpen(false);
+      closeInvModal();
     } catch (error) {
       console.error("Error saving item", error);
       toast.error("Failed to save item. Please try again.");
@@ -503,7 +530,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Add/Edit Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      <Dialog open={isModalOpen} onOpenChange={(v) => !v && closeInvModal()}>
         <DialogContent className="sm:max-w-[700px] bg-popover text-gray-100 border-gray-800 p-0 overflow-hidden shadow-2xl shadow-black">
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-900/20 to-indigo-900/10 p-6 border-b border-gray-800 flex items-center justify-between relative overflow-hidden">
@@ -517,7 +544,7 @@ export default function InventoryPage() {
                 {editingItem ? 'Update inventory details for this product.' : 'Enter details to add a new product to inventory.'}
               </DialogDescription>
             </div>
-            <Button onClick={() => setIsModalOpen(false)} className="p-2 rounded-full bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-gray-200 transition-colors relative z-10 focus:outline-none">
+            <Button onClick={() => closeInvModal()} className="p-2 rounded-full bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-gray-200 transition-colors relative z-10 focus:outline-none">
               <X className="w-4 h-4" />
             </Button>
           </div>
@@ -678,7 +705,7 @@ export default function InventoryPage() {
             <div className="mt-8 flex justify-end gap-3 pt-5 border-t border-gray-800/60">
               <Button 
                 type="button"
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => closeInvModal()}
                 className="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-400 bg-gray-800/50 hover:bg-gray-800 hover:text-gray-200 transition-colors"
               >
                 Cancel
@@ -717,7 +744,7 @@ export default function InventoryPage() {
       />
     
 {/* Restock Modal */}
-      <Dialog open={isRestockModalOpen} onOpenChange={setIsRestockModalOpen}>
+      <Dialog open={isRestockModalOpen} onOpenChange={(v) => !v && closeRestockModal()}>
         <DialogContent className="sm:max-w-[500px] bg-popover text-gray-100 border-gray-800 p-0 overflow-hidden shadow-2xl shadow-black">
           <div className="bg-gradient-to-r from-emerald-900/20 to-teal-900/10 p-6 border-b border-gray-800 flex items-center justify-between relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
@@ -730,7 +757,7 @@ export default function InventoryPage() {
                 Add stock and recalculate average cost price.
               </DialogDescription>
             </div>
-            <Button onClick={() => setIsRestockModalOpen(false)} className="p-2 rounded-full bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-gray-200 transition-colors relative z-10 focus:outline-none">
+            <Button onClick={() => closeRestockModal()} className="p-2 rounded-full bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-gray-200 transition-colors relative z-10 focus:outline-none">
               <X className="w-4 h-4" />
             </Button>
           </div>
@@ -818,7 +845,7 @@ export default function InventoryPage() {
             <div className="pt-4 flex justify-end gap-3 border-t border-gray-800/60">
               <Button 
                 type="button"
-                onClick={() => setIsRestockModalOpen(false)}
+                onClick={() => closeRestockModal()}
                 className="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-400 bg-gray-800/50 hover:bg-gray-800 hover:text-gray-200 transition-colors"
               >
                 Cancel
@@ -837,7 +864,7 @@ export default function InventoryPage() {
 
     
       {/* Direct Sell Modal */}
-      <Dialog open={isSellModalOpen} onOpenChange={setIsSellModalOpen}>
+      <Dialog open={isSellModalOpen} onOpenChange={(v) => !v && closeSellModal()}>
         <DialogContent className="sm:max-w-[500px] bg-popover text-gray-100 border-gray-800 p-0 overflow-hidden shadow-2xl shadow-black">
           <div className="bg-gradient-to-r from-blue-900/20 to-indigo-900/10 p-6 border-b border-gray-800 flex items-center justify-between relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
@@ -850,7 +877,7 @@ export default function InventoryPage() {
                 Sell this item directly without a repair job.
               </DialogDescription>
             </div>
-            <Button onClick={() => setIsSellModalOpen(false)} className="p-2 rounded-full bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-gray-200 transition-colors relative z-10 focus:outline-none">
+            <Button onClick={() => closeSellModal()} className="p-2 rounded-full bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-gray-200 transition-colors relative z-10 focus:outline-none">
               <X className="w-4 h-4" />
             </Button>
           </div>
@@ -920,7 +947,7 @@ export default function InventoryPage() {
             <div className="pt-4 flex justify-end gap-3 border-t border-gray-800/60">
               <Button 
                 type="button"
-                onClick={() => setIsSellModalOpen(false)}
+                onClick={() => closeSellModal()}
                 className="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-400 bg-gray-800/50 hover:bg-gray-800 hover:text-gray-200 transition-colors"
               >
                 Cancel

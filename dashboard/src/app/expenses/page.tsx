@@ -257,7 +257,7 @@ export default function ExpensesPage() {
           <form onSubmit={handleSave} className="space-y-4 mt-4">
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1.5">Category</label>
-              <Select value={formData.category} onValueChange={(v) => setFormData({...formData, category: v})}>
+              <Select value={formData.category} onValueChange={(v) => setFormData({...formData, category: v || ''})}>
                 <SelectTrigger className="w-full bg-secondary border-border h-10">
                   <SelectValue placeholder="Select Category" />
                 </SelectTrigger>

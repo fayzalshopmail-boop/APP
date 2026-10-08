@@ -34,6 +34,24 @@ export default function CustomersPage() {
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (isModalOpen) setIsModalOpen(false);
+    };
+    if (isModalOpen) {
+      window.history.pushState({ modal: 'customer-modal' }, '');
+      window.addEventListener('popstate', handlePopState);
+    }
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isModalOpen]);
+
+  const closeCustomerModal = () => {
+    setIsModalOpen(false);
+    if (window.history.state?.modal === 'customer-modal') {
+      window.history.back();
+    }
+  };
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
 
   const [paymentModalCustomer, setPaymentModalCustomer] = useState<Customer | null>(null);
@@ -573,7 +591,7 @@ export default function CustomersPage() {
 
       <CustomerModal 
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => closeCustomerModal()}
         onSave={handleSaveCustomer}
         initialData={editingCustomer}
         existingAddresses={Array.from(new Set(customers.map(c => c.address).filter(Boolean)))}

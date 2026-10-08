@@ -548,15 +548,22 @@ export default function SettingsPage() {
             <div className="space-y-2">
               <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Contact Phone</label>
               <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                <input 
-                  type="text" 
-                  value={shopForm.phone}
-                  onChange={(e) => setShopForm({ ...shopForm, phone: e.target.value })}
-                  className="w-full bg-popover border border-gray-800 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50" 
-                  placeholder="Shop Phone Number"
-                />
-              </div>
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  <span className="absolute left-10 top-1/2 -translate-y-1/2 font-medium text-gray-300 pointer-events-none">+880</span>
+                  <input 
+                    type="tel"
+                    maxLength={11}
+                    value={shopForm.phone ? shopForm.phone.replace(/^\+880/, '') : ''}
+                    onChange={(e) => {
+                      let digits = e.target.value.replace(/\D/g, ''); 
+                      if (digits.startsWith('0')) digits = digits.substring(1);
+                      if (digits.length > 10) digits = digits.substring(0, 10);
+                      setShopForm({ ...shopForm, phone: '+880' + digits });
+                    }}
+                    className="w-full bg-popover border border-gray-800 text-white rounded-xl pl-[76px] pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50" 
+                    placeholder="1711000000"
+                  />
+                </div>
             </div>
             
             <div className="space-y-2">

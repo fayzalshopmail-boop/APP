@@ -49,6 +49,28 @@ export function Topbar() {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (isCustomerModalOpen) {
+        setIsCustomerModalOpen(false);
+      }
+    };
+    if (isCustomerModalOpen) {
+      window.history.pushState({ modal: 'add-customer' }, '');
+      window.addEventListener('popstate', handlePopState);
+    }
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isCustomerModalOpen]);
+
+  const handleCloseCustomerModal = () => {
+    setIsCustomerModalOpen(false);
+    if (window.history.state && window.history.state.modal === 'add-customer') {
+      window.history.back();
+    }
+  };
   const notifRef = useRef<HTMLDivElement>(null);
   
   const basePath = '/' + pathname.split('/')[1];
@@ -121,7 +143,7 @@ export function Topbar() {
     if (!user) return;
     try {
       await shopTransactionService.createCustomer(data, user.name || user.email || 'Unknown');
-      setIsCustomerModalOpen(false);
+      handleCloseCustomerModal();
       // If we are not on customers page, maybe route there, or just show success?
       // Since it's a global action, just closing is fine. The user can go to customers page if they want.
     } catch (e) {
@@ -239,7 +261,7 @@ export function Topbar() {
 
       <CustomerModal 
         isOpen={isCustomerModalOpen}
-        onClose={() => setIsCustomerModalOpen(false)}
+        onClose={handleCloseCustomerModal}
         onSave={handleSaveNewCustomer}
         existingAddresses={[]}
       />
