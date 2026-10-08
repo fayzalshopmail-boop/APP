@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
   Home, Users, Box, Clock, CreditCard, Star, 
-  Wrench, Truck, Receipt, BarChart2, Settings, MessageSquare, LogOut 
+  Wrench, Truck, Receipt, BarChart2, Settings, MessageSquare, LogOut, Lock 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/useAppStore';
@@ -122,13 +122,24 @@ export function Sidebar() {
           <div className="text-sm text-gray-200 font-semibold truncate">{user?.name}</div>
         </div>
         
-        <button 
-          onClick={handleLogoutRequest}
-          className="absolute right-4 text-gray-500 hover:text-red-400 transition-colors bg-[#1b1f30] p-1.5 rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100"
-          title="Log Out"
-        >
-          <LogOut className="w-4 h-4" />
-        </button>
+        <div className="absolute right-2 flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100">
+          {user?.role === 'Owner' && (
+            <button 
+              onClick={() => setUnlocked(false)}
+              className="text-gray-500 hover:text-orange-400 transition-colors bg-[#1b1f30] hover:bg-gray-800 p-1.5 rounded-lg"
+              title="Lock Screen"
+            >
+              <Lock className="w-4 h-4" />
+            </button>
+          )}
+          <button 
+            onClick={handleLogoutRequest}
+            className="text-gray-500 hover:text-red-400 transition-colors bg-[#1b1f30] hover:bg-gray-800 p-1.5 rounded-lg"
+            title="Log Out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </aside>
 
@@ -144,6 +155,7 @@ export function Sidebar() {
     </>
   );
 }
+
 
 
 

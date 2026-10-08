@@ -154,16 +154,6 @@ export function Topbar() {
           <UserPlus className="w-4 h-4 md:w-5 md:h-5" />
           <span className="hidden sm:inline">Add Customer</span>
         </button>
-
-        {user?.role === 'Owner' && (
-          <button 
-            onClick={() => setUnlocked(false)}
-            className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-gray-400 hover:text-orange-400 hover:bg-orange-500/10 transition-colors"
-            title="Lock Screen"
-          >
-            <Lock className="w-5 h-5" />
-          </button>
-        )}
         
         <button 
           onClick={() => setIsNotifOpen(!isNotifOpen)}
@@ -252,4 +242,5 @@ export function Topbar() {
     </header>
   );
 }
+
 
