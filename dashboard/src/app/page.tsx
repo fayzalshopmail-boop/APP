@@ -13,7 +13,7 @@ import { formatCurrency } from '@/lib/currency';
 import { useAppStore } from '@/store/useAppStore';
 
 export default function Dashboard() {
-  const [timeFilter, setTimeFilter] = useState<'Today' | 'This Week' | 'This Month' | 'This Year' | 'All Time'>('All Time');
+  const [timeFilter, setTimeFilter] = useState<'Today' | 'This Week' | 'This Month' | 'This Year' | 'All Time'>('Today');
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({ totalCustomers: 0, totalRevenue: 0, pendingJobs: 0, completedRepairs: 0 });
 
@@ -199,5 +199,6 @@ return (
     </div>
   );
 }
+
 
 
