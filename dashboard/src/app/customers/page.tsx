@@ -379,11 +379,8 @@ export default function CustomersPage() {
   return (
     <div className="max-w-[1600px] mx-auto">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <div>
-          <h2 className="text-2xl font-bold text-white mb-1">Customer Details</h2>
-          <p className="text-gray-400 text-sm">Manage your TV repair customers and their records.</p>
-        </div>
+      <div className="flex flex-col md:flex-row md:items-center justify-end gap-4 mb-8">
+        
         
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
           <div className="flex flex-row items-center gap-2 w-full sm:w-auto">

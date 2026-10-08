@@ -97,10 +97,7 @@ export default function ReportsPage() {
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white mb-1">Profit & Loss Report</h1>
-          <p className="text-gray-400 text-sm">Track your income, expenses, and overall business health.</p>
-        </div>
+        
         <div className="flex bg-gray-800/50 p-1 rounded-lg border border-gray-700">
           {(['today', 'week', 'month', 'all'] as TimeFilter[]).map((f) => (
             <button

@@ -20,6 +20,7 @@ function TitleUpdater({ title }: { title: string }) {
 }
 
 export function AuthWrapper({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const { isUnlocked, user, setShop, shop } = useAppStore();
 
@@ -58,6 +59,21 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
     return <AuthScreen />;
   }
 
+  // Role based access control
+  const technicianAllowedRoutes = ['/customers', '/inventory'];
+  const basePath = '/' + pathname.split('/')[1];
+  const isTechnicianBlocked = user.role === 'Technician' && pathname !== '/' && !technicianAllowedRoutes.includes(basePath);
+
+  if (isTechnicianBlocked) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen text-center bg-background">
+        <h2 className="text-2xl font-bold text-red-500">Access Denied</h2>
+        <p className="text-gray-500 mt-2">Technicians do not have access to this page.</p>
+        <button onClick={() => window.location.href='/customers'} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg">Go Back</button>
+      </div>
+    );
+  }
+
   return (
     <>
       <TitleUpdater title={shop?.shopName ? shop.shopName + ' Dashboard' : 'Shop Dashboard'} />
@@ -74,6 +90,7 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
     </>
   );
 }
+
 
 
 

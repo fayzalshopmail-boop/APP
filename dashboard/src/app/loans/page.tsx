@@ -152,11 +152,8 @@ export default function LoansPage() {
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white mb-1">My Loans (ধারদেনা)</h1>
-          <p className="text-gray-400 text-sm">Manage money you've borrowed or lent to others.</p>
-        </div>
+      <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4 mb-4">
+        
         <Button onClick={() => handleOpenModal()} className="bg-blue-600 hover:bg-blue-700 text-white gap-2 h-10">
           <Plus className="w-4 h-4" /> Add Record
         </Button>

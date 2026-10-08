@@ -27,6 +27,21 @@ const routeTitles: Record<string, string> = {
   '/sms': 'SMS Settings',
 };
 
+const routeSubtitles: Record<string, string> = {
+  '/': 'Welcome back to your dashboard.',
+  '/customers': 'Manage your TV repair customers and their records.',
+  '/inventory': 'Manage parts, stock levels, and pricing.',
+  '/due': 'Manage and collect outstanding balances from customers.',
+  '/loans': 'Manage money you\'ve borrowed or lent to others.',
+  '/loyalty': 'Manage customer reward points.',
+  '/mechanics': 'Manage B2B technician repairs and billing.',
+  '/suppliers': 'Manage your vendors and supply chain.',
+  '/expenses': 'Track and manage shop expenses.',
+  '/reports': 'View business analytics and insights.',
+  '/settings': 'Configure your shop settings.',
+  '/sms': 'SMS packages and delivery history.'
+};
+
 export function Topbar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -38,6 +53,7 @@ export function Topbar() {
   
   const basePath = '/' + pathname.split('/')[1];
   const title = routeTitles[basePath] || routeTitles[pathname] || 'Dashboard';
+  const subtitle = routeSubtitles[basePath] || routeSubtitles[pathname] || '';
 
   const prevCountRef = useRef(-1);
 
@@ -122,7 +138,10 @@ export function Topbar() {
         >
           <Menu className="w-5 h-5" />
         </button>
-        <h1 className="text-xl md:text-2xl font-bold text-white truncate max-w-[200px] md:max-w-none">{title}</h1>
+        <div className="flex flex-col">
+          <h1 className="text-lg md:text-2xl font-bold text-white leading-tight truncate max-w-[200px] md:max-w-[400px]">{title}</h1>
+          {subtitle && <p className="text-[10px] md:text-sm text-gray-400 leading-tight truncate max-w-[200px] md:max-w-[400px]">{subtitle}</p>}
+        </div>
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4 relative" ref={notifRef}>

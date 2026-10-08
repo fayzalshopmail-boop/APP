@@ -11,11 +11,23 @@ import { customerService, Customer } from '@/lib/services/customer';
 import { transactionService, Transaction } from '@/lib/services/transaction';
 import { formatCurrency } from '@/lib/currency';
 import { useAppStore } from '@/store/useAppStore';
+import { useRouter } from 'next/navigation';
 
 export default function Dashboard() {
+  const { user } = useAppStore();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (user?.role === 'Technician') {
+      router.replace('/customers');
+    }
+  }, [user, router]);
+
   const [timeFilter, setTimeFilter] = useState<'Today' | 'This Week' | 'This Month' | 'This Year' | 'All Time'>('This Week');
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({ totalCustomers: 0, totalRevenue: 0, pendingJobs: 0, completedRepairs: 0 });
+
+  if (user?.role === 'Technician') return null;
 
   useEffect(() => {
         const loadAggregatedData = async () => {
@@ -102,15 +114,7 @@ return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
       {/* Header section */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 sm:mb-8">
-        <div className="hidden sm:flex items-center gap-3">
-          <div className="p-3 bg-blue-500/10 rounded-xl">
-            <LayoutDashboard className="w-8 h-8 text-blue-500" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white mb-1">Overview</h1>
-            <p className="text-gray-400 text-sm">Welcome back to your {useAppStore().shop?.shopTitle || 'TV Repair Center'} dashboard.</p>
-          </div>
-        </div>
+        
         <div className="flex items-center gap-3">
           {isLoading && (
             <div className="flex items-center gap-2 text-blue-400 bg-blue-500/10 px-4 py-2 rounded-lg text-sm font-medium">

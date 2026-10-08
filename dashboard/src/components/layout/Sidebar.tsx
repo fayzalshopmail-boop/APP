@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/useAppStore';
 import { auth } from '@/lib/firebase';
 
-const navItems = [
+const navItemsAll = [
   { name: 'Dashboard', href: '/', icon: Home },
   { name: 'Customer Details', href: '/customers', icon: Users },
   { name: 'Inventory', href: '/inventory', icon: Box },
@@ -86,7 +86,7 @@ export function Sidebar() {
 
       {/* Nav Links */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 scrollbar-hide">
-        {navItems.map((item) => {
+        {navItemsAll.filter(item => user?.role === 'Technician' ? ['Customer Details', 'Inventory'].includes(item.name) : true).map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
           return (
@@ -144,6 +144,8 @@ export function Sidebar() {
     </>
   );
 }
+
+
 
 
 

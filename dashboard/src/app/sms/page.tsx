@@ -230,18 +230,6 @@ export default function SmsMarketingPage() {
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-blue-500/10 rounded-xl">
-            <MessageSquare className="w-8 h-8 text-blue-500" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white">SMS Settings</h1>
-            <p className="text-sm text-gray-400">Manage your SMS marketing and API configuration.</p>
-          </div>
-        </div>
-      </div>
 
       {message && (
         <div className={`p-4 rounded-xl text-sm flex items-center gap-2 ${message.type === 'success' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
@@ -583,5 +571,6 @@ export default function SmsMarketingPage() {
     </div>
   );
 }
+
 
 

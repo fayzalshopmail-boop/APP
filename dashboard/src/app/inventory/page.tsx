@@ -21,6 +21,7 @@ const formatNumber = (num: number) => num.toLocaleString('en-IN');
 
 export default function InventoryPage() {
   const { user } = useAppStore();
+  const hasFullAccess = user?.role === 'Owner' || user?.role === 'Manager';
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -328,7 +329,7 @@ export default function InventoryPage() {
   const totalInventoryValue = items.reduce((sum, item) => sum + (item.stock * item.purchasePrice), 0);
   const lowStockItems = items.filter(item => item.stock <= (item.minStockLevel || 5));
 
-  if (user?.role !== 'Owner' && user?.role !== 'Manager') {
+  if (user?.role !== 'Owner' && user?.role !== 'Manager' && user?.role !== 'Technician') {
     return (
       <div className="flex flex-col items-center justify-center h-[70vh] text-center">
         <Box className="w-16 h-16 text-red-500/50 mb-4" />
@@ -357,16 +358,8 @@ export default function InventoryPage() {
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">
       {/* Header & Stats */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-blue-500/10 rounded-xl hidden sm:block">
-            <Box className="w-8 h-8 text-blue-500" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white">Inventory</h1>
-            <p className="text-sm text-gray-400">Manage parts, stock levels, and pricing.</p>
-          </div>
-        </div>
+      <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4 mb-2">
+        
         <Button 
             onClick={() => handleOpenModal()}
             className="h-10 bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 flex items-center gap-2"
@@ -487,7 +480,8 @@ export default function InventoryPage() {
                           >
                             <PlusCircle className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleOpenModal(item)} className="h-8 w-8 bg-gray-800/50 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg transition-colors"
+                          {hasFullAccess && (<>
+<Button variant="ghost" size="icon" onClick={() => handleOpenModal(item)} className="h-8 w-8 bg-gray-800/50 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg transition-colors"
                           title="Edit Part"
                         >
                           <Edit2 className="w-4 h-4" />
@@ -497,6 +491,7 @@ export default function InventoryPage() {
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
+</>)}
                       </div>
                     </td>
                   </tr>
@@ -944,6 +939,10 @@ export default function InventoryPage() {
     </div>
   );
 }
+
+
+
+
 
 
 

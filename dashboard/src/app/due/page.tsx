@@ -83,14 +83,8 @@ export default function DuePage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Coins className="w-6 h-6 text-orange-400" />
-            Pending Dues
-          </h1>
-          <p className="text-sm text-gray-400 mt-1">Manage and collect outstanding balances from customers</p>
-        </div>
+      <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4">
+        
       </div>
 
       {/* Summary Card */}
