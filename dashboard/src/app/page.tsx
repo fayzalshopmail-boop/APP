@@ -44,26 +44,19 @@ export default function Dashboard() {
 
         // 2. Total Revenue (Transactions)
         let totalRevenue = 0;
+        let qTransactions = collection(db, 'transactions') as any;
         
         if (startDate) {
-          // If filtering by date, fetch docs and sum locally to avoid Firebase Composite Index requirement
-          const qTransactions = query(collection(db, 'transactions'), where('createdAt', '>=', startDate));
-          const docsSnap = await getDocs(qTransactions);
-          docsSnap.forEach(doc => {
-            const data = doc.data();
-            if (['Advance Payment', 'Due Collection', 'Direct Sell'].includes(data.type)) {
-              totalRevenue += Number(data.amount) || 0;
-            }
-          });
-        } else {
-          // For All Time, we can use server aggregation (multiple queries to avoid fetching all docs)
-          const revenueTypes = ['Advance Payment', 'Due Collection', 'Direct Sell'];
-          for (const rType of revenueTypes) {
-            const qType = query(collection(db, 'transactions'), where('type', '==', rType));
-            const snapRevenue = await getAggregateFromServer(qType, { total: sum('amount') });
-            totalRevenue += snapRevenue.data().total || 0;
-          }
+          qTransactions = query(qTransactions, where('createdAt', '>=', startDate));
         }
+        
+        const docsSnap = await getDocs(qTransactions);
+        docsSnap.forEach(doc => {
+          const data = doc.data();
+          if (['Advance Payment', 'Due Collection', 'Direct Sell'].includes(data.type)) {
+            totalRevenue += Number(data.amount) || 0;
+          }
+        });
 
         // 3. Pending Jobs (Live snapshot, ignores date filter)
         const qPending = query(collection(db, 'customers'), where('status', 'in', ['Received', 'In Progress', 'Waiting for Parts']));
@@ -122,9 +115,21 @@ return (
           {isLoading && (
             <div className="flex items-center gap-2 text-blue-400 bg-blue-500/10 px-4 py-2 rounded-lg text-sm font-medium">
               <Loader2 className="w-4 h-4 animate-spin" />
-              Syncing data...
+              <span className="hidden sm:inline">Syncing...</span>
             </div>
           )}
+          <Select value={timeFilter} onValueChange={(val: any) => setTimeFilter(val)}>
+            <SelectTrigger className="w-[140px] h-10 bg-secondary border-gray-800 text-gray-200 shadow-sm focus:ring-1 focus:ring-blue-500">
+              <SelectValue placeholder="Select timeframe" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Today">Today</SelectItem>
+              <SelectItem value="This Week">This Week</SelectItem>
+              <SelectItem value="This Month">This Month</SelectItem>
+              <SelectItem value="This Year">This Year</SelectItem>
+              <SelectItem value="All Time">All Time</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -146,20 +151,6 @@ return (
           iconBgColor="bg-emerald-500/10" 
           iconColor="text-emerald-500" 
           delay={0.2} 
-          headerAction={
-            <Select value={timeFilter} onValueChange={(val: any) => setTimeFilter(val)}>
-              <SelectTrigger className="w-[110px] h-7 text-xs bg-popover border-gray-800">
-                <SelectValue placeholder="Select timeframe" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Today">Today</SelectItem>
-                <SelectItem value="This Week">This Week</SelectItem>
-                <SelectItem value="This Month">This Month</SelectItem>
-                <SelectItem value="This Year">This Year</SelectItem>
-                <SelectItem value="All Time">All Time</SelectItem>
-              </SelectContent>
-            </Select>
-          }
         />
         <StatCard 
           title="Pending Jobs" 
@@ -208,4 +199,5 @@ return (
     </div>
   );
 }
+
 

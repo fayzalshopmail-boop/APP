@@ -73,7 +73,6 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  setSearch('');
  setPaymentReceived(0);
  setHasDiscount(false);
- setDiscount(0);
  setDueDate('');
  }
  }, [isOpen]);
@@ -162,7 +161,6 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  const handlePayFull = () => {
  setPaymentReceived(currentDue);
  setHasDiscount(false);
- setDiscount(0);
  setDueDate('');
  };
 
@@ -393,7 +391,6 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  setPaymentReceived(val);
  if (val >= currentDue) {
  setHasDiscount(false);
- setDiscount(0);
  setDueDate('');
  }
  }}
@@ -519,6 +516,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  </Dialog>
  );
 }
+
 
 
 
