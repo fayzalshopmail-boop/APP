@@ -99,7 +99,7 @@ export function Sidebar() {
                   setSidebarOpen(false);
                   setTimeout(() => {
                     router.push(item.href);
-                  }, 200);
+                  }, 350);
                 } else {
                   setSidebarOpen(false);
                 }
