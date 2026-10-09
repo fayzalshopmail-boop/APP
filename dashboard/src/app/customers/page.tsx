@@ -392,6 +392,10 @@ export default function CustomersPage() {
                           c.deviceBrand?.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === 'All' || (c.status || 'Received') === statusFilter;
     return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+    if (a.status === 'Delivered' && b.status !== 'Delivered') return 1;
+    if (b.status === 'Delivered' && a.status !== 'Delivered') return -1;
+    return 0;
   });
 
   return (
