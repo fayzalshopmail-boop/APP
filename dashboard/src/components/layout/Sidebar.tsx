@@ -89,16 +89,23 @@ export function Sidebar() {
         {navItemsAll.filter(item => user?.role === 'Technician' ? ['Customer Details', 'Inventory'].includes(item.name) : true).map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
+          const shouldReplace = pathname !== '/';
+          
           return (
             <Link
               key={item.name}
               href={item.href}
+              replace={shouldReplace}
               onClick={(e) => {
                 if (window.innerWidth < 768) {
                   e.preventDefault();
                   setSidebarOpen(false);
                   setTimeout(() => {
-                    router.push(item.href);
+                    if (shouldReplace) {
+                      router.replace(item.href);
+                    } else {
+                      router.push(item.href);
+                    }
                   }, 350);
                 } else {
                   setSidebarOpen(false);
