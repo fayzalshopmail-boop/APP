@@ -93,7 +93,17 @@ export function Sidebar() {
             <Link
               key={item.name}
               href={item.href}
-              onClick={() => setSidebarOpen(false)}
+              onClick={(e) => {
+                if (window.innerWidth < 768) {
+                  e.preventDefault();
+                  setSidebarOpen(false);
+                  setTimeout(() => {
+                    router.push(item.href);
+                  }, 200);
+                } else {
+                  setSidebarOpen(false);
+                }
+              }}
               className={cn(
                 "flex items-center gap-3 px-3 py-3.5 md:py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                 isActive 

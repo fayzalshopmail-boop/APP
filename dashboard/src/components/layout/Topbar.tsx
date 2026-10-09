@@ -153,8 +153,26 @@ export function Topbar() {
     try {
       await shopTransactionService.createCustomer(data, user.name || user.email || 'Unknown');
       handleCloseCustomerModal();
-      // If we are not on customers page, maybe route there, or just show success?
-      // Since it's a global action, just closing is fine. The user can go to customers page if they want.
+      
+      // Send Welcome SMS
+      const { smsConfigService } = await import('@/lib/services/smsConfig');
+      const { sendSMS } = await import('@/lib/sms');
+      
+      const smsSettings = await smsConfigService.getSettings();
+      if (smsSettings.enabled && smsSettings.apiKey && smsSettings.senderId && data.phone) {
+        const msg = smsSettings.welcomeTemplate
+          .replace(/{name}/g, data.name || '')
+          .replace(/{phone}/g, data.phone || '')
+          .replace(/{brand}/g, data.deviceBrand || '')
+          .replace(/{type}/g, data.deviceType || '')
+          .replace(/{problem}/g, data.deviceProblem || '')
+          .replace(/{total}/g, `${data.totalBill || 0}`)
+          .replace(/{advance}/g, `${data.advance || 0}`)
+          .replace(/{due}/g, `${data.due || 0}`);
+          
+        await sendSMS(data.phone, msg, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
+      }
+      
     } catch (e) {
       console.error("Failed to add customer globally", e);
     }
@@ -211,24 +229,24 @@ export function Topbar() {
               transition={{ duration: 0.2 }}
               className="absolute top-14 right-0 w-[320px] sm:w-[380px] bg-secondary border border-gray-800 rounded-2xl shadow-2xl overflow-hidden z-50"
             >
-              <div className="p-4 border-b border-gray-800 flex items-center justify-between bg-[#1a1d2d]">
-                <h3 className="font-semibold text-white flex items-center gap-2">
+              <div className="p-3 sm:p-4 border-b border-gray-800 flex items-center justify-between bg-[#1a1d2d] gap-2">
+                <h3 className="font-semibold text-white flex items-center gap-1.5 text-sm sm:text-base shrink-0">
                   Notifications
                   {unreadCount > 0 && (
-                    <span className="bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+                    <span className="bg-blue-500 text-white text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-bold">
                       {unreadCount} NEW
                     </span>
                   )}
                 </h3>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 shrink-0">
                   {unreadCount > 0 && (
-                    <button onClick={handleMarkAll} className="text-xs text-blue-400 hover:text-blue-300 font-medium transition-colors">
-                      Mark all read
+                    <button onClick={handleMarkAll} className="text-[11px] sm:text-xs whitespace-nowrap text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                      Mark Read
                     </button>
                   )}
                   {notifications.length > 0 && (
-                    <button onClick={handleClearAll} className="text-xs text-red-400 hover:text-red-300 font-medium transition-colors">
-                      Clear all
+                    <button onClick={handleClearAll} className="text-[11px] sm:text-xs whitespace-nowrap text-red-400 hover:text-red-300 font-medium transition-colors">
+                      Clear All
                     </button>
                   )}
                 </div>

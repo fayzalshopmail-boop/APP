@@ -26,16 +26,28 @@ export async function POST(request: Request) {
       targetNumbers = formatPhone(number);
     }
 
-    const baseUrl = apiUrl || 'http://bulksmsbd.net/api/smsapi';
+    let baseUrl = apiUrl || 'https://bulksmsbd.net/api/smsapi';
+    if (baseUrl.includes('bulksmsbd.net') && baseUrl.startsWith('http://')) {
+      baseUrl = baseUrl.replace('http://', 'https://');
+    }
+    
     const url = `${baseUrl}?api_key=${apiKey}&type=text&number=${targetNumbers}&senderid=${senderId}&message=${encodeURIComponent(message)}`;
     
-    const response = await fetch(url);
-    const result = await response.text();
+    console.log("Sending SMS to URL:", url.replace(apiKey, 'HIDDEN'));
     
-    console.log("BulkSMSBD API Response:", result);
+    const response = await fetch(url, { cache: 'no-store' });
+    const resultText = await response.text();
+    
+    console.log("BulkSMSBD API Response:", resultText);
+    
+    let result = resultText;
+    try {
+      result = JSON.parse(resultText);
+    } catch(e) {}
     
     return NextResponse.json({ success: true, result });
   } catch (error: any) {
+    console.error("SMS API Route Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
