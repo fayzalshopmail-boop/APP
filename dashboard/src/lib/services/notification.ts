@@ -22,7 +22,8 @@ export const notificationService = {
     const notificationsRef = collection(db, COLLECTION_NAME);
     const q = query(
       notificationsRef,
-      where('read', '==', false)
+      orderBy('createdAt', 'desc'),
+      limit(50)
     );
 
     return onSnapshot(q, (snapshot) => {
@@ -77,6 +78,12 @@ export const notificationService = {
   async markAllAsRead(ids: string[]) {
     if (!db) return;
     const promises = ids.map(id => updateDoc(doc(db, COLLECTION_NAME, id), { read: true }));
+    await Promise.all(promises);
+  },
+
+  async clearAll(ids: string[]) {
+    if (!db) return;
+    const promises = ids.map(id => deleteDoc(doc(db, COLLECTION_NAME, id)));
     await Promise.all(promises);
   },
 

@@ -49,6 +49,7 @@ export function Topbar() {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   useEffect(() => {
     const handlePopState = () => {
@@ -111,13 +112,15 @@ export function Topbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleMarkAsRead = async (id: string, e: React.MouseEvent) => {
+  const handleDeleteNotification = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    await notificationService.markAsRead(id);
+    await notificationService.delete(id);
   };
 
   const handleNotificationClick = async (notif: AppNotification) => {
-    await notificationService.markAsRead(notif.id!);
+    if (!notif.read) {
+      await notificationService.markAsRead(notif.id!);
+    }
     setIsNotifOpen(false);
     if (notif.link) {
       router.push(notif.link);
@@ -125,9 +128,15 @@ export function Topbar() {
   };
 
   const handleMarkAll = async () => {
+    const unreadIds = notifications.filter(n => !n.read).map(n => n.id!);
+    if (unreadIds.length === 0) return;
+    await notificationService.markAllAsRead(unreadIds);
+  };
+
+  const handleClearAll = async () => {
     if (notifications.length === 0) return;
     const ids = notifications.map(n => n.id!);
-    await notificationService.markAllAsRead(ids);
+    await notificationService.clearAll(ids);
   };
 
   const getIcon = (type: string) => {
@@ -186,10 +195,10 @@ export function Topbar() {
           className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors relative ${isNotifOpen ? 'bg-gray-800 text-white' : 'bg-secondary text-gray-400 hover:text-white hover:bg-gray-800'}`}
         >
           <Bell className="w-5 h-5" />
-          {notifications.length > 0 && (
-            <span className="absolute top-1.5 right-1.5 w-3 h-3 bg-red-500 border-2 border-background rounded-full flex items-center justify-center">
-            </span>
-          )}
+          {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-3 h-3 bg-red-500 border-2 border-background rounded-full flex items-center justify-center">
+              </span>
+            )}
         </button>
 
         {/* Notifications Dropdown */}
@@ -205,24 +214,31 @@ export function Topbar() {
               <div className="p-4 border-b border-gray-800 flex items-center justify-between bg-[#1a1d2d]">
                 <h3 className="font-semibold text-white flex items-center gap-2">
                   Notifications
-                  {notifications.length > 0 && (
+                  {unreadCount > 0 && (
                     <span className="bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
-                      {notifications.length} NEW
+                      {unreadCount} NEW
                     </span>
                   )}
                 </h3>
-                {notifications.length > 0 && (
-                  <button onClick={handleMarkAll} className="text-xs text-blue-400 hover:text-blue-300 font-medium">
-                    Mark all read
-                  </button>
-                )}
+                <div className="flex items-center gap-3">
+                  {unreadCount > 0 && (
+                    <button onClick={handleMarkAll} className="text-xs text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                      Mark all read
+                    </button>
+                  )}
+                  {notifications.length > 0 && (
+                    <button onClick={handleClearAll} className="text-xs text-red-400 hover:text-red-300 font-medium transition-colors">
+                      Clear all
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
                 {notifications.length === 0 ? (
                   <div className="p-8 text-center text-gray-500">
                     <Bell className="w-8 h-8 mx-auto mb-3 opacity-20" />
-                    <p className="text-sm">You have no new notifications.</p>
+                    <p className="text-sm">No notifications here.</p>
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-800/50">
@@ -230,7 +246,7 @@ export function Topbar() {
                       <div 
                         key={notif.id} 
                         onClick={() => handleNotificationClick(notif)}
-                        className="p-4 hover:bg-gray-800/30 transition-colors flex gap-3 group relative cursor-pointer"
+                        className={`p-4 transition-colors flex gap-3 group relative cursor-pointer ${notif.read ? 'opacity-60 hover:bg-gray-800/20' : 'bg-blue-500/5 hover:bg-blue-500/10'}`}
                       >
                         <div className="shrink-0 mt-1">
                           {getIcon(notif.type)}
@@ -242,10 +258,13 @@ export function Topbar() {
                             {formatDistanceToNow(notif.createdAt, { addSuffix: true })}
                           </p>
                         </div>
+                        {!notif.read && (
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-r-full" />
+                        )}
                         <button 
-                          onClick={(e) => handleMarkAsRead(notif.id!, e)}
-                          className="absolute right-3 top-4 text-gray-500 hover:text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="Mark as read"
+                          onClick={(e) => handleDeleteNotification(notif.id!, e)}
+                          className="absolute right-3 top-4 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Clear notification"
                         >
                           <X className="w-4 h-4" />
                         </button>
