@@ -38,6 +38,14 @@ export default function ExpensesPage() {
     fetchExpenses();
   }, []);
 
+  useEffect(() => {
+    const handleOpenAdd = () => {
+      setIsModalOpen(true);
+    };
+    window.addEventListener('app:add-expense', handleOpenAdd);
+    return () => window.removeEventListener('app:add-expense', handleOpenAdd);
+  }, []);
+
   const fetchExpenses = async () => {
     try {
       setLoading(true);
@@ -153,7 +161,7 @@ export default function ExpensesPage() {
           </div>
           <Button 
             onClick={() => setIsModalOpen(true)}
-            className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 flex items-center gap-2"
+            className="hidden sm:flex bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 items-center gap-2"
           >
             <Plus className="w-4 h-4" /> Add Expense
           </Button>

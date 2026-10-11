@@ -113,6 +113,14 @@ export default function InventoryPage() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const handleOpenAdd = () => {
+      handleOpenModal();
+    };
+    window.addEventListener('app:add-inventory', handleOpenAdd);
+    return () => window.removeEventListener('app:add-inventory', handleOpenAdd);
+  }, []);
+
     const handleManageCategories = () => {
     setManageCategoryModal(true);
   };
@@ -395,8 +403,7 @@ export default function InventoryPage() {
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">
       {/* Header & Stats */}
-      <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4 mb-2">
-        
+      <div className="hidden sm:flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4 mb-2">
         <Button 
             onClick={() => handleOpenModal()}
             className="h-10 bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 flex items-center gap-2"

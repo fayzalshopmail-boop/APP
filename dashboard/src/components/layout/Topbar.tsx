@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Lock, Menu, CheckCircle2, AlertTriangle, Info, BellRing, X, UserPlus } from 'lucide-react';
+import { Bell, Lock, Menu, CheckCircle2, AlertTriangle, Info, BellRing, X, UserPlus, PackagePlus, PlusCircle, Wrench, Truck, Wallet } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
@@ -11,6 +11,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CustomerModal } from '@/components/ui/CustomerModal';
 import { shopTransactionService } from '@/lib/services/shopTransaction';
 import { Customer } from '@/lib/services/customer';
+
+const headerAddButtons: Record<string, { label: string; icon: any; event?: string }> = {
+  '/': { label: 'Add Customer', icon: UserPlus },
+  '/customers': { label: 'Add Customer', icon: UserPlus, event: 'app:add-customer' },
+  '/inventory': { label: 'Add Part', icon: PackagePlus, event: 'app:add-inventory' },
+  '/loans': { label: 'Add Record', icon: PlusCircle, event: 'app:add-loan' },
+  '/mechanics': { label: 'Add Mechanic', icon: Wrench, event: 'app:add-mechanic' },
+  '/suppliers': { label: 'Add Supplier', icon: Truck, event: 'app:add-supplier' },
+  '/expenses': { label: 'Add Expense', icon: Wallet, event: 'app:add-expense' },
+};
 
 const routeTitles: Record<string, string> = {
   '/': 'Dashboard',
@@ -50,6 +60,17 @@ export function Topbar() {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  const currentAddButton = headerAddButtons[pathname];
+
+  const handleHeaderAdd = () => {
+    if (!currentAddButton) return;
+    if (pathname === '/') {
+      setIsCustomerModalOpen(true);
+    } else if (currentAddButton.event) {
+      window.dispatchEvent(new CustomEvent(currentAddButton.event));
+    }
+  };
 
   useEffect(() => {
     const handlePopState = () => {
@@ -240,22 +261,24 @@ export function Topbar() {
           <Menu className="w-5 h-5" />
         </button>
         <div className="flex flex-col">
-          <h1 className="text-lg md:text-2xl font-bold text-white leading-tight truncate max-w-[200px] md:max-w-[400px]">{title}</h1>
-          {subtitle && <p className="text-[10px] md:text-sm text-gray-400 leading-tight truncate max-w-[200px] md:max-w-[400px]">{subtitle}</p>}
+          <h1 className="text-lg md:text-2xl font-bold text-white leading-tight truncate max-w-[140px] xs:max-w-[180px] sm:max-w-[240px] md:max-w-[400px]">{title}</h1>
+          {subtitle && <p className="text-[10px] md:text-sm text-gray-400 leading-tight truncate max-w-[140px] xs:max-w-[180px] sm:max-w-[240px] md:max-w-[400px]">{subtitle}</p>}
         </div>
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4 relative" ref={notifRef}>
         
-        {pathname === '/' && (
+        {currentAddButton && (
           <div className="flex items-center">
-            {/* ADD CUSTOMER BUTTON */}
+            {/* DYNAMIC PAGE ADD ACTION BUTTON */}
             <button
-              onClick={() => setIsCustomerModalOpen(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg text-sm font-medium transition-colors shadow-lg shadow-blue-500/20 mr-1 sm:mr-0"
+              onClick={handleHeaderAdd}
+              className="flex items-center gap-1.5 sm:gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-2.5 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2 rounded-lg text-sm font-medium transition-all shadow-lg shadow-blue-500/20 mr-1 sm:mr-0"
+              title={currentAddButton.label}
+              aria-label={currentAddButton.label}
             >
-              <UserPlus className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="hidden sm:inline">Add Customer</span>
+              <currentAddButton.icon className="w-4 h-4 md:w-5 md:h-5" />
+              <span className="hidden sm:inline">{currentAddButton.label}</span>
             </button>
           </div>
         )}

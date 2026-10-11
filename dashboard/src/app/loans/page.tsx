@@ -73,6 +73,14 @@ export default function LoansPage() {
     fetchLoans();
   }, []);
 
+  useEffect(() => {
+    const handleOpenAdd = () => {
+      handleOpenModal();
+    };
+    window.addEventListener('app:add-loan', handleOpenAdd);
+    return () => window.removeEventListener('app:add-loan', handleOpenAdd);
+  }, []);
+
   const fetchLoans = async () => {
     try {
       setLoading(true);
@@ -238,8 +246,7 @@ export default function LoansPage() {
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
-      <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4 mb-4">
-        
+      <div className="hidden sm:flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4 mb-4">
         <Button onClick={() => handleOpenModal()} className="bg-blue-600 hover:bg-blue-700 text-white gap-2 h-10">
           <Plus className="w-4 h-4" /> Add Record
         </Button>

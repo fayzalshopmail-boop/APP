@@ -38,6 +38,14 @@ export default function SuppliersPage() {
     fetchSuppliers();
   }, []);
 
+  useEffect(() => {
+    const handleOpenAdd = () => {
+      openAddModal();
+    };
+    window.addEventListener('app:add-supplier', handleOpenAdd);
+    return () => window.removeEventListener('app:add-supplier', handleOpenAdd);
+  }, []);
+
   const fetchSuppliers = async () => {
     try {
       setLoading(true);
@@ -170,7 +178,7 @@ export default function SuppliersPage() {
         </div>
         <Button 
           onClick={openAddModal}
-          className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 flex items-center gap-2"
+          className="hidden sm:flex bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 items-center gap-2"
         >
           <Plus className="w-4 h-4" /> Add Supplier
         </Button>

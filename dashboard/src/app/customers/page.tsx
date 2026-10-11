@@ -110,6 +110,14 @@ export default function CustomersPage() {
     fetchCustomers();
   }, []);
 
+  useEffect(() => {
+    const handleOpenAdd = () => {
+      openAddModal();
+    };
+    window.addEventListener('app:add-customer', handleOpenAdd);
+    return () => window.removeEventListener('app:add-customer', handleOpenAdd);
+  }, []);
+
   // Instant opening on notification click without requiring reload
   useEffect(() => {
     const targetSearch = highlightCustomerSearch || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('search') : null);
@@ -536,10 +544,10 @@ export default function CustomersPage() {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex flex-row items-center gap-2 w-full sm:w-auto">
+          <div className="hidden sm:flex flex-row items-center gap-2 w-full sm:w-auto">
             <Button 
               onClick={handleExportCSV}
-              className="hidden sm:flex items-center gap-2 bg-secondary hover:bg-gray-800 text-gray-300 border border-gray-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-all"
+              className="items-center gap-2 bg-secondary hover:bg-gray-800 text-gray-300 border border-gray-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-all"
             >
               <Download className="w-4 h-4" />
               Export CSV
