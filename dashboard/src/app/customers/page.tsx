@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect } from 'react';
-import { Search, Plus, MoreVertical, Edit, Trash2, MessageCircle, Download, FileText } from 'lucide-react';
+import { Search, Plus, MoreVertical, Edit, Trash2, MessageCircle, Download, FileText, Phone, MapPin, Tv, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatCurrency } from '@/lib/currency';
 import { useAppStore } from '@/store/useAppStore';
@@ -560,7 +560,7 @@ export default function CustomersPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="bg-card rounded-2xl border border-gray-800/50 overflow-hidden"
+        className="hidden md:block bg-card rounded-2xl border border-gray-800/50 overflow-hidden"
       >
         <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-240px)] relative">
           <table className="w-full text-left text-sm whitespace-nowrap">
@@ -690,6 +690,186 @@ export default function CustomersPage() {
           </table>
         </div>
       </motion.div>
+
+      {/* Mobile Customer Cards (visible on mobile only) */}
+      <div className="block md:hidden space-y-3 pb-8">
+        {loading ? (
+          <div className="bg-card rounded-xl border border-gray-800 p-8 text-center text-gray-500 text-sm">
+            Loading customers...
+          </div>
+        ) : filteredCustomers.map((customer) => (
+          <div 
+            key={customer.id}
+            className="bg-card border border-gray-800/80 rounded-xl p-4 shadow-sm space-y-3"
+          >
+            {/* Header: Customer Name + Status Dropdown */}
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <button 
+                  onClick={() => setProfileSidebarCustomer(customer)}
+                  className="font-bold text-base text-gray-100 hover:text-blue-400 transition-colors text-left truncate block"
+                >
+                  {customer.name}
+                </button>
+                <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-gray-400">
+                  <a 
+                    href={`tel:${customer.phone}`} 
+                    className="flex items-center gap-1 text-blue-400 hover:underline font-medium"
+                  >
+                    <Phone className="w-3.5 h-3.5" />
+                    <span>{customer.phone}</span>
+                  </a>
+                  {customer.address && (
+                    <span className="flex items-center gap-1 text-gray-500 truncate max-w-[150px]">
+                      <MapPin className="w-3 h-3 shrink-0" />
+                      <span className="truncate">{customer.address}</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="shrink-0">
+                <StatusDropdown 
+                  status={customer.status} 
+                  onChange={(newStatus) => handleUpdateStatus(customer.id, newStatus)} 
+                />
+              </div>
+            </div>
+
+            {/* Device / Appliance Details */}
+            <div className="bg-[#121526]/60 rounded-lg p-2.5 border border-gray-800/60 text-xs space-y-1.5">
+              <div className="flex items-center justify-between text-gray-300 font-medium">
+                <div className="flex items-center gap-1.5 truncate">
+                  <Tv className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <span className="truncate">{customer.deviceBrand || 'Appliance'} {customer.deviceType ? `(${customer.deviceType})` : ''}</span>
+                </div>
+                {customer.serialNumber && (
+                  <span className="font-mono text-[10px] text-gray-400 bg-gray-800/80 px-1.5 py-0.5 rounded border border-gray-700/50">
+                    SN: {customer.serialNumber}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between flex-wrap gap-1 text-[11px]">
+                <span className="text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded font-medium">
+                  {customer.deviceProblem || 'Problem not specified'}
+                </span>
+                {customer.warrantyMonths ? (
+                  <span className="text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded font-medium">
+                    {customer.warrantyMonths} Warranty
+                  </span>
+                ) : null}
+              </div>
+              {customer.deviceDetails && (
+                <p className="text-[11px] text-gray-400 italic line-clamp-1">
+                  {customer.deviceDetails}
+                </p>
+              )}
+            </div>
+
+            {/* Bill & Financials Strip */}
+            <div className="flex items-center justify-between bg-secondary/50 rounded-lg px-3 py-2 text-xs border border-gray-800/40">
+              <div>
+                <span className="text-gray-500 text-[10px] uppercase block">Total</span>
+                <span className="font-semibold text-gray-200">{formatCurrency(customer.totalBill)}</span>
+              </div>
+              <div className="border-l border-gray-800 pl-3">
+                <span className="text-gray-500 text-[10px] uppercase block">Advance</span>
+                <span className="font-medium text-gray-300">{formatCurrency(customer.advance || 0)}</span>
+              </div>
+              <div className="border-l border-gray-800 pl-3 text-right">
+                <span className="text-gray-500 text-[10px] uppercase block">Due Status</span>
+                {customer.due > 0 ? (
+                  <span className="font-bold text-red-400">{formatCurrency(customer.due)} Due</span>
+                ) : (
+                  <span className="font-bold text-emerald-400">Paid ✓</span>
+                )}
+              </div>
+            </div>
+
+            {/* Actions Bottom Bar */}
+            <div className="flex items-center justify-between pt-1 gap-1.5 flex-wrap">
+              <a 
+                href={`https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
+                  (smsSettings?.whatsappTemplate || '')
+                    .replace(/{name}/g, customer.name || '')
+                    .replace(/{brand}/g, customer.deviceBrand || '')
+                    .replace(/{type}/g, customer.deviceType || '')
+                    .replace(/{total}/g, `${customer.totalBill || 0}`)
+                    .replace(/{advance}/g, `${customer.advance || 0}`)
+                    .replace(/{due}/g, `${customer.due || 0}`)
+                )}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-green-500/10 text-green-400 hover:bg-green-500/20 rounded-lg text-xs font-medium transition-colors"
+                title="Send on WhatsApp"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>WhatsApp</span>
+              </a>
+
+              <div className="flex items-center gap-1.5">
+                {customer.due > 0 && (
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => setPaymentModalCustomer(customer)} 
+                    className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300 px-2.5 py-1.5 h-auto text-xs font-semibold rounded-lg"
+                  >
+                    Pay
+                  </Button>
+                )}
+
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setInvoiceModalCustomer(customer)} 
+                  className="text-gray-400 hover:text-white hover:bg-gray-800 h-8 w-8 rounded-lg"
+                  title="Print Invoice"
+                >
+                  <FileText className="w-4 h-4" />
+                </Button>
+
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setProfileSidebarCustomer(customer)} 
+                  className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 h-8 w-8 rounded-lg"
+                  title="View History & Profile"
+                >
+                  <Eye className="w-4 h-4" />
+                </Button>
+
+                {hasFullAccess && (
+                  <>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => openEditModal(customer)} 
+                      className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 h-8 w-8 rounded-lg"
+                      title="Edit"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => handleDeleteRequest(customer.id)} 
+                      className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 h-8 w-8 rounded-lg"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+        {!loading && filteredCustomers.length === 0 && (
+          <div className="bg-card rounded-xl border border-gray-800 p-8 text-center text-gray-500 text-sm">
+            No customers found matching your search.
+          </div>
+        )}
+      </div>
 
       <CustomerProfileSidebar
         isOpen={!!profileSidebarCustomer}
