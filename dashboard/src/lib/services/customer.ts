@@ -11,6 +11,35 @@ export interface PartUsed {
   price: number;
 }
 
+export interface RepairRecord {
+  id: string;
+  deviceBrand?: string;
+  deviceType?: string;
+  deviceProblem?: string;
+  deviceDetails?: string;
+  serialNumber?: string;
+  totalBill: number;
+  advance?: number;
+  due: number;
+  discount?: number;
+  dueDate?: string;
+  expectedDeliveryDate?: string;
+  status?: CustomerStatus;
+  warrantyMonths?: string | number;
+  partsUsed?: PartUsed[];
+  totalCost?: number;
+  createdAt?: string | Date | any;
+}
+
+export const normalizePhone = (p: string) => {
+  if (!p) return '';
+  const digits = p.replace(/\D/g, '');
+  if (digits.startsWith('880')) return '0' + digits.slice(3);
+  if (digits.startsWith('88')) return digits.slice(2);
+  if (!digits.startsWith('0') && digits.length === 10) return '0' + digits;
+  return digits;
+};
+
 export interface Customer {
   id: string;
   name: string;
@@ -33,6 +62,7 @@ export interface Customer {
   partsUsed?: PartUsed[];
   totalCost?: number;
   createdAt?: string | Date | any;
+  repairHistory?: RepairRecord[];
 }
 
 const COLLECTION_NAME = 'customers';

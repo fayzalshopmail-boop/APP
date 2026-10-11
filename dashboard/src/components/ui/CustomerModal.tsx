@@ -12,8 +12,8 @@ import {
  DialogHeader,
  DialogTitle,
 } from "@/components/ui/dialog";
-import { Customer } from '@/lib/services/customer';
-import { User, Phone, MapPin, Loader2, Tv, Wrench, Tag, FileText, Settings2, Camera } from 'lucide-react';
+import { Customer, normalizePhone } from '@/lib/services/customer';
+import { User, Phone, MapPin, Loader2, Tv, Wrench, Tag, FileText, Settings2, Camera, CheckCircle } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { ManageOptionsModal } from './ManageOptionsModal';
 import { BarcodeScannerModal } from './BarcodeScannerModal';
@@ -25,12 +25,14 @@ interface CustomerModalProps {
  onSave: (data: Omit<Customer, 'id' | 'createdAt' | 'points'>, instantDelivery?: boolean) => Promise<void>;
  initialData?: Customer | null;
  existingAddresses?: string[];
+ existingCustomers?: Customer[];
 }
 
-export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAddresses = [] }: CustomerModalProps) {
+export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAddresses = [], existingCustomers = [] }: CustomerModalProps) {
  const { deviceBrands: storeBrands, deviceTypes, deviceProblems: storeProblems } = useAppStore();
  
  const [instantDelivery, setInstantDelivery] = useState(false);
+ const [matchedCustomer, setMatchedCustomer] = useState<Customer | null>(null);
  const [formData, setFormData] = useState({
  name: '',
  phone: '+880',
@@ -53,6 +55,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  const currentProblems = currentBrand ? (storeProblems[currentBrand] || []) : [];
 
  useEffect(() => {
+ setMatchedCustomer(null);
  if (initialData) {
  // eslint-disable-next-line react-hooks/set-state-in-effect
  setFormData({
@@ -122,21 +125,6 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  <User className="w-4 h-4" /> Customer Information
  </h4>
  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
- {/* Name */}
- <div className="space-y-1.5">
- <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Full Name</label>
- <div className="relative">
- <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
- <Input 
- required
- value={formData.name}
- onChange={(e) => setFormData({ ...formData, name: e.target.value })}
- className="pl-10" 
- placeholder="e.g. Rahim Uddin"
- />
- </div>
- </div>
-
  {/* Phone */}
  <div className="space-y-1.5">
  <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Phone Number</label>
@@ -150,11 +138,52 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  let digits = e.target.value.replace(/\D/g, ''); 
  if (digits.startsWith('0')) digits = digits.substring(1);
  if (digits.length > 10) digits = digits.substring(0, 10);
- setFormData({ ...formData, phone: '+880' + digits });
+ const fullPhone = '+880' + digits;
+
+ if (!initialData && digits.length >= 10 && existingCustomers && existingCustomers.length > 0) {
+   const match = existingCustomers.find(c => normalizePhone(c.phone) === normalizePhone(fullPhone));
+   if (match) {
+     setMatchedCustomer(match);
+     setFormData(prev => ({
+       ...prev,
+       phone: fullPhone,
+       name: prev.name ? prev.name : match.name,
+       address: prev.address ? prev.address : (match.address || '')
+     }));
+     return;
+   } else {
+     setMatchedCustomer(null);
+   }
+ } else if (digits.length < 10) {
+   setMatchedCustomer(null);
+ }
+
+ setFormData({ ...formData, phone: fullPhone });
  }}
  className="pl-[76px]" 
  placeholder="1711000000"
  maxLength={11}
+ />
+ </div>
+ {matchedCustomer && (
+ <div className="flex items-center gap-2 p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs text-blue-400 mt-2">
+ <CheckCircle className="w-4 h-4 shrink-0 text-blue-400" />
+ <span>পূর্বের কাস্টমার পাওয়া গেছে: <strong>{matchedCustomer.name}</strong>। নতুন তথ্যগুলো এই কাস্টমারের হিস্ট্রিতে যুক্ত হবে।</span>
+ </div>
+ )}
+ </div>
+
+ {/* Name */}
+ <div className="space-y-1.5">
+ <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Full Name</label>
+ <div className="relative">
+ <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+ <Input 
+ required
+ value={formData.name}
+ onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+ className="pl-10" 
+ placeholder="e.g. Rahim Uddin"
  />
  </div>
  </div>

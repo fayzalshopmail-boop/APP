@@ -15,7 +15,7 @@ import { PaymentModal } from '@/components/ui/PaymentModal';
 import { InvoiceModal } from '@/components/ui/InvoiceModal';
 import { PartsUsedModal, PartsConfirmData } from '@/components/ui/PartsUsedModal';
 import { CustomerProfileSidebar } from '@/components/ui/CustomerProfileSidebar';
-import { customerService, Customer, CustomerStatus } from '@/lib/services/customer';
+import { customerService, Customer, CustomerStatus, normalizePhone, RepairRecord } from '@/lib/services/customer';
 import { increment } from 'firebase/firestore';
 import { transactionService } from '@/lib/services/transaction';
 import { shopTransactionService } from '@/lib/services/shopTransaction';
@@ -34,17 +34,33 @@ export default function CustomersPage() {
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // Confirm Modal State
+  const [confirmModal, setConfirmModal] = useState<{isOpen: boolean; actionType: 'delete' | 'return' | null; id: string | null;}>({isOpen: false, actionType: null, id: null});
 
   useEffect(() => {
     const handlePopState = () => {
-      if (isModalOpen) setIsModalOpen(false);
+      if (confirmModal.isOpen) {
+        setConfirmModal({ isOpen: false, actionType: null, id: null });
+      } else if (isModalOpen) {
+        setIsModalOpen(false);
+      }
     };
-    if (isModalOpen) {
+    if (confirmModal.isOpen) {
+      window.history.pushState({ modal: 'confirm-modal' }, '');
+      window.addEventListener('popstate', handlePopState);
+    } else if (isModalOpen) {
       window.history.pushState({ modal: 'customer-modal' }, '');
       window.addEventListener('popstate', handlePopState);
     }
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [isModalOpen]);
+  }, [confirmModal.isOpen, isModalOpen]);
+
+  const closeConfirmModal = () => {
+    setConfirmModal({ isOpen: false, actionType: null, id: null });
+    if (window.history.state?.modal === 'confirm-modal') {
+      window.history.back();
+    }
+  };
 
   const closeCustomerModal = () => {
     setIsModalOpen(false);
@@ -59,8 +75,6 @@ export default function CustomersPage() {
   const [partsModalCustomer, setPartsModalCustomer] = useState<{ id: string; name: string; pendingStatus: CustomerStatus } | null>(null);
   const [profileSidebarCustomer, setProfileSidebarCustomer] = useState<Customer | null>(null);
 
-  // Confirm Modal State
-  const [confirmModal, setConfirmModal] = useState<{isOpen: boolean; actionType: 'delete' | 'return' | null; id: string | null;}>({isOpen: false, actionType: null, id: null});
 
   const [smsSettings, setSmsSettings] = useState<any>(null);
 
@@ -96,14 +110,7 @@ export default function CustomersPage() {
       } else {
         // Add Atomically
         const newId = await shopTransactionService.createCustomer(data, user?.name || user?.email || 'Unknown');
-        const newCustomerData = { ...data, status: 'Received' as const };
-
-        const newCustomer: Customer = {
-          id: newId,
-          ...newCustomerData,
-          points: 0,
-        };
-        setCustomers([newCustomer, ...customers]);
+        await fetchCustomers();
 
         if (instantDelivery) {
           setPartsModalCustomer({ id: newId, name: data.name, pendingStatus: 'Delivered' });
@@ -138,35 +145,8 @@ export default function CustomersPage() {
     }
 
     if (newStatus === 'Returned (Unrepaired)') {
-      if (!window.confirm('Are you sure you want to mark this as Returned? Any advance will be logged as Refunded and parts will be restocked.')) {
-        return; // Cancel
-      }
-      try {
-        await shopTransactionService.markAsReturned(id, user?.email || 'Unknown');
-        // Update local state to reflect the wipe
-        setCustomers(customers.map(cust => cust.id === id ? { 
-          ...cust, 
-          status: 'Returned (Unrepaired)', 
-          partsUsed: [], 
-          totalCost: 0, 
-          advance: 0, 
-          due: 0, 
-          totalBill: 0, 
-          discount: 0, 
-          dueDate: '' 
-        } : cust));
-        
-        // Also fire sms
-        const smsSettings = await smsConfigService.getSettings();
-        if (smsSettings.enabled && smsSettings.apiKey && smsSettings.senderId && c.phone) {
-          await sendSMS(c.phone, `Your device   has been returned unrepaired. Please collect it from .`, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
-        }
-        return;
-      } catch (err: any) {
-        console.error('Error marking as returned', err);
-        alert(err.message || 'Failed to mark as returned');
-        return;
-      }
+      setConfirmModal({ isOpen: true, actionType: 'return', id });
+      return;
     }
 
     await performStatusUpdate(id, newStatus, c);
@@ -368,7 +348,21 @@ export default function CustomersPage() {
       const c = customers.find(x => x.id === id);
       const smsSettings = await smsConfigService.getSettings();
       if (smsSettings.enabled && smsSettings.apiKey && smsSettings.senderId && c?.phone) {
-        await sendSMS(c.phone, `Your device   has been returned unrepaired. Please collect it from .`, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
+        const template = smsSettings.returnedTemplate;
+        if (template) {
+          const msg = template
+            .replace(/{name}/g, c.name || '')
+            .replace(/{phone}/g, c.phone || '')
+            .replace(/{brand}/g, c.deviceBrand || '')
+            .replace(/{type}/g, c.deviceType || '')
+            .replace(/{problem}/g, c.deviceProblem || '')
+            .replace(/{total}/g, `${c.totalBill || 0}`)
+            .replace(/{advance}/g, `${c.advance || 0}`)
+            .replace(/{due}/g, `${c.due || 0}`);
+          await sendSMS(c.phone, msg, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
+        } else {
+          await sendSMS(c.phone, `Your device has been returned unrepaired. Please collect it from shop.`, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
+        }
       }
     } catch (err: any) {
       console.error('Error marking as returned', err);
@@ -386,15 +380,77 @@ export default function CustomersPage() {
     setIsModalOpen(true);
   };
 
-  const filteredCustomers = customers.filter(c => {
+  const getCustomerTime = (item: Customer) => {
+    if (!item.createdAt) return 0;
+    if (typeof item.createdAt.toMillis === 'function') return item.createdAt.toMillis();
+    if (item.createdAt.seconds) return item.createdAt.seconds * 1000;
+    if (item.createdAt instanceof Date) return item.createdAt.getTime();
+    const parsed = new Date(item.createdAt).getTime();
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  // Group and deduplicate customer documents sharing the same phone number so each customer appears once
+  const uniqueCustomersMap = new Map<string, Customer>();
+  customers.forEach(c => {
+    const key = normalizePhone(c.phone) || c.id;
+    if (!uniqueCustomersMap.has(key)) {
+      uniqueCustomersMap.set(key, { ...c, repairHistory: [...(c.repairHistory || [])] });
+    } else {
+      const existing = uniqueCustomersMap.get(key)!;
+      const historyRecord: RepairRecord = {
+        id: c.id,
+        deviceBrand: c.deviceBrand,
+        deviceType: c.deviceType,
+        deviceProblem: c.deviceProblem,
+        deviceDetails: c.deviceDetails,
+        serialNumber: c.serialNumber,
+        totalBill: c.totalBill || 0,
+        advance: c.advance || 0,
+        due: c.due || 0,
+        discount: c.discount || 0,
+        dueDate: c.dueDate,
+        expectedDeliveryDate: c.expectedDeliveryDate,
+        status: c.status || 'Received',
+        warrantyMonths: c.warrantyMonths,
+        partsUsed: c.partsUsed || [],
+        totalCost: c.totalCost || 0,
+        createdAt: c.createdAt
+      };
+      const mergedHistory = [...(existing.repairHistory || []), historyRecord, ...(c.repairHistory || [])];
+      if (getCustomerTime(c) > getCustomerTime(existing)) {
+        uniqueCustomersMap.set(key, {
+          ...c,
+          repairHistory: mergedHistory
+        });
+      } else {
+        existing.repairHistory = mergedHistory;
+      }
+    }
+  });
+
+  const displayCustomers = Array.from(uniqueCustomersMap.values());
+
+  const filteredCustomers = displayCustomers.filter(c => {
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) || 
                           c.phone.includes(search) ||
                           c.deviceBrand?.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === 'All' || (c.status || 'Received') === statusFilter;
     return matchesSearch && matchesStatus;
   }).sort((a, b) => {
-    if (a.status === 'Delivered' && b.status !== 'Delivered') return 1;
-    if (b.status === 'Delivered' && a.status !== 'Delivered') return -1;
+    // 0 = Active / Newly Listed, 1 = Delivered, 2 = Returned / Cancelled
+    const tierA = a.status === 'Returned (Unrepaired)' ? 2 : a.status === 'Delivered' ? 1 : 0;
+    const tierB = b.status === 'Returned (Unrepaired)' ? 2 : b.status === 'Delivered' ? 1 : 0;
+    
+    if (tierA !== tierB) {
+      return tierA - tierB;
+    }
+
+    // Within the same tier, sort newest first
+    const timeA = getCustomerTime(a);
+    const timeB = getCustomerTime(b);
+    if (timeA && timeB) {
+      return timeB - timeA;
+    }
     return 0;
   });
 
@@ -599,6 +655,7 @@ export default function CustomersPage() {
         onSave={handleSaveCustomer}
         initialData={editingCustomer}
         existingAddresses={Array.from(new Set(customers.map(c => c.address).filter(Boolean)))}
+        existingCustomers={customers}
       />
 
       <PaymentModal
@@ -624,13 +681,14 @@ export default function CustomersPage() {
 
       <ConfirmModal 
         isOpen={confirmModal.isOpen}
-        onClose={() => setConfirmModal({ isOpen: false, actionType: null, id: null })}
+        onClose={closeConfirmModal}
         onConfirm={handleConfirmAction}
-        title={confirmModal.actionType === 'return' ? "Mark as Returned?" : "Delete Customer?"}
+        title={confirmModal.actionType === 'return' ? "কাজ বাতিল বা ফেরত নিশ্চিতকরণ" : "Delete Customer?"}
         message={confirmModal.actionType === 'return' 
-          ? "Are you sure you want to mark this as Returned? Any advance will be logged as Refunded and parts will be restocked." 
+          ? "আপনি কি নিশ্চিতভাবে এই কাস্টমারের কাজ বাতিল/ফেরত (Returned) করতে চান? কোনো অগ্রিম টাকা জমা থাকলে তা রিফান্ড হিসেবে রেকর্ড হবে এবং ব্যবহৃত পার্টস পুনরায় স্টকে যুক্ত হবে।" 
           : "Are you sure you want to delete this customer? This action cannot be undone and all data will be permanently lost."}
-        confirmText={confirmModal.actionType === 'return' ? "Confirm Return" : "Delete Customer"}
+        confirmText={confirmModal.actionType === 'return' ? "হ্যাঁ, ফেরত দিন" : "Delete Customer"}
+        cancelText="বাতিল"
       />
     </div>
   );

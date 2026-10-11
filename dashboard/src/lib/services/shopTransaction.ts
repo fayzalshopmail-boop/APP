@@ -11,7 +11,7 @@ import {
   where
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Customer, PartUsed } from './customer';
+import { Customer, PartUsed, RepairRecord, normalizePhone } from './customer';
 import { Transaction } from './transaction';
 import { InventoryItem } from './inventory';
 import { notificationService } from './notification';
@@ -21,11 +21,110 @@ import { notificationService } from './notification';
  */
 export const shopTransactionService = {
   /**
-   * Atomically creates a customer and records their initial advance payment if > 0.
+   * Atomically creates a customer or adds a new repair job to an existing customer's history.
    */
   async createCustomer(customerData: Omit<Customer, 'id' | 'createdAt' | 'points'>, userEmail: string): Promise<string> {
     if (!db) throw new Error('Firebase DB is not initialized');
 
+    // 1. Check if customer already exists by phone number
+    const cleanDigits = customerData.phone ? customerData.phone.replace(/\D/g, '') : '';
+    let existingDoc: { id: string; data: Customer } | null = null;
+
+    if (cleanDigits.length >= 10) {
+      const last10 = cleanDigits.slice(-10);
+      const possiblePhones = [
+        customerData.phone,
+        `+880${last10}`,
+        `0${last10}`,
+        `880${last10}`,
+        last10
+      ];
+      try {
+        const q = query(collection(db, 'customers'), where('phone', 'in', Array.from(new Set(possiblePhones))));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          existingDoc = {
+            id: snap.docs[0].id,
+            data: snap.docs[0].data() as Customer
+          };
+        }
+      } catch (err) {
+        console.warn("Failed querying customer by phone in createCustomer:", err);
+      }
+    }
+
+    if (existingDoc) {
+      // Returning customer: Archive old repair to history and set new repair as active
+      const existingId = existingDoc.id;
+      const prevData = existingDoc.data;
+      const prevHistory: RepairRecord[] = prevData.repairHistory || [];
+
+      // If existing customer has an active or past device recorded, archive it
+      if (prevData.deviceBrand || prevData.deviceType || prevData.totalBill) {
+        prevHistory.push({
+          id: `${existingId}_${prevHistory.length}_${Date.now()}`,
+          deviceBrand: prevData.deviceBrand,
+          deviceType: prevData.deviceType,
+          deviceProblem: prevData.deviceProblem,
+          deviceDetails: prevData.deviceDetails,
+          serialNumber: prevData.serialNumber,
+          totalBill: prevData.totalBill || 0,
+          advance: prevData.advance || 0,
+          due: prevData.due || 0,
+          discount: prevData.discount || 0,
+          dueDate: prevData.dueDate,
+          expectedDeliveryDate: prevData.expectedDeliveryDate,
+          status: prevData.status || 'Received',
+          warrantyMonths: prevData.warrantyMonths,
+          partsUsed: prevData.partsUsed || [],
+          totalCost: prevData.totalCost || 0,
+          createdAt: prevData.createdAt || new Date().toISOString()
+        });
+      }
+
+      await runTransaction(db, async (transaction) => {
+        const targetRef = doc(db, 'customers', existingId);
+        transaction.update(targetRef, {
+          ...customerData,
+          name: customerData.name || prevData.name,
+          address: customerData.address || prevData.address,
+          points: prevData.points || 0,
+          status: 'Received',
+          partsUsed: [],
+          totalCost: 0,
+          repairHistory: prevHistory,
+          createdAt: serverTimestamp()
+        });
+
+        if (customerData.advance && customerData.advance > 0) {
+          const transRef = doc(collection(db, 'transactions'));
+          transaction.set(transRef, {
+            customerId: existingId,
+            customerName: customerData.name || prevData.name,
+            amount: customerData.advance,
+            type: 'Advance Payment',
+            receivedBy: userEmail,
+            createdAt: serverTimestamp()
+          });
+        }
+      });
+
+      try {
+        await notificationService.add({
+          title: 'Repeat Customer Added',
+          message: `${customerData.name} (Returning Customer) brought a new device, added by ${userEmail}.`,
+          type: 'info',
+          targetRole: 'Owner',
+          link: '/customers'
+        });
+      } catch (e) {
+        console.error("Failed to add notification", e);
+      }
+
+      return existingId;
+    }
+
+    // Brand new customer
     const customerRef = doc(collection(db, 'customers'));
     const newId = customerRef.id;
 
@@ -34,6 +133,7 @@ export const shopTransactionService = {
         ...customerData,
         status: 'Received',
         points: 0,
+        repairHistory: [],
         createdAt: serverTimestamp()
       });
 

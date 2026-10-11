@@ -1,6 +1,6 @@
 'use client';
 
-import { Customer } from '@/lib/services/customer';
+import { Customer, RepairRecord, normalizePhone } from '@/lib/services/customer';
 import { X, User, Phone, MapPin, Tv, Shield, History } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,14 +26,21 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
 
   if (!customer) return null;
 
-  // Find repair history by phone number
-  const history = allCustomers
-    .filter(c => c.phone === customer.phone)
-    .sort((a, b) => {
-      // Sort by newest first. Assuming ID is timestamp based or just string compare.
-      // If we had createdAt, we'd use it. For now fallback to string compare.
-      return b.id.localeCompare(a.id);
-    });
+  // Combine current active job and all historical repairs
+  const rawHistory: (Customer | RepairRecord)[] = [
+    customer,
+    ...(customer.repairHistory || []),
+    ...allCustomers.filter(c => c.id !== customer.id && normalizePhone(c.phone) === normalizePhone(customer.phone))
+  ];
+
+  // Deduplicate by id if needed
+  const seenIds = new Set<string>();
+  const history = rawHistory.filter(item => {
+    const key = item.id || `${item.deviceBrand}_${item.serialNumber}_${item.totalBill}`;
+    if (seenIds.has(key)) return false;
+    seenIds.add(key);
+    return true;
+  });
 
   const totalSpent = history.reduce((sum, c) => sum + (c.totalBill || 0), 0);
 
