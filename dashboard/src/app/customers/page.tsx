@@ -25,7 +25,7 @@ import { sendSMS } from '@/lib/sms';
 import { smsConfigService } from '@/lib/services/smsConfig';
 
 export default function CustomersPage() {
-  const { user } = useAppStore();
+  const { user, highlightCustomerId, highlightCustomerSearch, setHighlightCustomerId, setHighlightCustomerSearch } = useAppStore();
   const hasFullAccess = user?.role === 'Owner' || user?.role === 'Manager';
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<CustomerStatus | 'All'>('All');
@@ -36,16 +36,23 @@ export default function CustomersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   // Confirm Modal State
   const [confirmModal, setConfirmModal] = useState<{isOpen: boolean; actionType: 'delete' | 'return' | null; id: string | null;}>({isOpen: false, actionType: null, id: null});
+  const [profileSidebarCustomer, setProfileSidebarCustomer] = useState<Customer | null>(null);
 
   useEffect(() => {
     const handlePopState = () => {
-      if (confirmModal.isOpen) {
+      if (profileSidebarCustomer) {
+        setProfileSidebarCustomer(null);
+        setSearch('');
+      } else if (confirmModal.isOpen) {
         setConfirmModal({ isOpen: false, actionType: null, id: null });
       } else if (isModalOpen) {
         setIsModalOpen(false);
       }
     };
-    if (confirmModal.isOpen) {
+    if (profileSidebarCustomer) {
+      window.history.pushState({ modal: 'profile-sidebar' }, '');
+      window.addEventListener('popstate', handlePopState);
+    } else if (confirmModal.isOpen) {
       window.history.pushState({ modal: 'confirm-modal' }, '');
       window.addEventListener('popstate', handlePopState);
     } else if (isModalOpen) {
@@ -53,7 +60,15 @@ export default function CustomersPage() {
       window.addEventListener('popstate', handlePopState);
     }
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [confirmModal.isOpen, isModalOpen]);
+  }, [profileSidebarCustomer, confirmModal.isOpen, isModalOpen]);
+
+  const closeProfileSidebar = () => {
+    setProfileSidebarCustomer(null);
+    setSearch('');
+    if (window.history.state?.modal === 'profile-sidebar') {
+      window.history.back();
+    }
+  };
 
   const closeConfirmModal = () => {
     setConfirmModal({ isOpen: false, actionType: null, id: null });
@@ -73,7 +88,6 @@ export default function CustomersPage() {
   const [paymentModalCustomer, setPaymentModalCustomer] = useState<Customer | null>(null);
   const [invoiceModalCustomer, setInvoiceModalCustomer] = useState<Customer | null>(null);
   const [partsModalCustomer, setPartsModalCustomer] = useState<{ id: string; name: string; pendingStatus: CustomerStatus } | null>(null);
-  const [profileSidebarCustomer, setProfileSidebarCustomer] = useState<Customer | null>(null);
 
 
   const [smsSettings, setSmsSettings] = useState<any>(null);
@@ -95,6 +109,41 @@ export default function CustomersPage() {
   useEffect(() => {
     fetchCustomers();
   }, []);
+
+  // Instant opening on notification click without requiring reload
+  useEffect(() => {
+    const targetSearch = highlightCustomerSearch || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('search') : null);
+    const targetId = highlightCustomerId || (typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('customerId') || new URLSearchParams(window.location.search).get('id')) : null);
+
+    if (customers.length > 0) {
+      if (targetId) {
+        const found = customers.find(c => c.id === targetId);
+        if (found) {
+          setProfileSidebarCustomer(found);
+          setSearch('');
+          if (highlightCustomerId) setHighlightCustomerId(null);
+          if (highlightCustomerSearch) setHighlightCustomerSearch(null);
+          return;
+        }
+      } 
+      
+      if (targetSearch) {
+        const found = customers.find(c => 
+          c.name.toLowerCase() === targetSearch.toLowerCase() ||
+          c.phone.includes(targetSearch) ||
+          c.name.toLowerCase().includes(targetSearch.toLowerCase())
+        );
+        if (found) {
+          setProfileSidebarCustomer(found);
+          setSearch('');
+          if (highlightCustomerSearch) setHighlightCustomerSearch(null);
+          return;
+        } else {
+          setSearch(targetSearch);
+        }
+      }
+    }
+  }, [customers, highlightCustomerId, highlightCustomerSearch]);
 
   const handleSaveCustomer = async (data: Omit<Customer, 'id' | 'createdAt' | 'points'>, instantDelivery?: boolean) => {
     try {
@@ -644,7 +693,7 @@ export default function CustomersPage() {
 
       <CustomerProfileSidebar
         isOpen={!!profileSidebarCustomer}
-        onClose={() => setProfileSidebarCustomer(null)}
+        onClose={closeProfileSidebar}
         customer={profileSidebarCustomer}
         allCustomers={customers}
       />

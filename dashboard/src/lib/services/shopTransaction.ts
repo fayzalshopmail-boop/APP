@@ -115,7 +115,7 @@ export const shopTransactionService = {
           message: `${customerData.name} (Returning Customer) brought a new device, added by ${userEmail}.`,
           type: 'info',
           targetRole: 'Owner',
-          link: '/customers'
+          link: `/customers?customerId=${existingId}&search=${encodeURIComponent(customerData.name)}`
         });
       } catch (e) {
         console.error("Failed to add notification", e);
@@ -156,7 +156,7 @@ export const shopTransactionService = {
         message: `${customerData.name} was added by ${userEmail}.`,
         type: 'info',
         targetRole: 'Owner',
-        link: '/customers'
+        link: `/customers?customerId=${newId}&search=${encodeURIComponent(customerData.name)}`
       });
     } catch (e) {
       console.error("Failed to add notification", e);
@@ -279,7 +279,7 @@ export const shopTransactionService = {
           message: `${alert.name} stock has dropped to ${alert.stock} (Min: ${alert.min}). Please restock!`,
           type: 'warning',
           targetRole: 'Owner',
-          link: '/inventory'
+          link: `/inventory?search=${encodeURIComponent(alert.name)}`
         });
       } catch (e) {
         console.error("Failed to add low stock notification", e);
@@ -395,7 +395,7 @@ export const shopTransactionService = {
           message: `${lowStockAlert.name} stock has dropped to ${lowStockAlert.stock} (Min: ${lowStockAlert.min}). Please restock!`,
           type: 'warning',
           targetRole: 'Owner',
-          link: '/inventory'
+          link: `/inventory?search=${encodeURIComponent(lowStockAlert.name)}`
         });
       } catch (e) {
         console.error("Failed to add low stock notification", e);

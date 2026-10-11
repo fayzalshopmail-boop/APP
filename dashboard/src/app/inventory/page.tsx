@@ -20,7 +20,7 @@ import toast from "react-hot-toast";
 const formatNumber = (num: number) => num.toLocaleString('en-IN');
 
 export default function InventoryPage() {
-  const { user } = useAppStore();
+  const { user, highlightInventorySearch, setHighlightInventorySearch } = useAppStore();
   const hasFullAccess = user?.role === 'Owner' || user?.role === 'Manager';
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +32,16 @@ export default function InventoryPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
   const [isSellModalOpen, setIsSellModalOpen] = useState(false);
+
+  // Handle URL search parameter or notification click immediately without reload
+  useEffect(() => {
+    const q = highlightInventorySearch || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('search') : null);
+    if (q) {
+      setSearchTerm(q);
+      if (highlightInventorySearch) setHighlightInventorySearch(null);
+    }
+  }, [highlightInventorySearch]);
+
   useEffect(() => {
     const handlePopState = () => {
       if (isModalOpen) setIsModalOpen(false);

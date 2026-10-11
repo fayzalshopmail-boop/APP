@@ -122,8 +122,60 @@ export function Topbar() {
       await notificationService.markAsRead(notif.id!);
     }
     setIsNotifOpen(false);
-    if (notif.link) {
-      router.push(notif.link);
+
+    let destination = notif.link || '/';
+    let targetCustomerId: string | null = null;
+    let targetCustomerSearch: string | null = null;
+    let targetInventorySearch: string | null = null;
+
+    if (destination.includes('/customers')) {
+      try {
+        const urlObj = new URL(destination, window.location.origin);
+        targetCustomerId = urlObj.searchParams.get('customerId') || urlObj.searchParams.get('id');
+        targetCustomerSearch = urlObj.searchParams.get('search');
+      } catch (e) {}
+
+      if (!targetCustomerId && !targetCustomerSearch) {
+        const msg = notif.message || '';
+        if (msg.includes(' was added')) {
+          targetCustomerSearch = msg.split(' was added')[0].trim();
+        } else if (msg.includes(' (Returning Customer)')) {
+          targetCustomerSearch = msg.split(' (Returning Customer)')[0].trim();
+        }
+      }
+
+      if (targetCustomerId) {
+        useAppStore.getState().setHighlightCustomerId(targetCustomerId);
+      }
+      if (targetCustomerSearch) {
+        useAppStore.getState().setHighlightCustomerSearch(targetCustomerSearch);
+      }
+      router.push('/customers');
+      return;
+    }
+
+    if (destination.includes('/inventory')) {
+      try {
+        const urlObj = new URL(destination, window.location.origin);
+        targetInventorySearch = urlObj.searchParams.get('search');
+      } catch (e) {}
+
+      if (!targetInventorySearch) {
+        const msg = notif.message || '';
+        if (msg.includes(' stock has dropped')) {
+          targetInventorySearch = msg.split(' stock has dropped')[0].trim();
+        }
+      }
+
+      if (targetInventorySearch) {
+        useAppStore.getState().setHighlightInventorySearch(targetInventorySearch);
+      }
+      router.push('/inventory');
+      return;
+    }
+
+    if (destination) {
+      router.push(destination);
     }
   };
 

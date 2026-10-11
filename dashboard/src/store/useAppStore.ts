@@ -32,6 +32,14 @@ interface AppState {
   deviceProblems: Record<string, string[]>;
   addOption: (category: 'deviceTypes' | 'deviceBrands' | 'deviceProblems', value: string, parentKey?: string) => void;
   removeOption: (category: 'deviceTypes' | 'deviceBrands' | 'deviceProblems', value: string, parentKey?: string) => void;
+
+  // Notification Navigation Targets
+  highlightCustomerId: string | null;
+  setHighlightCustomerId: (id: string | null) => void;
+  highlightCustomerSearch: string | null;
+  setHighlightCustomerSearch: (term: string | null) => void;
+  highlightInventorySearch: string | null;
+  setHighlightInventorySearch: (term: string | null) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -50,6 +58,13 @@ export const useAppStore = create<AppState>()(
       setPin: (pin) => set({ pin }),
       isUnlocked: false,
       setUnlocked: (status) => set({ isUnlocked: status }),
+
+      highlightCustomerId: null,
+      setHighlightCustomerId: (highlightCustomerId) => set({ highlightCustomerId }),
+      highlightCustomerSearch: null,
+      setHighlightCustomerSearch: (highlightCustomerSearch) => set({ highlightCustomerSearch }),
+      highlightInventorySearch: null,
+      setHighlightInventorySearch: (highlightInventorySearch) => set({ highlightInventorySearch }),
 
       // Default Options
       deviceTypes: ['LED TV', 'LCD TV', 'Smart TV', 'Android TV', 'Monitor'],
