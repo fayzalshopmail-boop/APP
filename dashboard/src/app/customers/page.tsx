@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect } from 'react';
-import { Search, Plus, MoreVertical, Edit, Trash2, MessageCircle, Download, FileText, Phone, MapPin, Tv, Eye, Filter, X } from 'lucide-react';
+import { Search, Plus, MoreVertical, Edit, Trash2, MessageCircle, Download, FileText, Phone, MapPin, Tv, Eye, Filter, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatCurrency } from '@/lib/currency';
 import { useAppStore } from '@/store/useAppStore';
@@ -31,6 +31,8 @@ export default function CustomersPage() {
   const [statusFilter, setStatusFilter] = useState<CustomerStatus | 'All'>('All');
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -117,6 +119,10 @@ export default function CustomersPage() {
     window.addEventListener('app:add-customer', handleOpenAdd);
     return () => window.removeEventListener('app:add-customer', handleOpenAdd);
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter]);
 
   // Instant opening on notification click without requiring reload
   useEffect(() => {
@@ -511,12 +517,61 @@ export default function CustomersPage() {
     return 0;
   });
 
+  const totalPages = Math.ceil(filteredCustomers.length / ITEMS_PER_PAGE) || 1;
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedCustomers = filteredCustomers.slice(startIndex, endIndex);
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    if (typeof window !== 'undefined') {
+      const el = document.getElementById('customer-list-container');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  };
+
+  const getPageNumbers = (isMobile: boolean = false) => {
+    if (isMobile) {
+      if (totalPages <= 5) {
+        return Array.from({ length: totalPages }, (_, i) => i + 1);
+      }
+      if (currentPage <= 3) {
+        return [1, 2, 3, '...', totalPages];
+      }
+      if (currentPage >= totalPages - 2) {
+        return [1, '...', totalPages - 2, totalPages - 1, totalPages];
+      }
+      return [1, '...', currentPage, '...', totalPages];
+    }
+
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    if (currentPage <= 4) {
+      return [1, 2, 3, 4, 5, '...', totalPages];
+    }
+    if (currentPage >= totalPages - 3) {
+      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+    return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+  };
+
   return (
-    <div className="max-w-[1600px] mx-auto">
+    <div className="max-w-[1600px] mx-auto w-full">
       {/* Page Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-        <div className="text-xs sm:text-sm text-gray-400 flex items-center gap-2">
-          <span>Showing <strong className="font-semibold text-white">{filteredCustomers.length}</strong> {filteredCustomers.length === 1 ? 'customer' : 'customers'}</span>
+        <div className="text-xs sm:text-sm text-gray-400 flex items-center gap-2 flex-wrap">
+          <span>
+            {filteredCustomers.length > 0 ? (
+              <>
+                Showing <strong className="font-semibold text-white">{startIndex + 1}-{Math.min(endIndex, filteredCustomers.length)}</strong> of <strong className="font-semibold text-white">{filteredCustomers.length}</strong> {filteredCustomers.length === 1 ? 'customer' : 'customers'}
+              </>
+            ) : (
+              <>Showing <strong className="font-semibold text-white">0</strong> customers</>
+            )}
+          </span>
           {statusFilter !== 'All' && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
               {statusFilter}
@@ -588,41 +643,42 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      {/* Customer Table */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="hidden md:block bg-card rounded-2xl border border-gray-800/50 overflow-hidden"
-      >
-        <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-240px)] relative">
-          <table className="w-full text-left text-sm whitespace-nowrap">
-            <thead className="bg-secondary sticky top-0 z-10 shadow-sm">
-              <tr className="text-gray-400 uppercase tracking-wider text-xs border-b border-gray-800">
-                <th className="px-6 py-4 font-medium text-left min-w-[200px]">Customer Info</th>
-                <th className="px-6 py-4 font-medium text-left min-w-[150px]">Contact</th>
-                <th className="px-6 py-4 font-medium text-left min-w-[200px]">Appliance Info</th>
-                <th className="px-6 py-4 font-medium text-left min-w-[150px]">Delivery</th>
-                <th className="px-6 py-4 font-medium text-left min-w-[180px]">Status</th>
-                <th className="px-6 py-4 font-medium text-right min-w-[120px]">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-800/50">
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">Loading customers...</td>
+      <div id="customer-list-container" className="scroll-mt-20">
+        {/* Customer Table */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="hidden md:block bg-card rounded-2xl border border-gray-800/80 shadow-sm overflow-hidden"
+        >
+          <div className="overflow-x-auto relative">
+            <table className="w-full text-left text-sm whitespace-nowrap">
+              <thead className="bg-secondary/80 sticky top-0 z-10 shadow-sm">
+                <tr className="text-gray-400 uppercase tracking-wider text-xs border-b border-gray-800">
+                  <th className="px-4 py-3.5 font-medium text-left min-w-[170px]">Customer Info</th>
+                  <th className="px-4 py-3.5 font-medium text-left min-w-[130px]">Contact</th>
+                  <th className="px-4 py-3.5 font-medium text-left min-w-[180px]">Appliance Info</th>
+                  <th className="px-4 py-3.5 font-medium text-left min-w-[130px]">Delivery</th>
+                  <th className="px-4 py-3.5 font-medium text-left min-w-[160px]">Status</th>
+                  <th className="px-4 py-3.5 font-medium text-right min-w-[120px]">Actions</th>
                 </tr>
-              ) : filteredCustomers.map((customer) => (
+              </thead>
+              <tbody className="divide-y divide-gray-800/50">
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-12 text-center text-gray-500">Loading customers...</td>
+                  </tr>
+                ) : paginatedCustomers.map((customer) => (
                 <tr key={customer.id} className="hover:bg-gray-800/20 transition-colors group">
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3.5">
                     <Button variant="link" onClick={() => setProfileSidebarCustomer(customer)} className="p-0 h-auto font-semibold text-gray-200 hover:text-blue-400 transition-colors text-left block hover:no-underline"
                       title="View Customer Profile & History"
                     >
                       {customer.name}
                     </Button>
-                    <div className="text-xs text-gray-500 mt-1">{customer.address || 'No Address'}</div>
+                    <div className="text-xs text-gray-500 mt-0.5 truncate max-w-[200px]">{customer.address || 'No Address'}</div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3.5">
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-300 font-medium">{customer.phone}</span>
                       <a 
@@ -644,7 +700,7 @@ export default function CustomersPage() {
                       </a>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3.5">
                     <div className="text-gray-300 text-sm font-medium">
                       {customer.deviceBrand || 'N/A'} {customer.deviceType ? `(${customer.deviceType})` : ''}
                       {customer.serialNumber && (
@@ -654,14 +710,14 @@ export default function CustomersPage() {
                       )}
                     </div>
                     <div className="text-xs text-orange-400/80 mt-0.5">{customer.deviceProblem || 'N/A'}</div>
-                    {customer.deviceDetails && <div className="text-[10px] text-gray-500 mt-1 truncate max-w-[150px]">{customer.deviceDetails}</div>}
+                    {customer.deviceDetails && <div className="text-[10px] text-gray-500 mt-0.5 truncate max-w-[150px]">{customer.deviceDetails}</div>}
                     {customer.warrantyMonths ? (
                       <div className="text-[10px] font-medium text-purple-400 mt-1 bg-purple-500/10 px-2 py-0.5 rounded w-fit">
                         {customer.warrantyMonths} Warranty
                       </div>
                     ) : null}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3.5">
                     <div className="text-gray-300 font-medium">Tot: {formatCurrency(customer.totalBill)}</div>
                     <div className="text-xs text-gray-500 mt-0.5">Adv: {formatCurrency(customer.advance || 0)}</div>
                     {customer.due > 0 ? (
@@ -674,14 +730,14 @@ export default function CustomersPage() {
                       </div>
                     )}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3.5">
                     <StatusDropdown 
                       status={customer.status} 
                       onChange={(newStatus) => handleUpdateStatus(customer.id, newStatus)} 
                     />
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-3 transition-opacity">
+                  <td className="px-4 py-3.5 text-right">
+                    <div className="flex items-center justify-end gap-1.5 transition-opacity">
                       {customer.due > 0 && (
                         <Button variant="ghost" onClick={() => setPaymentModalCustomer(customer)} className="text-emerald-500 hover:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1 h-auto rounded text-xs font-medium mr-1"
                           title="Receive Payment"
@@ -694,18 +750,23 @@ export default function CustomersPage() {
                       >
                         <FileText className="w-4 h-4" />
                       </Button>
+                      <Button variant="ghost" size="icon" onClick={() => setProfileSidebarCustomer(customer)} className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors h-8 w-8" 
+                        title="View History & Profile"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
                       {hasFullAccess && (
                         <>
                           <Button variant="ghost" size="icon" onClick={() => openEditModal(customer)} className="text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 transition-colors h-8 w-8" 
-                                                  title="Edit"
-                                                >
-                                                  <Edit className="w-4 h-4" />
-                                                </Button>
-                                                <Button variant="ghost" size="icon" onClick={() => handleDeleteRequest(customer.id)} className="text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors h-8 w-8" 
-                                                  title="Delete"
-                                                >
-                                                  <Trash2 className="w-4 h-4" />
-                                                </Button>
+                            title="Edit"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDeleteRequest(customer.id)} className="text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors h-8 w-8" 
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </>
                       )}
                     </div>
@@ -714,7 +775,7 @@ export default function CustomersPage() {
               ))}
               {!loading && filteredCustomers.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
                     No customers found matching your search.
                   </td>
                 </tr>
@@ -722,6 +783,65 @@ export default function CustomersPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Integrated Desktop Table Footer Pagination */}
+        {filteredCustomers.length > 0 && (
+          <div className="flex items-center justify-between px-5 py-3.5 border-t border-gray-800/80 bg-secondary/20">
+            <div className="text-xs text-gray-400">
+              Showing <span className="font-semibold text-white">{startIndex + 1}</span> to <span className="font-semibold text-white">{Math.min(endIndex, filteredCustomers.length)}</span> of <span className="font-semibold text-white">{filteredCustomers.length}</span> customers
+              <span className="text-gray-500 ml-1.5">(Page {currentPage} of {totalPages})</span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="h-8 w-8 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
+                title="Previous Page"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+
+              {getPageNumbers(false).map((pageNum, idx) => {
+                if (pageNum === '...') {
+                  return (
+                    <span key={`desktop-ellipsis-${idx}`} className="px-1 text-gray-500 text-xs select-none">
+                      ...
+                    </span>
+                  );
+                }
+                const page = Number(pageNum);
+                const isActive = currentPage === page;
+                return (
+                  <button
+                    key={`desktop-page-${page}`}
+                    onClick={() => handlePageChange(page)}
+                    className={`h-8 min-w-[32px] px-2 rounded-lg text-xs font-medium transition-all ${
+                      isActive
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 font-bold'
+                        : 'bg-card border border-gray-800 text-gray-300 hover:text-white hover:bg-secondary hover:border-gray-700'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="h-8 w-8 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
+                title="Next Page"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </motion.div>
 
       {/* Mobile Customer Cards (visible on mobile only) */}
@@ -730,7 +850,7 @@ export default function CustomersPage() {
           <div className="bg-card rounded-xl border border-gray-800 p-8 text-center text-gray-500 text-sm">
             Loading customers...
           </div>
-        ) : filteredCustomers.map((customer) => (
+        ) : paginatedCustomers.map((customer) => (
           <div 
             key={customer.id}
             className="bg-card border border-gray-800/80 rounded-xl p-4 shadow-sm space-y-3"
@@ -800,27 +920,27 @@ export default function CustomersPage() {
             </div>
 
             {/* Bill & Financials Strip */}
-            <div className="flex items-center justify-between bg-secondary/50 rounded-lg px-3 py-2 text-xs border border-gray-800/40">
+            <div className="grid grid-cols-3 gap-1 bg-secondary/50 rounded-lg p-2 text-xs border border-gray-800/40 text-center">
               <div>
                 <span className="text-gray-500 text-[10px] uppercase block">Total</span>
-                <span className="font-semibold text-gray-200">{formatCurrency(customer.totalBill)}</span>
+                <span className="font-semibold text-gray-200 truncate block">{formatCurrency(customer.totalBill)}</span>
               </div>
-              <div className="border-l border-gray-800 pl-3">
+              <div className="border-x border-gray-800/60 px-1">
                 <span className="text-gray-500 text-[10px] uppercase block">Advance</span>
-                <span className="font-medium text-gray-300">{formatCurrency(customer.advance || 0)}</span>
+                <span className="font-medium text-gray-300 truncate block">{formatCurrency(customer.advance || 0)}</span>
               </div>
-              <div className="border-l border-gray-800 pl-3 text-right">
+              <div>
                 <span className="text-gray-500 text-[10px] uppercase block">Due Status</span>
                 {customer.due > 0 ? (
-                  <span className="font-bold text-red-400">{formatCurrency(customer.due)} Due</span>
+                  <span className="font-bold text-red-400 truncate block">{formatCurrency(customer.due)} Due</span>
                 ) : (
-                  <span className="font-bold text-emerald-400">Paid ✓</span>
+                  <span className="font-bold text-emerald-400 truncate block">Paid ✓</span>
                 )}
               </div>
             </div>
 
             {/* Actions Bottom Bar */}
-            <div className="flex items-center justify-between pt-1 gap-1.5 flex-wrap">
+            <div className="flex items-center justify-between pt-1 gap-1.5">
               <a 
                 href={`https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
                   (smsSettings?.whatsappTemplate || '')
@@ -833,19 +953,19 @@ export default function CustomersPage() {
                 )}`} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-green-500/10 text-green-400 hover:bg-green-500/20 rounded-lg text-xs font-medium transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-green-500/10 text-green-400 hover:bg-green-500/20 rounded-lg text-xs font-medium transition-colors shrink-0"
                 title="Send on WhatsApp"
               >
-                <MessageCircle className="w-3.5 h-3.5" />
+                <MessageCircle className="w-3.5 h-3.5 shrink-0" />
                 <span>WhatsApp</span>
               </a>
 
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1 shrink-0">
                 {customer.due > 0 && (
                   <Button 
                     variant="ghost" 
                     onClick={() => setPaymentModalCustomer(customer)} 
-                    className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300 px-2.5 py-1.5 h-auto text-xs font-semibold rounded-lg"
+                    className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300 px-2 py-1.5 h-8 text-xs font-semibold rounded-lg shrink-0"
                   >
                     Pay
                   </Button>
@@ -855,7 +975,7 @@ export default function CustomersPage() {
                   variant="ghost" 
                   size="icon" 
                   onClick={() => setInvoiceModalCustomer(customer)} 
-                  className="text-gray-400 hover:text-white hover:bg-gray-800 h-8 w-8 rounded-lg"
+                  className="text-gray-400 hover:text-white hover:bg-gray-800 h-8 w-8 rounded-lg shrink-0"
                   title="Print Invoice"
                 >
                   <FileText className="w-4 h-4" />
@@ -865,7 +985,7 @@ export default function CustomersPage() {
                   variant="ghost" 
                   size="icon" 
                   onClick={() => setProfileSidebarCustomer(customer)} 
-                  className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 h-8 w-8 rounded-lg"
+                  className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 h-8 w-8 rounded-lg shrink-0"
                   title="View History & Profile"
                 >
                   <Eye className="w-4 h-4" />
@@ -877,7 +997,7 @@ export default function CustomersPage() {
                       variant="ghost" 
                       size="icon" 
                       onClick={() => openEditModal(customer)} 
-                      className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 h-8 w-8 rounded-lg"
+                      className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 h-8 w-8 rounded-lg shrink-0"
                       title="Edit"
                     >
                       <Edit className="w-4 h-4" />
@@ -886,7 +1006,7 @@ export default function CustomersPage() {
                       variant="ghost" 
                       size="icon" 
                       onClick={() => handleDeleteRequest(customer.id)} 
-                      className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 h-8 w-8 rounded-lg"
+                      className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 h-8 w-8 rounded-lg shrink-0"
                       title="Delete"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -902,6 +1022,66 @@ export default function CustomersPage() {
             No customers found matching your search.
           </div>
         )}
+
+        {/* Mobile Pagination */}
+        {filteredCustomers.length > 0 && (
+          <div className="flex flex-col items-center gap-3 pt-3 pb-2 bg-card border border-gray-800/80 rounded-xl p-3 shadow-sm">
+            <div className="flex items-center gap-1.5 flex-wrap justify-center">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="h-8 w-8 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
+                title="Previous Page"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+
+              {getPageNumbers(true).map((pageNum, idx) => {
+                if (pageNum === '...') {
+                  return (
+                    <span key={`mobile-ellipsis-${idx}`} className="px-1 text-gray-500 text-xs select-none">
+                      ...
+                    </span>
+                  );
+                }
+                const page = Number(pageNum);
+                const isActive = currentPage === page;
+                return (
+                  <button
+                    key={`mobile-page-${page}`}
+                    onClick={() => handlePageChange(page)}
+                    className={`h-8 min-w-[32px] px-2 rounded-lg text-xs font-medium transition-all ${
+                      isActive
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 font-bold'
+                        : 'bg-card border border-gray-800 text-gray-300 hover:text-white hover:bg-secondary hover:border-gray-700'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="h-8 w-8 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
+                title="Next Page"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="text-xs text-gray-400 text-center">
+              Showing <span className="font-semibold text-white">{startIndex + 1}</span> to <span className="font-semibold text-white">{Math.min(endIndex, filteredCustomers.length)}</span> of <span className="font-semibold text-white">{filteredCustomers.length}</span>
+              <span className="text-gray-500 ml-1">(Page {currentPage} of {totalPages})</span>
+            </div>
+          </div>
+        )}
+      </div>
       </div>
 
       <CustomerProfileSidebar
