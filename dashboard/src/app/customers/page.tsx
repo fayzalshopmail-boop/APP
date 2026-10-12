@@ -534,13 +534,13 @@ export default function CustomersPage() {
 
   const getPageNumbers = (isMobile: boolean = false) => {
     if (isMobile) {
-      if (totalPages <= 5) {
+      if (totalPages <= 4) {
         return Array.from({ length: totalPages }, (_, i) => i + 1);
       }
-      if (currentPage <= 3) {
+      if (currentPage <= 2) {
         return [1, 2, 3, '...', totalPages];
       }
-      if (currentPage >= totalPages - 2) {
+      if (currentPage >= totalPages - 1) {
         return [1, '...', totalPages - 2, totalPages - 1, totalPages];
       }
       return [1, '...', currentPage, '...', totalPages];
@@ -561,8 +561,9 @@ export default function CustomersPage() {
   return (
     <div className="max-w-[1600px] mx-auto w-full">
       {/* Page Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-        <div className="text-xs sm:text-sm text-gray-400 flex items-center gap-2 flex-wrap">
+      <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        {/* Results Counter & Active Filter Badge */}
+        <div className="text-xs sm:text-sm text-gray-400 flex items-center justify-between sm:justify-start gap-2 flex-wrap">
           <span>
             {filteredCustomers.length > 0 ? (
               <>
@@ -582,48 +583,48 @@ export default function CustomersPage() {
           )}
         </div>
         
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-          <div className="flex flex-row items-center gap-2.5 w-full sm:w-auto">
-            {/* Search Input */}
-            <div className="relative flex-1 sm:w-64 md:w-72">
-              <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <Input 
-                type="text" 
-                placeholder="Search customers..." 
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="!h-11 !bg-card dark:!bg-card border border-gray-800 hover:border-gray-700 text-gray-200 text-sm !rounded-xl pl-10 pr-9 focus:outline-none focus:!border-blue-500 focus:!ring-1 focus:!ring-blue-500/50 transition-all w-full placeholder:text-gray-500 shadow-sm"
-              />
-              {search && (
-                <button 
-                  onClick={() => setSearch('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 p-0.5 transition-colors"
-                  title="Clear search"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-
-            {/* Status Filter Dropdown */}
-            <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val as CustomerStatus | 'All')}>
-              <SelectTrigger className="!h-11 w-36 sm:w-44 !bg-card dark:!bg-card border border-gray-800 hover:border-gray-700 text-gray-200 text-sm !rounded-xl px-3.5 focus:outline-none focus:!border-blue-500 focus:!ring-1 focus:!ring-blue-500/50 transition-all shadow-sm shrink-0 flex items-center justify-between">
-                <span className="flex items-center gap-2 truncate">
-                  <Filter className={`w-4 h-4 shrink-0 transition-colors ${statusFilter !== 'All' ? 'text-blue-400' : 'text-gray-400'}`} />
-                  <SelectValue placeholder="All Statuses" />
-                </span>
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-gray-800 text-gray-200 rounded-xl shadow-xl">
-                <SelectItem value="All">All Statuses</SelectItem>
-                <SelectItem value="Received">Received</SelectItem>
-                <SelectItem value="In Progress">In Progress</SelectItem>
-                <SelectItem value="Waiting for Parts">Waiting for Parts</SelectItem>
-                <SelectItem value="Ready for Delivery">Ready for Delivery</SelectItem>
-                <SelectItem value="Delivered">Delivered</SelectItem>
-                <SelectItem value="Returned (Unrepaired)">Returned</SelectItem>
-              </SelectContent>
-            </Select>
+        {/* Search & Filter Bar */}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {/* Search Input */}
+          <div className="relative flex-1 sm:w-64 md:w-72">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Input 
+              type="text" 
+              placeholder="Search customers..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="!h-10 sm:!h-11 !bg-card dark:!bg-card border border-gray-800 hover:border-gray-700 text-gray-200 text-xs sm:text-sm !rounded-xl pl-9 pr-8 focus:outline-none focus:!border-blue-500 focus:!ring-1 focus:!ring-blue-500/50 transition-all w-full placeholder:text-gray-500 shadow-sm"
+            />
+            {search && (
+              <button 
+                onClick={() => setSearch('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 p-0.5 transition-colors"
+                title="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
+
+          {/* Status Filter Dropdown */}
+          <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val as CustomerStatus | 'All')}>
+            <SelectTrigger className="!h-10 sm:!h-11 w-32 sm:w-44 !bg-card dark:!bg-card border border-gray-800 hover:border-gray-700 text-gray-200 text-xs sm:text-sm !rounded-xl px-2.5 sm:px-3.5 focus:outline-none focus:!border-blue-500 focus:!ring-1 focus:!ring-blue-500/50 transition-all shadow-sm shrink-0 flex items-center justify-between">
+              <span className="flex items-center gap-1.5 sm:gap-2 truncate">
+                <Filter className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 transition-colors ${statusFilter !== 'All' ? 'text-blue-400' : 'text-gray-400'}`} />
+                <SelectValue placeholder="All Statuses" />
+              </span>
+            </SelectTrigger>
+            <SelectContent className="bg-popover border-gray-800 text-gray-200 rounded-xl shadow-xl">
+              <SelectItem value="All">All Statuses</SelectItem>
+              <SelectItem value="Received">Received</SelectItem>
+              <SelectItem value="In Progress">In Progress</SelectItem>
+              <SelectItem value="Waiting for Parts">Waiting for Parts</SelectItem>
+              <SelectItem value="Ready for Delivery">Ready for Delivery</SelectItem>
+              <SelectItem value="Delivered">Delivered</SelectItem>
+              <SelectItem value="Returned (Unrepaired)">Returned</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
           <div className="hidden sm:flex flex-row items-center gap-2 w-full sm:w-auto">
             <Button 
               onClick={handleExportCSV}
@@ -641,7 +642,6 @@ export default function CustomersPage() {
             </Button>
           </div>
         </div>
-      </div>
 
       <div id="customer-list-container" className="scroll-mt-20">
         {/* Customer Table */}
@@ -866,33 +866,16 @@ export default function CustomersPage() {
         ) : paginatedCustomers.map((customer) => (
           <div 
             key={customer.id}
-            className="bg-card border border-gray-800/80 rounded-xl p-4 shadow-sm space-y-3"
+            className="bg-card border border-gray-800/80 rounded-xl p-3.5 shadow-sm space-y-2.5"
           >
             {/* Header: Customer Name + Status Dropdown */}
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <button 
-                  onClick={() => setProfileSidebarCustomer(customer)}
-                  className="font-bold text-base text-gray-100 hover:text-blue-400 transition-colors text-left truncate block"
-                >
-                  {customer.name}
-                </button>
-                <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-gray-400">
-                  <a 
-                    href={`tel:${customer.phone}`} 
-                    className="flex items-center gap-1 text-blue-400 hover:underline font-medium"
-                  >
-                    <Phone className="w-3.5 h-3.5" />
-                    <span>{customer.phone}</span>
-                  </a>
-                  {customer.address && (
-                    <span className="flex items-center gap-1 text-gray-500 truncate max-w-[150px]">
-                      <MapPin className="w-3 h-3 shrink-0" />
-                      <span className="truncate">{customer.address}</span>
-                    </span>
-                  )}
-                </div>
-              </div>
+            <div className="flex items-center justify-between gap-2 pb-2 border-b border-gray-800/50">
+              <button 
+                onClick={() => setProfileSidebarCustomer(customer)}
+                className="font-bold text-base text-gray-100 hover:text-blue-400 transition-colors text-left truncate flex-1 min-w-0"
+              >
+                {customer.name}
+              </button>
               <div className="shrink-0">
                 <StatusDropdown 
                   status={customer.status} 
@@ -901,26 +884,45 @@ export default function CustomersPage() {
               </div>
             </div>
 
+            {/* Contact & Address Sub-header */}
+            <div className="flex items-center justify-between gap-2 text-xs text-gray-400">
+              <a 
+                href={`tel:${customer.phone}`} 
+                className="flex items-center gap-1.5 text-blue-400 hover:underline font-medium shrink-0"
+              >
+                <Phone className="w-3.5 h-3.5 text-blue-400" />
+                <span>{customer.phone}</span>
+              </a>
+              {customer.address ? (
+                <span className="flex items-center gap-1 text-gray-400 truncate max-w-[170px] text-right">
+                  <MapPin className="w-3 h-3 shrink-0 text-gray-500" />
+                  <span className="truncate">{customer.address}</span>
+                </span>
+              ) : (
+                <span className="text-[11px] text-gray-600">No Address</span>
+              )}
+            </div>
+
             {/* Device / Appliance Details */}
-            <div className="bg-[#121526]/60 rounded-lg p-2.5 border border-gray-800/60 text-xs space-y-1.5">
-              <div className="flex items-center justify-between text-gray-300 font-medium">
-                <div className="flex items-center gap-1.5 truncate">
+            <div className="bg-[#121526]/70 rounded-lg p-2.5 border border-gray-800/60 text-xs space-y-1.5">
+              <div className="flex items-center justify-between text-gray-200 font-medium gap-2">
+                <div className="flex items-center gap-1.5 truncate flex-1 min-w-0">
                   <Tv className="w-3.5 h-3.5 text-blue-400 shrink-0" />
                   <span className="truncate">{customer.deviceBrand || 'Appliance'} {customer.deviceType ? `(${customer.deviceType})` : ''}</span>
                 </div>
                 {customer.serialNumber && (
-                  <span className="font-mono text-[10px] text-gray-400 bg-gray-800/80 px-1.5 py-0.5 rounded border border-gray-700/50">
+                  <span className="font-mono text-[10px] text-gray-400 bg-gray-800/80 px-1.5 py-0.5 rounded border border-gray-700/50 shrink-0">
                     SN: {customer.serialNumber}
                   </span>
                 )}
               </div>
 
-              <div className="flex items-center justify-between flex-wrap gap-1 text-[11px]">
-                <span className="text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded font-medium">
+              <div className="flex items-center justify-between gap-2 text-[11px]">
+                <span className="text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded font-medium truncate flex-1 min-w-0">
                   {customer.deviceProblem || 'Problem not specified'}
                 </span>
                 {customer.warrantyMonths ? (
-                  <span className="text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded font-medium">
+                  <span className="text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded font-medium shrink-0">
                     {customer.warrantyMonths} Warranty
                   </span>
                 ) : null}
@@ -933,7 +935,7 @@ export default function CustomersPage() {
             </div>
 
             {/* Bill & Financials Strip */}
-            <div className="grid grid-cols-3 gap-1 bg-secondary/50 rounded-lg p-2 text-xs border border-gray-800/40 text-center">
+            <div className="grid grid-cols-3 gap-1 bg-secondary/60 rounded-lg p-2 text-xs border border-gray-800/50 text-center">
               <div>
                 <span className="text-gray-500 text-[10px] uppercase block">Total</span>
                 <span className="font-semibold text-gray-200 truncate block">{formatCurrency(customer.totalBill)}</span>
@@ -953,14 +955,15 @@ export default function CustomersPage() {
             </div>
 
             {/* Actions Bottom Bar */}
-            <div className="flex items-center justify-between pt-1 gap-1.5 flex-wrap">
-              <div className="flex items-center gap-1.5 shrink-0">
+            <div className="pt-2 border-t border-gray-800/50 space-y-2">
+              {/* Primary Call & WhatsApp Row */}
+              <div className="grid grid-cols-2 gap-2">
                 <a 
                   href={`tel:${customer.phone}`}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm shadow-blue-600/20 shrink-0"
+                  className="flex items-center justify-center gap-1.5 py-2 px-3 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white rounded-lg text-xs font-semibold transition-all shadow-sm shadow-blue-600/20"
                   title="Direct Call"
                 >
-                  <PhoneCall className="w-3.5 h-3.5 shrink-0" />
+                  <PhoneCall className="w-3.5 h-3.5" />
                   <span>Call</span>
                 </a>
 
@@ -976,67 +979,72 @@ export default function CustomersPage() {
                   )}`} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20 rounded-lg text-xs font-medium transition-colors shrink-0"
+                  className="flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-600/15 hover:bg-emerald-600/25 active:scale-95 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-semibold transition-all"
                   title="Send on WhatsApp"
                 >
-                  <MessageCircle className="w-3.5 h-3.5 shrink-0" />
+                  <MessageCircle className="w-3.5 h-3.5" />
                   <span>WhatsApp</span>
                 </a>
               </div>
 
-              <div className="flex items-center gap-1 shrink-0 ml-auto">
-                {customer.due > 0 && (
+              {/* Utility Toolbar Row: Pay (if due) + Invoice + History/Profile + Edit + Delete */}
+              <div className="flex items-center justify-between bg-secondary/40 rounded-lg px-2.5 py-1.5 border border-gray-800/40">
+                {customer.due > 0 ? (
                   <Button 
                     variant="ghost" 
                     onClick={() => setPaymentModalCustomer(customer)} 
-                    className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300 px-2 py-1.5 h-8 text-xs font-semibold rounded-lg shrink-0"
+                    className="bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 hover:text-emerald-300 px-2.5 py-1 h-7 text-xs font-semibold rounded-md border border-emerald-500/25"
                   >
-                    Pay
+                    Receive Due
                   </Button>
+                ) : (
+                  <span className="text-[11px] text-gray-500 font-medium">Quick Actions</span>
                 )}
 
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => setInvoiceModalCustomer(customer)} 
-                  className="text-gray-400 hover:text-white hover:bg-gray-800 h-8 w-8 rounded-lg shrink-0"
-                  title="Print Invoice"
-                >
-                  <FileText className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => setInvoiceModalCustomer(customer)} 
+                    className="text-gray-400 hover:text-white hover:bg-gray-800 h-7 w-7 rounded-md"
+                    title="Print Invoice"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                  </Button>
 
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => setProfileSidebarCustomer(customer)} 
-                  className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 h-8 w-8 rounded-lg shrink-0"
-                  title="View History & Profile"
-                >
-                  <Eye className="w-4 h-4" />
-                </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => setProfileSidebarCustomer(customer)} 
+                    className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 h-7 w-7 rounded-md"
+                    title="View History & Profile"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                  </Button>
 
-                {hasFullAccess && (
-                  <>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => openEditModal(customer)} 
-                      className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 h-8 w-8 rounded-lg shrink-0"
-                      title="Edit"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => handleDeleteRequest(customer.id)} 
-                      className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 h-8 w-8 rounded-lg shrink-0"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </>
-                )}
+                  {hasFullAccess && (
+                    <>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => openEditModal(customer)} 
+                        className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 h-7 w-7 rounded-md"
+                        title="Edit"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => handleDeleteRequest(customer.id)} 
+                        className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 h-7 w-7 rounded-md"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>

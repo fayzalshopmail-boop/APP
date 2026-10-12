@@ -32,9 +32,19 @@ export function StatusDropdown({ status, onChange }: StatusDropdownProps) {
         topPos = rect.top + window.scrollY - dropdownHeight - 8;
       }
 
+      // Safe bounds calculation so it never overflows off-screen on mobile
+      let leftPos = rect.right + window.scrollX - 192;
+      const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 360;
+      if (leftPos < 8) {
+        leftPos = Math.max(8, rect.left + window.scrollX);
+      }
+      if (leftPos + 192 > screenWidth - 8) {
+        leftPos = Math.max(8, screenWidth - 192 - 8);
+      }
+
       setDropdownPos({
         top: topPos,
-        left: rect.right + window.scrollX - 192,
+        left: leftPos,
         width: 192
       });
     }
@@ -90,6 +100,16 @@ export function StatusDropdown({ status, onChange }: StatusDropdownProps) {
     }
   };
 
+  const getStatusShortLabel = (s?: CustomerStatus) => {
+    switch (s) {
+      case 'Waiting for Parts': return 'Waiting';
+      case 'Ready for Delivery': return 'Ready';
+      case 'Returned (Unrepaired)': return 'Returned';
+      case 'In Progress': return 'In Progress';
+      default: return s || 'Received';
+    }
+  };
+
   const currentConfig = getStatusConfig(status || 'Received');
   const isFinalState = status === 'Delivered' || status === 'Returned (Unrepaired)';
 
@@ -103,10 +123,11 @@ export function StatusDropdown({ status, onChange }: StatusDropdownProps) {
           }}
           disabled={isFinalState}
           title={isFinalState ? "Status locked (Cannot be changed)" : "Change status"}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${currentConfig.bg} ${currentConfig.text} ${currentConfig.border} ${isFinalState ? 'cursor-not-allowed opacity-80 bg-opacity-50' : 'cursor-pointer hover:brightness-110'}`}
+          className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border text-xs font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${currentConfig.bg} ${currentConfig.text} ${currentConfig.border} ${isFinalState ? 'cursor-not-allowed opacity-80 bg-opacity-50' : 'cursor-pointer hover:brightness-110'}`}
         >
           {currentConfig.icon}
-          {status || 'Received'}
+          <span className="hidden sm:inline">{status || 'Received'}</span>
+          <span className="sm:hidden">{getStatusShortLabel(status)}</span>
           {!isFinalState ? (
             <ChevronDown className={`w-3 h-3 opacity-50 ml-0.5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
           ) : (
