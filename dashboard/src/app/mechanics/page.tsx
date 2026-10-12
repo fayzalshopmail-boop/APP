@@ -170,9 +170,6 @@ export default function MechanicsPage() {
           <h1 className="text-2xl font-bold text-white mb-1">Mechanics (B2B)</h1>
           <p className="text-gray-400 text-sm">Manage partner mechanics, their jobs, and commissions.</p>
         </div>
-        <Button onClick={() => handleOpenModal()} className="hidden sm:flex bg-blue-600 hover:bg-blue-700 text-white gap-2 h-10">
-          <Plus className="w-4 h-4" /> Add Mechanic
-        </Button>
       </div>
 
       {/* Summary Card */}

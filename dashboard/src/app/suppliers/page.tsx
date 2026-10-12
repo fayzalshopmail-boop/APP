@@ -176,12 +176,6 @@ export default function SuppliersPage() {
           </h1>
           <p className="text-sm text-gray-400 mt-1">Manage your parts suppliers and their payment dues</p>
         </div>
-        <Button 
-          onClick={openAddModal}
-          className="hidden sm:flex bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 items-center gap-2"
-        >
-          <Plus className="w-4 h-4" /> Add Supplier
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

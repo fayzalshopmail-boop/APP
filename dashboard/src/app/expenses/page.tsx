@@ -159,12 +159,6 @@ export default function ExpensesPage() {
               <option value="month">This Month</option>
             </select>
           </div>
-          <Button 
-            onClick={() => setIsModalOpen(true)}
-            className="hidden sm:flex bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 items-center gap-2"
-          >
-            <Plus className="w-4 h-4" /> Add Expense
-          </Button>
         </div>
       </div>
 

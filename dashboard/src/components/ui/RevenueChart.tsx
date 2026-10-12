@@ -51,8 +51,12 @@ export function RevenueChart() {
             
             if (tDate) {
               const dayObj = last7Days.find(d => d.dateStr === tDate);
-              if (dayObj && ['Advance Payment', 'Due Collection', 'Direct Sell'].includes(t.type)) {
-                dayObj.revenue += Number(t.amount) || 0;
+              if (dayObj) {
+                if (['Advance Payment', 'Due Collection', 'Direct Sell'].includes(t.type)) {
+                  dayObj.revenue += Number(t.amount) || 0;
+                } else if (t.type === 'Refund') {
+                  dayObj.revenue -= Number(t.amount) || 0;
+                }
               }
             }
           }
@@ -81,16 +85,16 @@ export function RevenueChart() {
           <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
             <div className="w-3 h-3 rounded-sm bg-indigo-500" />
           </div>
-          Revenue Overview <span className="text-gray-500 text-sm font-medium ml-2">(7 Days)</span>
+          রাজস্ব চিত্র <span className="text-gray-500 text-sm font-medium ml-2">(গত ৭ দিন)</span>
         </h3>
       </div>
       
       <div className="h-[300px] w-full">
         {loading ? (
-          <div className="w-full h-full flex items-center justify-center text-gray-500 text-sm">Loading chart data...</div>
+          <div className="w-full h-full flex items-center justify-center text-gray-500 text-sm">চার্ট ডেটা লোড হচ্ছে...</div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+            <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
               <XAxis 
                 dataKey="name" 
@@ -102,10 +106,14 @@ export function RevenueChart() {
               />
               <YAxis 
                 stroke="#4b5563" 
-                fontSize={12}
+                fontSize={11}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => formatCurrency(value)}
+                width={48}
+                tickFormatter={(value) => {
+                  if (value >= 1000) return `৳${(value / 1000).toFixed(value % 1000 === 0 ? 0 : 1)}k`;
+                  return `৳${value}`;
+                }}
               />
               <Tooltip 
                 contentStyle={{ 
@@ -116,7 +124,7 @@ export function RevenueChart() {
                 }}
                 itemStyle={{ color: '#fff', fontWeight: 600 }}
                 labelStyle={{ color: '#9ca3af', marginBottom: '4px' }}
-                formatter={(value: any) => [formatCurrency(value), 'Revenue']}
+                formatter={(value: any) => [formatCurrency(value), 'রাজস্ব']}
               />
               <Line 
                 type="monotone" 

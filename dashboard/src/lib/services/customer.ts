@@ -63,6 +63,9 @@ export interface Customer {
   partsUsed?: PartUsed[];
   totalCost?: number;
   createdAt?: string | Date | any;
+  updatedAt?: string | Date | any;
+  completedAt?: string | Date | any;
+  deliveredAt?: string | Date | any;
   repairHistory?: RepairRecord[];
   isBillPending?: boolean;
 }
@@ -112,7 +115,17 @@ export const customerService = {
     try {
       if (!db) throw "Firebase DB is not initialized";
       const docRef = doc(db, COLLECTION_NAME, id);
-      await updateDoc(docRef, data);
+      const updates: any = {
+        ...data,
+        updatedAt: (data as any).updatedAt || serverTimestamp()
+      };
+      if (data.status === 'Ready for Delivery' || data.status === 'Delivered') {
+        if (!updates.completedAt) updates.completedAt = serverTimestamp();
+      }
+      if (data.status === 'Delivered') {
+        if (!updates.deliveredAt) updates.deliveredAt = serverTimestamp();
+      }
+      await updateDoc(docRef, updates);
     } catch (error) {
       console.error("Error updating customer: ", error);
       throw error;

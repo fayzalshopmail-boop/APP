@@ -40,6 +40,10 @@ interface AppState {
   setHighlightCustomerSearch: (term: string | null) => void;
   highlightInventorySearch: string | null;
   setHighlightInventorySearch: (term: string | null) => void;
+
+  // Dashboard Filters
+  dashboardTimeFilter: 'Today' | 'This Week' | 'This Month' | 'This Year' | 'All Time';
+  setDashboardTimeFilter: (filter: 'Today' | 'This Week' | 'This Month' | 'This Year' | 'All Time') => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -65,6 +69,9 @@ export const useAppStore = create<AppState>()(
       setHighlightCustomerSearch: (highlightCustomerSearch) => set({ highlightCustomerSearch }),
       highlightInventorySearch: null,
       setHighlightInventorySearch: (highlightInventorySearch) => set({ highlightInventorySearch }),
+
+      dashboardTimeFilter: 'This Week',
+      setDashboardTimeFilter: (dashboardTimeFilter) => set({ dashboardTimeFilter }),
 
       // Default Options
       deviceTypes: ['LED TV', 'LCD TV', 'Smart TV', 'Android TV', 'Monitor'],

@@ -29,7 +29,7 @@ export default function CustomersPage() {
   const { user, highlightCustomerId, highlightCustomerSearch, setHighlightCustomerId, setHighlightCustomerSearch } = useAppStore();
   const hasFullAccess = user?.role === 'Owner' || user?.role === 'Manager';
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<CustomerStatus | 'All'>('All');
+  const [statusFilter, setStatusFilter] = useState<CustomerStatus | 'All' | 'Pending'>('All');
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -112,6 +112,13 @@ export default function CustomersPage() {
 
   useEffect(() => {
     fetchCustomers();
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const s = params.get('status');
+      if (s) {
+        setStatusFilter(s as any);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -614,7 +621,11 @@ export default function CustomersPage() {
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) || 
                           c.phone.includes(search) ||
                           c.deviceBrand?.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === 'All' || (c.status || 'Received') === statusFilter;
+    const matchesStatus = statusFilter === 'All' 
+      ? true 
+      : statusFilter === 'Pending'
+        ? ['Received', 'In Progress', 'Waiting for Parts'].includes(c.status || 'Received')
+        : (c.status || 'Received') === statusFilter;
     return matchesSearch && matchesStatus;
   }).sort((a, b) => {
     // 0 = Active / Newly Listed, 1 = Delivered, 2 = Returned / Cancelled
@@ -735,6 +746,7 @@ export default function CustomersPage() {
               </SelectTrigger>
               <SelectContent className="bg-popover border-gray-800 text-gray-200 rounded-xl shadow-xl">
                 <SelectItem value="All">All Statuses</SelectItem>
+                <SelectItem value="Pending">পেন্ডিং কাজ (Active)</SelectItem>
                 <SelectItem value="Received">Received</SelectItem>
                 <SelectItem value="In Progress">In Progress</SelectItem>
                 <SelectItem value="Waiting for Parts">Waiting for Parts</SelectItem>
@@ -752,13 +764,6 @@ export default function CustomersPage() {
             >
               <Download className="w-4 h-4" />
               Export CSV
-            </Button>
-            <Button 
-              onClick={openAddModal}
-              className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-4 h-10 rounded-xl text-xs sm:text-sm font-medium transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 flex-1 sm:flex-none whitespace-nowrap"
-            >
-              <Plus className="w-5 h-5" />
-              <span className="whitespace-nowrap">Add Customer</span>
             </Button>
           </div>
         </div>

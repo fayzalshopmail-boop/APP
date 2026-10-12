@@ -402,17 +402,6 @@ export default function InventoryPage() {
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">
-      {/* Header & Stats */}
-      <div className="hidden sm:flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4 mb-2">
-        <Button 
-            onClick={() => handleOpenModal()}
-            className="h-10 bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 flex items-center gap-2"
-          >
-            <Plus className="w-5 h-5 mr-1" />
-            Add New Part
-          </Button>
-      </div>
-
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-card border border-gray-800 rounded-xl p-5">

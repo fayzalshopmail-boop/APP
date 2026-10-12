@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { LayoutDashboard, Users, Coins, Tv, Wrench, Loader2 } from 'lucide-react';
+import { LayoutDashboard, Users, Coins, Tv, Wrench, Loader2, UserPlus, ShoppingCart, Receipt, TrendingUp, TrendingDown, ArrowUpRight } from 'lucide-react';
 import { StatCard } from '@/components/ui/StatCard';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { QuickAlerts } from '@/components/ui/QuickAlerts';
 import { RevenueChart } from '@/components/ui/RevenueChart';
 import { RecentCustomers } from '@/components/ui/RecentCustomers';
@@ -12,9 +11,10 @@ import { transactionService, Transaction } from '@/lib/services/transaction';
 import { formatCurrency } from '@/lib/currency';
 import { useAppStore } from '@/store/useAppStore';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function Dashboard() {
-  const { user } = useAppStore();
+  const { user, dashboardTimeFilter } = useAppStore();
   const router = useRouter();
 
   useEffect(() => {
@@ -23,9 +23,17 @@ export default function Dashboard() {
     }
   }, [user, router]);
 
-  const [timeFilter, setTimeFilter] = useState<'Today' | 'This Week' | 'This Month' | 'This Year' | 'All Time'>('This Week');
+  const timeFilter = dashboardTimeFilter;
   const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState({ totalCustomers: 0, totalRevenue: 0, pendingJobs: 0, completedRepairs: 0 });
+  const [stats, setStats] = useState({ 
+    totalCustomers: 0, 
+    totalRevenue: 0, 
+    pendingJobs: 0, 
+    completedRepairs: 0,
+    totalExpenses: 0,
+    netProfit: 0,
+    totalPendingDues: 0
+  });
 
   if (user?.role === 'Technician') return null;
 
@@ -49,54 +57,100 @@ export default function Dashboard() {
         else if (timeFilter === 'This Month') startDate = new Date(now.getFullYear(), now.getMonth(), 1);
         else if (timeFilter === 'This Year') startDate = new Date(now.getFullYear(), 0, 1);
 
-        // 1. Total Customers
+        // 1. Prepare queries
         let qCustomers = collection(db, 'customers') as any;
         if (startDate) qCustomers = query(qCustomers, where('createdAt', '>=', startDate));
-        const snapCustomers = await getCountFromServer(qCustomers);
 
-        // 2. Total Revenue (Transactions)
-        let totalRevenue = 0;
         let qTransactions = collection(db, 'transactions') as any;
-        
+        if (startDate) qTransactions = query(qTransactions, where('createdAt', '>=', startDate));
+
+        let qExpenses = collection(db, 'expenses') as any;
         if (startDate) {
-          qTransactions = query(qTransactions, where('createdAt', '>=', startDate));
+          const startDateStr = startDate.toISOString().split('T')[0];
+          qExpenses = query(qExpenses, where('date', '>=', startDateStr));
         }
-        
-        const docsSnap = await getDocs(qTransactions);
+
+        const qDues = query(collection(db, 'customers'), where('due', '>', 0));
+        const qPending = query(collection(db, 'customers'), where('status', 'in', ['Received', 'In Progress', 'Waiting for Parts']));
+        const qCompleted = query(collection(db, 'customers'), where('status', 'in', ['Delivered', 'Ready for Delivery']));
+
+        // Execute all aggregations and queries in parallel
+        const [
+          snapCustomers,
+          docsSnap,
+          snapExpenses,
+          snapDues,
+          snapPending,
+          completedResult
+        ] = await Promise.all([
+          getCountFromServer(qCustomers),
+          getDocs(qTransactions),
+          getDocs(qExpenses),
+          getDocs(qDues),
+          getCountFromServer(qPending),
+          startDate ? getDocs(qCompleted) : getCountFromServer(qCompleted)
+        ]);
+
+        // Process Transactions (Revenue & Outflows)
+        let totalRevenue = 0;
+        let outflowTransactions = 0;
         docsSnap.forEach(doc => {
           const data = doc.data() as any;
           if (['Advance Payment', 'Due Collection', 'Direct Sell'].includes(data.type)) {
             totalRevenue += Number(data.amount) || 0;
+          } else if (data.type === 'Refund') {
+            totalRevenue -= Number(data.amount) || 0;
+          } else if (['Inventory Purchase', 'Supplier Payment', 'Mechanic Payment'].includes(data.type)) {
+            outflowTransactions += Number(data.amount) || 0;
           }
         });
 
-        // 3. Pending Jobs (Live snapshot, ignores date filter)
-        const qPending = query(collection(db, 'customers'), where('status', 'in', ['Received', 'In Progress', 'Waiting for Parts']));
-        const snapPending = await getCountFromServer(qPending);
+        // Process Expenses
+        let totalManualExpenses = 0;
+        snapExpenses.forEach(doc => {
+          const data = doc.data() as any;
+          if (!startDate) {
+            totalManualExpenses += Number(data.amount) || 0;
+          } else {
+            const expDate = data.date ? new Date(data.date) : data.createdAt?.toDate ? data.createdAt.toDate() : null;
+            if (expDate && expDate >= startDate) {
+              totalManualExpenses += Number(data.amount) || 0;
+            }
+          }
+        });
+        const totalExpenses = totalManualExpenses + outflowTransactions;
+        const netProfit = totalRevenue - totalExpenses;
 
-        // 4. Completed Repairs
-        let qCompleted = query(collection(db, 'customers'), where('status', 'in', ['Delivered', 'Ready for Delivery']));
+        // Process Shop-wide Pending Dues
+        let totalPendingDues = 0;
+        snapDues.forEach(doc => {
+          totalPendingDues += Number(doc.data().due) || 0;
+        });
+
+        // Process Completed Repairs
         let completedCount = 0;
         if (startDate) {
-           const docsSnap = await getDocs(qCompleted);
-           docsSnap.forEach(doc => {
+           (completedResult as any).forEach((doc: any) => {
               const d = doc.data();
-              const dateToUse = d.updatedAt || d.createdAt;
+              const dateToUse = d.completedAt || d.deliveredAt || d.updatedAt || d.createdAt;
               let dateObj = null;
-              if (dateToUse?.seconds) dateObj = new Date(dateToUse.seconds * 1000);
+              if (dateToUse?.toDate) dateObj = dateToUse.toDate();
+              else if (dateToUse?.seconds) dateObj = new Date(dateToUse.seconds * 1000);
               else if (dateToUse) dateObj = new Date(dateToUse);
-              if (dateObj && dateObj >= startDate) completedCount++;
+              if (dateObj && !isNaN(dateObj.getTime()) && dateObj >= startDate) completedCount++;
            });
         } else {
-           const snapCompleted = await getCountFromServer(qCompleted);
-           completedCount = snapCompleted.data().count;
+           completedCount = (completedResult as any).data().count;
         }
 
         setStats({
            totalCustomers: snapCustomers.data().count,
            totalRevenue: totalRevenue,
            pendingJobs: snapPending.data().count,
-           completedRepairs: completedCount
+           completedRepairs: completedCount,
+           totalExpenses: totalExpenses,
+           netProfit: netProfit,
+           totalPendingDues: totalPendingDues
         });
 
       } catch (err) {
@@ -105,75 +159,123 @@ export default function Dashboard() {
         setIsLoading(false);
       }
     };
+
     loadAggregatedData();
+
+    // Auto-refresh when tab gains focus or on app custom refresh event
+    const handleRefresh = () => {
+      loadAggregatedData();
+    };
+    window.addEventListener('focus', handleRefresh);
+    window.addEventListener('app:refresh-dashboard', handleRefresh);
+    return () => {
+      window.removeEventListener('focus', handleRefresh);
+      window.removeEventListener('app:refresh-dashboard', handleRefresh);
+    };
   }, [timeFilter]);
 
   const filteredStats = stats;
 
 return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
-      {/* Header section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 sm:mb-8">
-        
-        <div className="flex items-center gap-3">
-          {isLoading && (
-            <div className="flex items-center gap-2 text-blue-400 bg-blue-500/10 px-4 py-2 rounded-lg text-sm font-medium">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="hidden sm:inline">Syncing...</span>
-            </div>
-          )}
-          <Select value={timeFilter} onValueChange={(val: any) => setTimeFilter(val)}>
-            <SelectTrigger className="w-[140px] bg-secondary border-gray-800 text-gray-100 rounded-lg focus:ring-1 focus:ring-blue-500/50">
-              <SelectValue placeholder="Select timeframe" />
-            </SelectTrigger>
-            <SelectContent alignItemWithTrigger={false}>
-              <SelectItem value="Today">Today</SelectItem>
-              <SelectItem value="This Week">This Week</SelectItem>
-              <SelectItem value="This Month">This Month</SelectItem>
-              <SelectItem value="This Year">This Year</SelectItem>
-              <SelectItem value="All Time">All Time</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
+      {/* 4 Core StatCards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <StatCard 
-          title="Total Customers" 
+          title="মোট কাস্টমার" 
           value={isLoading ? '...' : filteredStats.totalCustomers.toString()} 
-          subtitle={timeFilter} 
+          subtitle={timeFilter === 'Today' ? 'আজকের এন্ট্রি' : timeFilter === 'This Week' ? 'এই সপ্তাহের এন্ট্রি' : timeFilter === 'This Month' ? 'এই মাসের এন্ট্রি' : timeFilter === 'This Year' ? 'এই বছরের এন্ট্রি' : 'সর্বমোট এন্ট্রি'} 
           icon={<Users className="w-5 h-5 text-blue-500" />} 
           iconBgColor="bg-blue-500/10" 
           iconColor="text-blue-500" 
           delay={0.1} 
+          href="/customers"
         />
         <StatCard 
-          title="Collected Revenue" 
+          title="সংগৃহীত রাজস্ব" 
           value={isLoading ? '...' : formatCurrency(filteredStats.totalRevenue)} 
-          subtitle="Based on filter" 
+          subtitle={timeFilter === 'Today' ? 'আজকের নেট আদায়' : timeFilter === 'This Week' ? 'সাপ্তাহিক নেট আদায়' : timeFilter === 'This Month' ? 'মাসিক নেট আদায়' : 'মোট নেট আদায়'} 
           icon={<Coins className="w-5 h-5 text-emerald-500" />} 
           iconBgColor="bg-emerald-500/10" 
           iconColor="text-emerald-500" 
           delay={0.2} 
+          href="/reports"
         />
         <StatCard 
-          title="Pending Jobs" 
+          title="পেন্ডিং কাজ" 
           value={isLoading ? '...' : filteredStats.pendingJobs.toString()} 
-          subtitle="Needs attention" 
+          subtitle="চলমান মেরামত কাজ" 
           icon={<Tv className="w-5 h-5 text-orange-500" />} 
           iconBgColor="bg-orange-500/10" 
           iconColor="text-orange-500" 
           delay={0.3} 
+          href="/customers?status=Pending"
         />
         <StatCard 
-          title="Completed Repairs" 
+          title="সম্পন্ন মেরামত" 
           value={isLoading ? '...' : filteredStats.completedRepairs.toString()} 
-          subtitle={timeFilter} 
+          subtitle={timeFilter === 'Today' ? 'আজকের ডেলিভারি' : timeFilter === 'This Week' ? 'এই সপ্তাহের ডেলিভারি' : timeFilter === 'This Month' ? 'এই মাসের ডেলিভারি' : 'সর্বমোট সম্পন্ন'} 
           icon={<Wrench className="w-5 h-5 text-purple-500" />} 
           iconBgColor="bg-purple-500/10" 
           iconColor="text-purple-500" 
           delay={0.4} 
+          href="/customers?status=Delivered"
         />
+      </div>
+
+      {/* Financial Health Overview Bar */}
+      <div className="bg-card/70 border border-gray-800/80 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-800/60 pb-3 mb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-emerald-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-gray-200">আর্থিক সারসংক্ষেপ ও নিট লাভ</h3>
+              <p className="text-[11px] text-gray-400">ফিল্টার অনুযায়ী ক্যাশ কালেকশন, মোট খরচ ও প্রকৃত নিট লাভ</p>
+            </div>
+          </div>
+          <Link 
+            href="/reports" 
+            className="text-xs text-blue-400 hover:text-blue-300 font-medium inline-flex items-center gap-1 transition-colors self-start sm:self-auto"
+          >
+            <span>পূর্ণাঙ্গ রিপোর্ট ও লেজার</span>
+            <ArrowUpRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <Link href="/reports" className="bg-secondary/40 hover:bg-secondary/70 p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-all block">
+            <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider block">নেট ক্যাশ জমা</span>
+            <div className="text-base sm:text-xl font-bold text-emerald-400 mt-0.5 truncate">
+              {isLoading ? '...' : formatCurrency(filteredStats.totalRevenue)}
+            </div>
+            <span className="text-[10px] text-gray-500">রিফান্ড বাদ দেওয়া</span>
+          </Link>
+
+          <Link href="/expenses" className="bg-secondary/40 hover:bg-secondary/70 p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-all block">
+            <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider block">দোকানের মোট খরচ</span>
+            <div className="text-base sm:text-xl font-bold text-rose-400 mt-0.5 truncate">
+              {isLoading ? '...' : formatCurrency(filteredStats.totalExpenses)}
+            </div>
+            <span className="text-[10px] text-gray-500">পার্টস ও সাধারণ খরচ</span>
+          </Link>
+
+          <Link href="/reports" className="bg-secondary/40 hover:bg-secondary/70 p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-all block">
+            <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider block">আসল লাভ (নিট ব্যালেন্স)</span>
+            <div className={`text-base sm:text-xl font-bold mt-0.5 truncate ${filteredStats.netProfit >= 0 ? 'text-indigo-400' : 'text-rose-400'}`}>
+              {isLoading ? '...' : formatCurrency(filteredStats.netProfit)}
+            </div>
+            <span className="text-[10px] text-gray-500">জমা থেকে খরচ বাদ</span>
+          </Link>
+
+          <Link href="/due" className="bg-secondary/40 hover:bg-secondary/70 p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-all block">
+            <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider block">গ্রাহকদের মোট বাকি</span>
+            <div className="text-base sm:text-xl font-bold text-amber-400 mt-0.5 truncate">
+              {isLoading ? '...' : formatCurrency(filteredStats.totalPendingDues)}
+            </div>
+            <span className="text-[10px] text-gray-500">আদায়ের অপেক্ষায়</span>
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

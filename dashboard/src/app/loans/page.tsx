@@ -246,12 +246,6 @@ export default function LoansPage() {
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
-      <div className="hidden sm:flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4 mb-4">
-        <Button onClick={() => handleOpenModal()} className="bg-blue-600 hover:bg-blue-700 text-white gap-2 h-10">
-          <Plus className="w-4 h-4" /> Add Record
-        </Button>
-      </div>
-
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="bg-[#1a1d2d]/50 border border-orange-500/20 rounded-2xl p-6 relative overflow-hidden group">

@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Lock, Menu, CheckCircle2, AlertTriangle, Info, BellRing, X, UserPlus, PackagePlus, PlusCircle, Wrench, Truck, Wallet } from 'lucide-react';
+import { Bell, Lock, Menu, CheckCircle2, AlertTriangle, Info, BellRing, X, UserPlus, PackagePlus, PlusCircle, Wrench, Truck, Wallet, ShoppingCart, Receipt, Coins } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
@@ -11,9 +11,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CustomerModal } from '@/components/ui/CustomerModal';
 import { shopTransactionService } from '@/lib/services/shopTransaction';
 import { Customer } from '@/lib/services/customer';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Link from 'next/link';
 
 const headerAddButtons: Record<string, { label: string; icon: any; event?: string }> = {
-  '/': { label: 'Add Customer', icon: UserPlus },
   '/customers': { label: 'Add Customer', icon: UserPlus, event: 'app:add-customer' },
   '/inventory': { label: 'Add Part', icon: PackagePlus, event: 'app:add-inventory' },
   '/loans': { label: 'Add Record', icon: PlusCircle, event: 'app:add-loan' },
@@ -55,7 +56,7 @@ const routeSubtitles: Record<string, string> = {
 export function Topbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { setUnlocked, user, toggleSidebar } = useAppStore();
+  const { setUnlocked, user, toggleSidebar, dashboardTimeFilter, setDashboardTimeFilter } = useAppStore();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
@@ -318,9 +319,47 @@ export function Topbar() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-4 relative" ref={notifRef}>
+      <div className="flex items-center gap-2 sm:gap-3">
         
-        {currentAddButton && (
+        {/* DASHBOARD TOPBAR ACTION BUTTONS */}
+        {pathname === '/' && (
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto max-w-[45vw] sm:max-w-none scrollbar-none py-1">
+            <button
+              onClick={() => setIsCustomerModalOpen(true)}
+              className="flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-md shadow-blue-500/20 shrink-0"
+              title="নতুন কাস্টমার যোগ করুন"
+            >
+              <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span>+ নতুন কাস্টমার</span>
+            </button>
+            <Link
+              href="/inventory"
+              className="flex items-center gap-1.5 bg-secondary hover:bg-gray-800 border border-gray-800 hover:border-gray-700 active:scale-95 text-gray-200 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0"
+              title="সরাসরি পার্টস বিক্রি"
+            >
+              <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
+              <span className="hidden sm:inline">সরাসরি বিক্রি</span>
+            </Link>
+            <Link
+              href="/expenses"
+              className="flex items-center gap-1.5 bg-secondary hover:bg-gray-800 border border-gray-800 hover:border-gray-700 active:scale-95 text-gray-200 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0"
+              title="খরচ এন্ট্রি"
+            >
+              <Receipt className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-400" />
+              <span className="hidden sm:inline">খরচ এন্ট্রি</span>
+            </Link>
+            <Link
+              href="/due"
+              className="flex items-center gap-1.5 bg-secondary hover:bg-gray-800 border border-gray-800 hover:border-gray-700 active:scale-95 text-gray-200 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0"
+              title="বকেয়া কালেকশন"
+            >
+              <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+              <span className="hidden sm:inline">বকেয়া কালেকশন</span>
+            </Link>
+          </div>
+        )}
+
+        {pathname !== '/' && currentAddButton && (
           <div className="flex items-center">
             {/* DYNAMIC PAGE ADD ACTION BUTTON */}
             <button
@@ -334,93 +373,116 @@ export function Topbar() {
             </button>
           </div>
         )}
-        
-        <button 
-          onClick={() => setIsNotifOpen(!isNotifOpen)}
-          className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors relative ${isNotifOpen ? 'bg-gray-800 text-white' : 'bg-secondary text-gray-400 hover:text-white hover:bg-gray-800'}`}
-        >
-          <Bell className="w-5 h-5" />
-          {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-3 h-3 bg-red-500 border-2 border-background rounded-full flex items-center justify-center">
-              </span>
-            )}
-        </button>
 
-        {/* Notifications Dropdown */}
-        <AnimatePresence>
-          {isNotifOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              className="absolute top-14 right-0 w-[320px] sm:w-[380px] bg-secondary border border-gray-800 rounded-2xl shadow-2xl overflow-hidden z-50"
+        {/* DASHBOARD TIME FILTER (NEXT TO NOTIFICATION) */}
+        {pathname === '/' && (
+          <div className="shrink-0">
+            <Select 
+              value={dashboardTimeFilter} 
+              onValueChange={(val: any) => setDashboardTimeFilter(val)}
             >
-              <div className="p-3 sm:p-4 border-b border-gray-800 flex items-center justify-between bg-[#1a1d2d] gap-2">
-                <h3 className="font-semibold text-white flex items-center gap-1.5 text-sm sm:text-base shrink-0">
-                  Notifications
-                  {unreadCount > 0 && (
-                    <span className="bg-blue-500 text-white text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-                      {unreadCount} NEW
-                    </span>
-                  )}
-                </h3>
-                <div className="flex items-center gap-2 shrink-0">
-                  {unreadCount > 0 && (
-                    <button onClick={handleMarkAll} className="text-[11px] sm:text-xs whitespace-nowrap text-blue-400 hover:text-blue-300 font-medium transition-colors">
-                      Mark Read
-                    </button>
-                  )}
-                  {notifications.length > 0 && (
-                    <button onClick={handleClearAll} className="text-[11px] sm:text-xs whitespace-nowrap text-red-400 hover:text-red-300 font-medium transition-colors">
-                      Clear All
-                    </button>
+              <SelectTrigger className="w-[110px] sm:w-[130px] h-9 sm:h-10 bg-secondary border border-gray-800 text-gray-200 rounded-xl text-xs sm:text-sm font-medium focus:ring-1 focus:ring-blue-500/50">
+                <SelectValue placeholder="সময় নির্ধারণ" />
+              </SelectTrigger>
+              <SelectContent alignItemWithTrigger={false}>
+                <SelectItem value="Today">আজকে</SelectItem>
+                <SelectItem value="This Week">এই সপ্তাহ</SelectItem>
+                <SelectItem value="This Month">এই মাস</SelectItem>
+                <SelectItem value="This Year">এই বছর</SelectItem>
+                <SelectItem value="All Time">সব সময়</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        
+        <div className="relative" ref={notifRef}>
+          <button 
+            onClick={() => setIsNotifOpen(!isNotifOpen)}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors relative ${isNotifOpen ? 'bg-gray-800 text-white' : 'bg-secondary text-gray-400 hover:text-white hover:bg-gray-800'}`}
+          >
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-3 h-3 bg-red-500 border-2 border-background rounded-full flex items-center justify-center">
+                </span>
+              )}
+          </button>
+
+          {/* Notifications Dropdown */}
+          <AnimatePresence>
+            {isNotifOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+                className="absolute top-14 right-0 w-[320px] sm:w-[380px] bg-secondary border border-gray-800 rounded-2xl shadow-2xl overflow-hidden z-50"
+              >
+                <div className="p-3 sm:p-4 border-b border-gray-800 flex items-center justify-between bg-[#1a1d2d] gap-2">
+                  <h3 className="font-semibold text-white flex items-center gap-1.5 text-sm sm:text-base shrink-0">
+                    Notifications
+                    {unreadCount > 0 && (
+                      <span className="bg-blue-500 text-white text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                        {unreadCount} NEW
+                      </span>
+                    )}
+                  </h3>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {unreadCount > 0 && (
+                      <button onClick={handleMarkAll} className="text-[11px] sm:text-xs whitespace-nowrap text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                        Mark Read
+                      </button>
+                    )}
+                    {notifications.length > 0 && (
+                      <button onClick={handleClearAll} className="text-[11px] sm:text-xs whitespace-nowrap text-red-400 hover:text-red-300 font-medium transition-colors">
+                        Clear All
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                  {notifications.length === 0 ? (
+                    <div className="p-8 text-center text-gray-500">
+                      <Bell className="w-8 h-8 mx-auto mb-3 opacity-20" />
+                      <p className="text-sm">No notifications here.</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-800/50">
+                      {notifications.map((notif) => (
+                        <div 
+                          key={notif.id} 
+                          onClick={() => handleNotificationClick(notif)}
+                          className={`p-4 transition-colors flex gap-3 group relative cursor-pointer ${notif.read ? 'opacity-60 hover:bg-gray-800/20' : 'bg-blue-500/5 hover:bg-blue-500/10'}`}
+                        >
+                          <div className="shrink-0 mt-1">
+                            {getIcon(notif.type)}
+                          </div>
+                          <div className="flex-1 pr-6">
+                            <p className="text-sm text-gray-200 font-medium leading-snug mb-1">{notif.title}</p>
+                            <p className="text-xs text-gray-400 leading-snug">{notif.message}</p>
+                            <p className="text-[10px] text-gray-500 mt-2 font-medium">
+                              {formatDistanceToNow(notif.createdAt, { addSuffix: true })}
+                            </p>
+                          </div>
+                          {!notif.read && (
+                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-r-full" />
+                          )}
+                          <button 
+                            onClick={(e) => handleDeleteNotification(notif.id!, e)}
+                            className="absolute right-3 top-4 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Clear notification"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
-              </div>
-
-              <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
-                {notifications.length === 0 ? (
-                  <div className="p-8 text-center text-gray-500">
-                    <Bell className="w-8 h-8 mx-auto mb-3 opacity-20" />
-                    <p className="text-sm">No notifications here.</p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-800/50">
-                    {notifications.map((notif) => (
-                      <div 
-                        key={notif.id} 
-                        onClick={() => handleNotificationClick(notif)}
-                        className={`p-4 transition-colors flex gap-3 group relative cursor-pointer ${notif.read ? 'opacity-60 hover:bg-gray-800/20' : 'bg-blue-500/5 hover:bg-blue-500/10'}`}
-                      >
-                        <div className="shrink-0 mt-1">
-                          {getIcon(notif.type)}
-                        </div>
-                        <div className="flex-1 pr-6">
-                          <p className="text-sm text-gray-200 font-medium leading-snug mb-1">{notif.title}</p>
-                          <p className="text-xs text-gray-400 leading-snug">{notif.message}</p>
-                          <p className="text-[10px] text-gray-500 mt-2 font-medium">
-                            {formatDistanceToNow(notif.createdAt, { addSuffix: true })}
-                          </p>
-                        </div>
-                        {!notif.read && (
-                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-r-full" />
-                        )}
-                        <button 
-                          onClick={(e) => handleDeleteNotification(notif.id!, e)}
-                          className="absolute right-3 top-4 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="Clear notification"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       <CustomerModal 
