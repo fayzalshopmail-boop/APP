@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect } from 'react';
-import { Search, Plus, MoreVertical, Edit, Trash2, MessageCircle, Download, FileText, Phone, MapPin, Tv, Eye, Filter, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, MoreVertical, Edit, Trash2, MessageCircle, Download, FileText, Phone, PhoneCall, MapPin, Tv, Eye, Filter, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatCurrency } from '@/lib/currency';
 import { useAppStore } from '@/store/useAppStore';
@@ -679,8 +679,21 @@ export default function CustomersPage() {
                     <div className="text-xs text-gray-500 mt-0.5 truncate max-w-[200px]">{customer.address || 'No Address'}</div>
                   </td>
                   <td className="px-4 py-3.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-300 font-medium">{customer.phone}</span>
+                    <div className="flex items-center gap-1.5">
+                      <a 
+                        href={`tel:${customer.phone}`} 
+                        className="text-sm text-gray-300 hover:text-blue-400 font-medium transition-colors"
+                        title="Click to Call"
+                      >
+                        {customer.phone}
+                      </a>
+                      <a 
+                        href={`tel:${customer.phone}`}
+                        className="text-blue-400 hover:text-blue-300 p-1 bg-blue-500/10 hover:bg-blue-500/20 rounded-md transition-colors"
+                        title="Direct Call"
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                      </a>
                       <a 
                         href={`https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
                           (smsSettings?.whatsappTemplate || '')
@@ -693,7 +706,7 @@ export default function CustomersPage() {
                         )}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-green-500 hover:text-green-400 p-1.5 bg-green-500/10 hover:bg-green-500/20 rounded-full transition-colors"
+                        className="text-green-500 hover:text-green-400 p-1 bg-green-500/10 hover:bg-green-500/20 rounded-md transition-colors"
                         title="Send Invoice on WhatsApp"
                       >
                         <MessageCircle className="w-3.5 h-3.5" />
@@ -940,27 +953,38 @@ export default function CustomersPage() {
             </div>
 
             {/* Actions Bottom Bar */}
-            <div className="flex items-center justify-between pt-1 gap-1.5">
-              <a 
-                href={`https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
-                  (smsSettings?.whatsappTemplate || '')
-                    .replace(/{name}/g, customer.name || '')
-                    .replace(/{brand}/g, customer.deviceBrand || '')
-                    .replace(/{type}/g, customer.deviceType || '')
-                    .replace(/{total}/g, `${customer.totalBill || 0}`)
-                    .replace(/{advance}/g, `${customer.advance || 0}`)
-                    .replace(/{due}/g, `${customer.due || 0}`)
-                )}`} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-green-500/10 text-green-400 hover:bg-green-500/20 rounded-lg text-xs font-medium transition-colors shrink-0"
-                title="Send on WhatsApp"
-              >
-                <MessageCircle className="w-3.5 h-3.5 shrink-0" />
-                <span>WhatsApp</span>
-              </a>
+            <div className="flex items-center justify-between pt-1 gap-1.5 flex-wrap">
+              <div className="flex items-center gap-1.5 shrink-0">
+                <a 
+                  href={`tel:${customer.phone}`}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm shadow-blue-600/20 shrink-0"
+                  title="Direct Call"
+                >
+                  <PhoneCall className="w-3.5 h-3.5 shrink-0" />
+                  <span>Call</span>
+                </a>
 
-              <div className="flex items-center gap-1 shrink-0">
+                <a 
+                  href={`https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
+                    (smsSettings?.whatsappTemplate || '')
+                      .replace(/{name}/g, customer.name || '')
+                      .replace(/{brand}/g, customer.deviceBrand || '')
+                      .replace(/{type}/g, customer.deviceType || '')
+                      .replace(/{total}/g, `${customer.totalBill || 0}`)
+                      .replace(/{advance}/g, `${customer.advance || 0}`)
+                      .replace(/{due}/g, `${customer.due || 0}`)
+                  )}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20 rounded-lg text-xs font-medium transition-colors shrink-0"
+                  title="Send on WhatsApp"
+                >
+                  <MessageCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>WhatsApp</span>
+                </a>
+              </div>
+
+              <div className="flex items-center gap-1 shrink-0 ml-auto">
                 {customer.due > 0 && (
                   <Button 
                     variant="ghost" 

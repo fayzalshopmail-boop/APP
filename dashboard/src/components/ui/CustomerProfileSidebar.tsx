@@ -1,7 +1,7 @@
 'use client';
 
 import { Customer, RepairRecord, normalizePhone } from '@/lib/services/customer';
-import { X, User, Phone, MapPin, Tv, Shield, History } from 'lucide-react';
+import { X, User, Phone, PhoneCall, MapPin, Tv, Shield, History } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect } from 'react';
@@ -85,11 +85,27 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
               <div className="bg-secondary rounded-xl p-5 border border-gray-800">
                 <h3 className="text-2xl font-bold text-white mb-4">{customer.name}</h3>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
-                      <Phone className="w-4 h-4 text-blue-400" />
+                  <div className="flex items-center justify-between gap-3 text-gray-300">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
+                        <Phone className="w-4 h-4 text-blue-400" />
+                      </div>
+                      <a 
+                        href={`tel:${customer.phone}`} 
+                        className="font-medium tracking-wide hover:text-blue-400 transition-colors"
+                        title="Click to Call"
+                      >
+                        {customer.phone}
+                      </a>
                     </div>
-                    <span className="font-medium tracking-wide">{customer.phone}</span>
+                    <a 
+                      href={`tel:${customer.phone}`}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors shrink-0"
+                      title="Call Customer"
+                    >
+                      <PhoneCall className="w-3.5 h-3.5" />
+                      <span>Call</span>
+                    </a>
                   </div>
                   <div className="flex items-center gap-3 text-gray-300">
                     <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center">
