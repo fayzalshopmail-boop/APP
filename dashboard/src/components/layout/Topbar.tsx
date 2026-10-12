@@ -135,56 +135,57 @@ export function Topbar() {
 
   const handleDeleteNotification = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    await notificationService.delete(id);
+    notificationService.delete(id).catch(console.error);
   };
 
   const handleNotificationClick = async (notif: AppNotification) => {
-    if (!notif.read) {
-      await notificationService.markAsRead(notif.id!);
+    // 1. Non-blocking markAsRead to keep mobile UI instant and fluid
+    if (!notif.read && notif.id) {
+      notificationService.markAsRead(notif.id).catch(console.error);
     }
     setIsNotifOpen(false);
 
-    let destination = notif.link || '/';
-    let targetCustomerId: string | null = null;
-    let targetCustomerSearch: string | null = null;
-    let targetInventorySearch: string | null = null;
+    const rawLink = notif.link || '';
+    let targetCustomerId: string | null = (notif as any).customerId || null;
+    let targetCustomerSearch: string | null = (notif as any).customerName || null;
+    let targetInventorySearch: string | null = (notif as any).inventorySearch || (notif as any).partName || null;
 
-    if (destination.includes('/customers')) {
+    if (rawLink) {
       try {
-        const urlObj = new URL(destination, window.location.origin);
-        targetCustomerId = urlObj.searchParams.get('customerId') || urlObj.searchParams.get('id');
-        targetCustomerSearch = urlObj.searchParams.get('search');
-      } catch (e) {}
-
-      if (!targetCustomerId && !targetCustomerSearch) {
-        const msg = notif.message || '';
-        if (msg.includes(' was added')) {
-          targetCustomerSearch = msg.split(' was added')[0].trim();
-        } else if (msg.includes(' (Returning Customer)')) {
-          targetCustomerSearch = msg.split(' (Returning Customer)')[0].trim();
+        const urlObj = new URL(rawLink, window.location.origin);
+        if (!targetCustomerId) {
+          targetCustomerId = urlObj.searchParams.get('customerId') || urlObj.searchParams.get('id');
+        }
+        if (!targetCustomerSearch) {
+          targetCustomerSearch = urlObj.searchParams.get('search');
+        }
+        if (!targetInventorySearch && rawLink.includes('/inventory')) {
+          targetInventorySearch = urlObj.searchParams.get('search');
+        }
+      } catch (e) {
+        // Fallback parameter parsing if relative link wasn't parsed by URL
+        const sMatch = rawLink.match(/[?&]search=([^&]+)/);
+        if (sMatch) {
+          const val = decodeURIComponent(sMatch[1]);
+          if (rawLink.includes('/inventory')) targetInventorySearch = val;
+          else targetCustomerSearch = val;
+        }
+        const idMatch = rawLink.match(/[?&](?:customerId|id)=([^&]+)/);
+        if (idMatch && !targetCustomerId) {
+          targetCustomerId = decodeURIComponent(idMatch[1]);
         }
       }
-
-      if (targetCustomerId) {
-        useAppStore.getState().setHighlightCustomerId(targetCustomerId);
-      }
-      if (targetCustomerSearch) {
-        useAppStore.getState().setHighlightCustomerSearch(targetCustomerSearch);
-      }
-      router.push('/customers');
-      return;
     }
 
-    if (destination.includes('/inventory')) {
-      try {
-        const urlObj = new URL(destination, window.location.origin);
-        targetInventorySearch = urlObj.searchParams.get('search');
-      } catch (e) {}
-
+    // Check if inventory-related
+    const isInventoryNotif = rawLink.includes('/inventory') || (notif.title && /stock|inventory|part/i.test(notif.title));
+    if (isInventoryNotif) {
       if (!targetInventorySearch) {
         const msg = notif.message || '';
         if (msg.includes(' stock has dropped')) {
           targetInventorySearch = msg.split(' stock has dropped')[0].trim();
+        } else {
+          targetInventorySearch = msg.split(/stock|dropped|restock/i)[0].trim() || null;
         }
       }
 
@@ -195,8 +196,59 @@ export function Topbar() {
       return;
     }
 
-    if (destination) {
-      router.push(destination);
+    // Check if customer-related (links to /customers, or contains customer/delivery in title or message)
+    const isCustomerNotif = 
+      rawLink.includes('/customers') ||
+      !!targetCustomerId ||
+      (notif.title && /customer|delivery|deliveries/i.test(notif.title)) ||
+      (notif.message && /was added|\(Returning Customer\)|delivery due|repair/i.test(notif.message));
+
+    if (isCustomerNotif) {
+      if (!targetCustomerId && !targetCustomerSearch) {
+        const msg = notif.message || '';
+        if (msg.includes(' was added')) {
+          targetCustomerSearch = msg.split(' was added')[0].trim();
+        } else if (msg.includes(' (Returning Customer)')) {
+          targetCustomerSearch = msg.split(' (Returning Customer)')[0].trim();
+        } else if (msg.toLowerCase().includes('due for ')) {
+          const afterDue = msg.substring(msg.toLowerCase().indexOf('due for ') + 8).trim();
+          const extracted = afterDue.split(/,|\sand\s|\stoday|\stomorrow|!|\./i)[0].trim();
+          if (extracted) targetCustomerSearch = extracted;
+        } else if (msg.toLowerCase().includes('crossed their payment')) {
+          const beforeCrossed = msg.split(/have crossed|has crossed/i)[0].trim();
+          const extracted = beforeCrossed.split(/,|\sand\s/i)[0].trim();
+          if (extracted) targetCustomerSearch = extracted;
+        } else if (msg.trim()) {
+          // Pass the message directly for intelligent reverse matching against customer names
+          targetCustomerSearch = msg.trim();
+        }
+      }
+
+      // Update Zustand store
+      if (targetCustomerId) {
+        useAppStore.getState().setHighlightCustomerId(targetCustomerId);
+      }
+      if (targetCustomerSearch) {
+        useAppStore.getState().setHighlightCustomerSearch(targetCustomerSearch);
+      }
+
+      // Dispatch instant custom event for when the user is already on /customers page
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('app:open-customer-profile', {
+          detail: { customerId: targetCustomerId, search: targetCustomerSearch }
+        }));
+      }
+
+      const params = new URLSearchParams();
+      if (targetCustomerId) params.set('customerId', targetCustomerId);
+      if (targetCustomerSearch) params.set('search', targetCustomerSearch);
+      const queryStr = params.toString() ? `?${params.toString()}` : '';
+      router.push(`/customers${queryStr}`);
+      return;
+    }
+
+    if (rawLink) {
+      router.push(rawLink);
     }
   };
 

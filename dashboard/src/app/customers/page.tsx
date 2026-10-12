@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect } from 'react';
-import { Search, Plus, MoreVertical, Edit, Trash2, MessageCircle, Download, FileText, Phone, PhoneCall, MapPin, Tv, Eye, Filter, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, MoreVertical, Edit, Trash2, MessageCircle, Download, FileText, Phone, PhoneCall, MapPin, Tv, Eye, Filter, X, ChevronLeft, ChevronRight, Coins } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatCurrency } from '@/lib/currency';
 import { useAppStore } from '@/store/useAppStore';
@@ -124,40 +124,124 @@ export default function CustomersPage() {
     setCurrentPage(1);
   }, [search, statusFilter]);
 
+  // Helper to match customer from notification (ID, exact, heuristics, or reverse message search)
+  const findMatchingCustomer = (targetId: string | null, targetSearch: string | null): Customer | null => {
+    if (!customers || customers.length === 0) return null;
+
+    // 1. By ID
+    if (targetId) {
+      const foundById = customers.find(c => c.id === targetId);
+      if (foundById) return foundById;
+    }
+
+    if (!targetSearch) return null;
+
+    const rawSearch = targetSearch.trim();
+    const cleanSearch = rawSearch.toLowerCase();
+    const digitsOnly = rawSearch.replace(/\D/g, '');
+
+    // 2. Exact match by Name or Phone
+    const exactMatch = customers.find(c => 
+      c.name.trim().toLowerCase() === cleanSearch ||
+      (digitsOnly.length >= 6 && c.phone && c.phone.replace(/\D/g, '') === digitsOnly)
+    );
+    if (exactMatch) return exactMatch;
+
+    // 3. Extracted name heuristics if targetSearch is a notification message
+    let extractedTerm = '';
+    if (rawSearch.includes(' was added')) {
+      extractedTerm = rawSearch.split(' was added')[0].trim();
+    } else if (rawSearch.includes(' (Returning Customer)')) {
+      extractedTerm = rawSearch.split(' (Returning Customer)')[0].trim();
+    } else if (cleanSearch.includes('due for ')) {
+      const part = rawSearch.substring(cleanSearch.indexOf('due for ') + 8).trim();
+      extractedTerm = part.split(/,|\sand\s|\stoday|\stomorrow|!|\./i)[0].trim();
+    } else if (cleanSearch.includes('crossed their payment')) {
+      const part = rawSearch.split(/have crossed|has crossed/i)[0].trim();
+      extractedTerm = part.split(/,|\sand\s/i)[0].trim();
+    }
+
+    if (extractedTerm) {
+      const cleanExtracted = extractedTerm.toLowerCase();
+      const extractedMatch = customers.find(c => 
+        c.name.trim().toLowerCase() === cleanExtracted ||
+        c.name.trim().toLowerCase().includes(cleanExtracted) ||
+        cleanExtracted.includes(c.name.trim().toLowerCase())
+      );
+      if (extractedMatch) return extractedMatch;
+    }
+
+    // 4. Reverse substring matching (check longer customer names first)
+    const sortedCustomers = [...customers].sort((a, b) => (b.name?.length || 0) - (a.name?.length || 0));
+    const substringMatch = sortedCustomers.find(c => {
+      const cName = c.name?.trim().toLowerCase();
+      if (!cName || cName.length < 2) return false;
+
+      // Does the notification text contain the customer name?
+      if (cleanSearch.includes(cName)) return true;
+
+      // Does customer name contain the search term?
+      if (cName.includes(cleanSearch)) return true;
+
+      // Phone match
+      const cPhoneDigits = c.phone?.replace(/\D/g, '') || '';
+      if (cPhoneDigits.length >= 6 && digitsOnly.length >= 6) {
+        if (cleanSearch.includes(cPhoneDigits) || cPhoneDigits.includes(digitsOnly)) return true;
+      }
+
+      return false;
+    });
+
+    return substringMatch || null;
+  };
+
   // Instant opening on notification click without requiring reload
   useEffect(() => {
     const targetSearch = highlightCustomerSearch || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('search') : null);
     const targetId = highlightCustomerId || (typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('customerId') || new URLSearchParams(window.location.search).get('id')) : null);
 
-    if (customers.length > 0) {
-      if (targetId) {
-        const found = customers.find(c => c.id === targetId);
-        if (found) {
-          setProfileSidebarCustomer(found);
-          setSearch('');
-          if (highlightCustomerId) setHighlightCustomerId(null);
-          if (highlightCustomerSearch) setHighlightCustomerSearch(null);
-          return;
+    if (customers.length > 0 && (targetId || targetSearch)) {
+      const matched = findMatchingCustomer(targetId, targetSearch);
+      if (matched) {
+        setProfileSidebarCustomer(matched);
+        setSearch('');
+        if (highlightCustomerId) setHighlightCustomerId(null);
+        if (highlightCustomerSearch) setHighlightCustomerSearch(null);
+        if (typeof window !== 'undefined' && window.location.search) {
+          window.history.replaceState({}, '', '/customers');
         }
-      } 
-      
-      if (targetSearch) {
-        const found = customers.find(c => 
-          c.name.toLowerCase() === targetSearch.toLowerCase() ||
-          c.phone.includes(targetSearch) ||
-          c.name.toLowerCase().includes(targetSearch.toLowerCase())
-        );
-        if (found) {
-          setProfileSidebarCustomer(found);
-          setSearch('');
-          if (highlightCustomerSearch) setHighlightCustomerSearch(null);
-          return;
-        } else {
+      } else {
+        if (targetSearch && targetSearch.length <= 25 && !targetSearch.includes('delivery') && !targetSearch.includes('added')) {
           setSearch(targetSearch);
+        }
+        if (highlightCustomerId) setHighlightCustomerId(null);
+        if (highlightCustomerSearch) setHighlightCustomerSearch(null);
+        if (typeof window !== 'undefined' && window.location.search) {
+          window.history.replaceState({}, '', '/customers');
         }
       }
     }
   }, [customers, highlightCustomerId, highlightCustomerSearch]);
+
+  // Listen to custom event for instant in-page notification clicks
+  useEffect(() => {
+    const handleCustomOpen = (e: any) => {
+      const { customerId, search: term } = e.detail || {};
+      const matched = findMatchingCustomer(customerId, term);
+      if (matched) {
+        setProfileSidebarCustomer(matched);
+        setSearch('');
+        if (highlightCustomerId) setHighlightCustomerId(null);
+        if (highlightCustomerSearch) setHighlightCustomerSearch(null);
+        if (typeof window !== 'undefined' && window.location.search) {
+          window.history.replaceState({}, '', '/customers');
+        }
+      }
+    };
+
+    window.addEventListener('app:open-customer-profile', handleCustomOpen);
+    return () => window.removeEventListener('app:open-customer-profile', handleCustomOpen);
+  }, [customers]);
 
   const handleSaveCustomer = async (data: Omit<Customer, 'id' | 'createdAt' | 'points'>, instantDelivery?: boolean) => {
     try {
@@ -858,7 +942,7 @@ export default function CustomersPage() {
       </motion.div>
 
       {/* Mobile Customer Cards (visible on mobile only) */}
-      <div className="block md:hidden space-y-3 pb-8">
+      <div className="block md:hidden space-y-2.5 pb-8">
         {loading ? (
           <div className="bg-card rounded-xl border border-gray-800 p-8 text-center text-gray-500 text-sm">
             Loading customers...
@@ -866,16 +950,44 @@ export default function CustomersPage() {
         ) : paginatedCustomers.map((customer) => (
           <div 
             key={customer.id}
-            className="bg-card border border-gray-800/80 rounded-xl p-3.5 shadow-sm space-y-2.5"
+            className="bg-card border border-gray-800/80 rounded-xl p-3 shadow-sm space-y-2 hover:border-gray-700/80 transition-all"
           >
-            {/* Header: Customer Name + Status Dropdown */}
-            <div className="flex items-center justify-between gap-2 pb-2 border-b border-gray-800/50">
-              <button 
-                onClick={() => setProfileSidebarCustomer(customer)}
-                className="font-bold text-base text-gray-100 hover:text-blue-400 transition-colors text-left truncate flex-1 min-w-0"
-              >
-                {customer.name}
-              </button>
+            {/* Header: Customer Name & Contact on Left | Status Badge on Right */}
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <button 
+                    onClick={() => setProfileSidebarCustomer(customer)}
+                    className="font-bold text-sm text-gray-100 hover:text-blue-400 transition-colors text-left truncate max-w-[190px] xs:max-w-[230px]"
+                    title="Click to view details"
+                  >
+                    {customer.name}
+                  </button>
+                  {customer.warrantyMonths ? (
+                    <span className="text-[10px] font-semibold text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.2 rounded shrink-0">
+                      {customer.warrantyMonths}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-gray-400 mt-0.5 flex-wrap">
+                  <a 
+                    href={`tel:${customer.phone}`} 
+                    className="flex items-center gap-1 text-blue-400 hover:underline font-medium text-[11px] shrink-0"
+                  >
+                    <Phone className="w-3 h-3 text-blue-400" />
+                    <span>{customer.phone}</span>
+                  </a>
+                  {customer.address ? (
+                    <span className="flex items-center gap-0.5 text-gray-400 text-[11px] truncate max-w-[150px]">
+                      <span className="text-gray-600">•</span>
+                      <MapPin className="w-2.5 h-2.5 shrink-0 text-gray-500" />
+                      <span className="truncate">{customer.address}</span>
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+
+              {/* Status Dropdown on top-right */}
               <div className="shrink-0">
                 <StatusDropdown 
                   status={customer.status} 
@@ -884,89 +996,71 @@ export default function CustomersPage() {
               </div>
             </div>
 
-            {/* Contact & Address Sub-header */}
-            <div className="flex items-center justify-between gap-2 text-xs text-gray-400">
-              <a 
-                href={`tel:${customer.phone}`} 
-                className="flex items-center gap-1.5 text-blue-400 hover:underline font-medium shrink-0"
-              >
-                <Phone className="w-3.5 h-3.5 text-blue-400" />
-                <span>{customer.phone}</span>
-              </a>
-              {customer.address ? (
-                <span className="flex items-center gap-1 text-gray-400 truncate max-w-[170px] text-right">
-                  <MapPin className="w-3 h-3 shrink-0 text-gray-500" />
-                  <span className="truncate">{customer.address}</span>
-                </span>
-              ) : (
-                <span className="text-[11px] text-gray-600">No Address</span>
-              )}
-            </div>
-
-            {/* Device / Appliance Details */}
-            <div className="bg-[#121526]/70 rounded-lg p-2.5 border border-gray-800/60 text-xs space-y-1.5">
-              <div className="flex items-center justify-between text-gray-200 font-medium gap-2">
-                <div className="flex items-center gap-1.5 truncate flex-1 min-w-0">
+            {/* Appliance & Issue Info (Compact Box) */}
+            <div className="bg-[#101322] rounded-lg px-2.5 py-1.5 border border-gray-800/70 text-xs space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 min-w-0 flex-1 text-gray-200 font-medium">
                   <Tv className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                  <span className="truncate">{customer.deviceBrand || 'Appliance'} {customer.deviceType ? `(${customer.deviceType})` : ''}</span>
-                </div>
-                {customer.serialNumber && (
-                  <span className="font-mono text-[10px] text-gray-400 bg-gray-800/80 px-1.5 py-0.5 rounded border border-gray-700/50 shrink-0">
-                    SN: {customer.serialNumber}
+                  <span className="truncate text-[12px]">
+                    {customer.deviceBrand || 'Appliance'} {customer.deviceType ? `• ${customer.deviceType}` : ''}
                   </span>
-                )}
+                  {customer.serialNumber && (
+                    <span className="font-mono text-[9px] text-gray-400 bg-gray-800/80 px-1.5 py-0.2 rounded border border-gray-700/50 shrink-0">
+                      SN: {customer.serialNumber}
+                    </span>
+                  )}
+                </div>
+                <span className="text-orange-400 bg-orange-500/10 border border-orange-500/20 px-1.5 py-0.5 rounded text-[10px] font-medium truncate max-w-[130px] shrink-0">
+                  {customer.deviceProblem || 'Checkup'}
+                </span>
               </div>
 
-              <div className="flex items-center justify-between gap-2 text-[11px]">
-                <span className="text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded font-medium truncate flex-1 min-w-0">
-                  {customer.deviceProblem || 'Problem not specified'}
-                </span>
-                {customer.warrantyMonths ? (
-                  <span className="text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded font-medium shrink-0">
-                    {customer.warrantyMonths} Warranty
-                  </span>
-                ) : null}
-              </div>
               {customer.deviceDetails && (
-                <p className="text-[11px] text-gray-400 italic line-clamp-1">
+                <p className="text-[10px] text-gray-400 italic line-clamp-1 border-t border-gray-800/40 pt-1">
                   {customer.deviceDetails}
                 </p>
               )}
             </div>
 
-            {/* Bill & Financials Strip */}
-            <div className="grid grid-cols-3 gap-1 bg-secondary/60 rounded-lg p-2 text-xs border border-gray-800/50 text-center">
-              <div>
-                <span className="text-gray-500 text-[10px] uppercase block">Total</span>
-                <span className="font-semibold text-gray-200 truncate block">{formatCurrency(customer.totalBill)}</span>
+            {/* Financials Strip (Sleek Horizontal Bar) */}
+            <div className="flex items-center justify-between bg-secondary/40 rounded-lg px-2.5 py-1 text-xs border border-gray-800/50">
+              <div className="flex items-center gap-2.5 text-[11px]">
+                <span className="text-gray-400">
+                  Total: <strong className="font-semibold text-gray-200">{formatCurrency(customer.totalBill)}</strong>
+                </span>
+                {customer.advance > 0 && (
+                  <span className="text-gray-400">
+                    Adv: <strong className="font-medium text-gray-300">{formatCurrency(customer.advance)}</strong>
+                  </span>
+                )}
               </div>
-              <div className="border-x border-gray-800/60 px-1">
-                <span className="text-gray-500 text-[10px] uppercase block">Advance</span>
-                <span className="font-medium text-gray-300 truncate block">{formatCurrency(customer.advance || 0)}</span>
-              </div>
-              <div>
-                <span className="text-gray-500 text-[10px] uppercase block">Due Status</span>
+              <div className="shrink-0 text-right">
                 {customer.due > 0 ? (
-                  <span className="font-bold text-red-400 truncate block">{formatCurrency(customer.due)} Due</span>
+                  <span className="inline-flex items-center gap-1 font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full text-[11px]">
+                    Due: {formatCurrency(customer.due)}
+                  </span>
                 ) : (
-                  <span className="font-bold text-emerald-400 truncate block">Paid ✓</span>
+                  <span className="inline-flex items-center gap-0.5 font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full text-[11px]">
+                    Paid ✓
+                  </span>
                 )}
               </div>
             </div>
 
-            {/* Actions Bottom Bar */}
-            <div className="pt-2 border-t border-gray-800/50 space-y-2">
-              {/* Primary Call & WhatsApp Row */}
-              <div className="grid grid-cols-2 gap-2">
+            {/* Single Compact Actions Toolbar */}
+            <div className="flex items-center justify-between gap-1 pt-1.5 border-t border-gray-800/50">
+              <div className="flex items-center gap-1.5 shrink-0">
+                {/* Direct Call Button */}
                 <a 
                   href={`tel:${customer.phone}`}
-                  className="flex items-center justify-center gap-1.5 py-2 px-3 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white rounded-lg text-xs font-semibold transition-all shadow-sm shadow-blue-600/20"
+                  className="flex items-center gap-1 py-1 px-2.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white rounded-lg text-[11px] font-semibold transition-all shadow-sm shadow-blue-600/20"
                   title="Direct Call"
                 >
-                  <PhoneCall className="w-3.5 h-3.5" />
+                  <PhoneCall className="w-3 h-3" />
                   <span>Call</span>
                 </a>
 
+                {/* WhatsApp Button */}
                 <a 
                   href={`https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
                     (smsSettings?.whatsappTemplate || '')
@@ -979,72 +1073,71 @@ export default function CustomersPage() {
                   )}`} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-600/15 hover:bg-emerald-600/25 active:scale-95 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-semibold transition-all"
+                  className="flex items-center gap-1 py-1 px-2 bg-emerald-600/15 hover:bg-emerald-600/25 active:scale-95 text-emerald-400 border border-emerald-500/30 rounded-lg text-[11px] font-semibold transition-all"
                   title="Send on WhatsApp"
                 >
-                  <MessageCircle className="w-3.5 h-3.5" />
-                  <span>WhatsApp</span>
+                  <MessageCircle className="w-3 h-3" />
+                  <span>WA</span>
                 </a>
-              </div>
 
-              {/* Utility Toolbar Row: Pay (if due) + Invoice + History/Profile + Edit + Delete */}
-              <div className="flex items-center justify-between bg-secondary/40 rounded-lg px-2.5 py-1.5 border border-gray-800/40">
-                {customer.due > 0 ? (
+                {/* Receive Due Button (Only when customer has due) */}
+                {customer.due > 0 && (
                   <Button 
                     variant="ghost" 
                     onClick={() => setPaymentModalCustomer(customer)} 
-                    className="bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 hover:text-emerald-300 px-2.5 py-1 h-7 text-xs font-semibold rounded-md border border-emerald-500/25"
+                    className="bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 hover:text-amber-300 px-2 py-0 h-6 text-[11px] font-semibold rounded-lg border border-amber-500/25 flex items-center gap-1"
+                    title="Receive Due Payment"
                   >
-                    Receive Due
+                    <Coins className="w-3 h-3" />
+                    <span>Pay</span>
                   </Button>
-                ) : (
-                  <span className="text-[11px] text-gray-500 font-medium">Quick Actions</span>
                 )}
+              </div>
 
-                <div className="flex items-center gap-1">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => setInvoiceModalCustomer(customer)} 
-                    className="text-gray-400 hover:text-white hover:bg-gray-800 h-7 w-7 rounded-md"
-                    title="Print Invoice"
-                  >
-                    <FileText className="w-3.5 h-3.5" />
-                  </Button>
+              {/* Utility Action Icons */}
+              <div className="flex items-center gap-0.5 shrink-0">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setInvoiceModalCustomer(customer)} 
+                  className="text-gray-400 hover:text-white hover:bg-gray-800 h-6.5 w-6.5 rounded-md p-0"
+                  title="Print Invoice"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                </Button>
 
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => setProfileSidebarCustomer(customer)} 
-                    className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 h-7 w-7 rounded-md"
-                    title="View History & Profile"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                  </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setProfileSidebarCustomer(customer)} 
+                  className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 h-6.5 w-6.5 rounded-md p-0"
+                  title="View History & Profile"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                </Button>
 
-                  {hasFullAccess && (
-                    <>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => openEditModal(customer)} 
-                        className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 h-7 w-7 rounded-md"
-                        title="Edit"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => handleDeleteRequest(customer.id)} 
-                        className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 h-7 w-7 rounded-md"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </>
-                  )}
-                </div>
+                {hasFullAccess && (
+                  <>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => openEditModal(customer)} 
+                      className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 h-6.5 w-6.5 rounded-md p-0"
+                      title="Edit Customer"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => handleDeleteRequest(customer.id)} 
+                      className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 h-6.5 w-6.5 rounded-md p-0"
+                      title="Delete Customer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>
