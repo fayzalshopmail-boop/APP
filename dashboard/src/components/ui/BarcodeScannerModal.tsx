@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
@@ -152,7 +152,7 @@ export function BarcodeScannerModal({ isOpen, onClose, onScan }: BarcodeScannerM
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="bg-popover border-gray-800 text-gray-100 max-w-sm [&>button]:hidden overflow-hidden">
+      <DialogContent className="w-[92vw] max-w-sm bg-popover border-gray-800 text-gray-100 rounded-2xl [&>button]:hidden overflow-hidden">
         <DialogHeader className="flex flex-row items-center justify-between pb-4 border-b border-gray-800">
           <div className="flex items-center gap-2">
             <Camera className="w-5 h-5 text-blue-500" />

@@ -29,6 +29,7 @@ export interface RepairRecord {
   partsUsed?: PartUsed[];
   totalCost?: number;
   createdAt?: string | Date | any;
+  isBillPending?: boolean;
 }
 
 export const normalizePhone = (p: string) => {
@@ -63,6 +64,7 @@ export interface Customer {
   totalCost?: number;
   createdAt?: string | Date | any;
   repairHistory?: RepairRecord[];
+  isBillPending?: boolean;
 }
 
 const COLLECTION_NAME = 'customers';

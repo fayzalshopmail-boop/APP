@@ -1,7 +1,7 @@
 'use client';
 
 import { Customer, RepairRecord, normalizePhone } from '@/lib/services/customer';
-import { X, User, Phone, PhoneCall, MapPin, Tv, Shield, History } from 'lucide-react';
+import { X, User, Phone, PhoneCall, MapPin, Tv, Shield, History, Coins } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect } from 'react';
@@ -11,9 +11,10 @@ interface CustomerProfileSidebarProps {
   onClose: () => void;
   customer: Customer | null;
   allCustomers: Customer[];
+  onOpenSetBill?: (customer: Customer) => void;
 }
 
-export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers }: CustomerProfileSidebarProps) {
+export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers, onOpenSetBill }: CustomerProfileSidebarProps) {
   
   useEffect(() => {
     if (isOpen) {
@@ -159,12 +160,31 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-bold text-gray-200">{formatCurrency(job.totalBill)}</p>
+                          {job.isBillPending ? (
+                            <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full inline-block">
+                              ⏳ বিল পেন্ডিং
+                            </span>
+                          ) : (
+                            <p className="text-sm font-bold text-gray-200">{formatCurrency(job.totalBill)}</p>
+                          )}
                           <p className={`text-[10px] font-bold mt-1 ${job.status === 'Delivered' ? 'text-emerald-500' : 'text-blue-400'}`}>
                             {job.status?.toUpperCase() || 'RECEIVED'}
                           </p>
                         </div>
                       </div>
+
+                      {job.id === customer.id && customer.isBillPending && onOpenSetBill && (
+                        <div className="mb-3">
+                          <button 
+                            type="button"
+                            onClick={() => onOpenSetBill(customer)}
+                            className="w-full py-2 px-3 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-400 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+                          >
+                            <Coins className="w-3.5 h-3.5" />
+                            <span>কাস্টমারের বিল নির্ধারণ করুন (Set Bill)</span>
+                          </button>
+                        </div>
+                      )}
 
                       {job.warrantyMonths && (
                         <div className="mt-3 pt-3 border-t border-gray-800/50 flex items-center gap-2 text-xs text-purple-400 font-medium">

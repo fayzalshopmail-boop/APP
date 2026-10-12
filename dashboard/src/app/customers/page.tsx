@@ -13,6 +13,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { StatusDropdown } from '@/components/ui/StatusDropdown';
 import { PaymentModal } from '@/components/ui/PaymentModal';
 import { InvoiceModal } from '@/components/ui/InvoiceModal';
+import { SetBillModal } from '@/components/ui/SetBillModal';
 import { PartsUsedModal, PartsConfirmData } from '@/components/ui/PartsUsedModal';
 import { CustomerProfileSidebar } from '@/components/ui/CustomerProfileSidebar';
 import { customerService, Customer, CustomerStatus, normalizePhone, RepairRecord } from '@/lib/services/customer';
@@ -88,6 +89,7 @@ export default function CustomersPage() {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
 
   const [paymentModalCustomer, setPaymentModalCustomer] = useState<Customer | null>(null);
+  const [setBillCustomer, setSetBillCustomer] = useState<Customer | null>(null);
   const [invoiceModalCustomer, setInvoiceModalCustomer] = useState<Customer | null>(null);
   const [partsModalCustomer, setPartsModalCustomer] = useState<{ id: string; name: string; pendingStatus: CustomerStatus } | null>(null);
 
@@ -247,8 +249,9 @@ export default function CustomersPage() {
     try {
       if (editingCustomer) {
         // Update
-        
-        const updatedDue = Math.max(0, data.totalBill - (editingCustomer.advance || 0) - (editingCustomer.discount || 0));
+        const updatedDue = data.isBillPending 
+          ? 0 
+          : Math.max(0, data.totalBill - (editingCustomer.advance || 0) - (editingCustomer.discount || 0));
         const updatedData = { ...data, due: updatedDue };
         await customerService.update(editingCustomer.id, updatedData);
         data = updatedData; // so local state gets the new due
@@ -272,14 +275,44 @@ export default function CustomersPage() {
             .replace(/{brand}/g, data.deviceBrand || '')
             .replace(/{type}/g, data.deviceType || '')
             .replace(/{problem}/g, data.deviceProblem || '')
-            .replace(/{total}/g, `${data.totalBill || 0}`)
+            .replace(/{total}/g, data.isBillPending ? 'চেক করে জানানো হবে' : `${data.totalBill || 0}`)
             .replace(/{advance}/g, `${data.advance || 0}`)
-            .replace(/{due}/g, `${data.due || 0}`);
+            .replace(/{due}/g, data.isBillPending ? 'পেন্ডিং' : `${data.due || 0}`);
             
           sendSMS(data.phone, msg, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
         }
       }
     } catch (error) { console.error("Firebase error", error); alert("Error: " + ((error as any).message || String(error))); }
+  };
+
+  const handleSaveSetBill = async (customerId: string, totalBill: number, discount?: number, expectedDeliveryDate?: string) => {
+    try {
+      const targetCustomer = customers.find(c => c.id === customerId);
+      if (!targetCustomer) return;
+
+      const advance = targetCustomer.advance || 0;
+      const numDiscount = discount || 0;
+      const calculatedDue = Math.max(0, totalBill - advance - numDiscount);
+
+      const updates: Partial<Customer> = {
+        totalBill,
+        due: calculatedDue,
+        discount: numDiscount,
+        isBillPending: false,
+        ...(expectedDeliveryDate ? { expectedDeliveryDate } : {})
+      };
+
+      await customerService.update(customerId, updates);
+
+      setCustomers(prev => prev.map(c => c.id === customerId ? { ...c, ...updates } : c));
+      if (profileSidebarCustomer?.id === customerId) {
+        setProfileSidebarCustomer({ ...profileSidebarCustomer, ...updates });
+      }
+      setSetBillCustomer(null);
+    } catch (err) {
+      console.error("Failed to set customer bill:", err);
+      alert("বিল সংরক্ষণ করতে সমস্যা হয়েছে।");
+    }
   };
 
   const handleUpdateStatus = async (id: string, newStatus: CustomerStatus) => {
@@ -667,65 +700,69 @@ export default function CustomersPage() {
           )}
         </div>
         
-        {/* Search & Filter Bar */}
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          {/* Search Input */}
-          <div className="relative flex-1 sm:w-64 md:w-72">
-            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <Input 
-              type="text" 
-              placeholder="Search customers..." 
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="!h-10 sm:!h-11 !bg-card dark:!bg-card border border-gray-800 hover:border-gray-700 text-gray-200 text-xs sm:text-sm !rounded-xl pl-9 pr-8 focus:outline-none focus:!border-blue-500 focus:!ring-1 focus:!ring-blue-500/50 transition-all w-full placeholder:text-gray-500 shadow-sm"
-            />
-            {search && (
-              <button 
-                onClick={() => setSearch('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 p-0.5 transition-colors"
-                title="Clear search"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
+        {/* Right Controls Group: Search, Filter, Export CSV, Add Customer */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
+          {/* Search & Filter Bar */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            {/* Search Input */}
+            <div className="relative flex-1 sm:w-56 md:w-64">
+              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Input 
+                type="text" 
+                placeholder="Search customers..." 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="!h-10 sm:!h-10 !bg-card dark:!bg-card border border-gray-800 hover:border-gray-700 text-gray-200 text-xs sm:text-sm !rounded-xl pl-9 pr-8 focus:outline-none focus:!border-blue-500 focus:!ring-1 focus:!ring-blue-500/50 transition-all w-full placeholder:text-gray-500 shadow-sm"
+              />
+              {search && (
+                <button 
+                  onClick={() => setSearch('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 p-0.5 transition-colors"
+                  title="Clear search"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Status Filter Dropdown */}
+            <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val as CustomerStatus | 'All')}>
+              <SelectTrigger className="!h-10 sm:!h-10 w-28 sm:w-36 !bg-card dark:!bg-card border border-gray-800 hover:border-gray-700 text-gray-200 text-xs sm:text-sm !rounded-xl px-2.5 sm:px-3 focus:outline-none focus:!border-blue-500 focus:!ring-1 focus:!ring-blue-500/50 transition-all shadow-sm shrink-0 flex items-center justify-between">
+                <span className="flex items-center gap-1.5 sm:gap-2 truncate">
+                  <Filter className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 transition-colors ${statusFilter !== 'All' ? 'text-blue-400' : 'text-gray-400'}`} />
+                  <SelectValue placeholder="All Statuses" />
+                </span>
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-gray-800 text-gray-200 rounded-xl shadow-xl">
+                <SelectItem value="All">All Statuses</SelectItem>
+                <SelectItem value="Received">Received</SelectItem>
+                <SelectItem value="In Progress">In Progress</SelectItem>
+                <SelectItem value="Waiting for Parts">Waiting for Parts</SelectItem>
+                <SelectItem value="Ready for Delivery">Ready for Delivery</SelectItem>
+                <SelectItem value="Delivered">Delivered</SelectItem>
+                <SelectItem value="Returned (Unrepaired)">Returned</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Status Filter Dropdown */}
-          <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val as CustomerStatus | 'All')}>
-            <SelectTrigger className="!h-10 sm:!h-11 w-32 sm:w-44 !bg-card dark:!bg-card border border-gray-800 hover:border-gray-700 text-gray-200 text-xs sm:text-sm !rounded-xl px-2.5 sm:px-3.5 focus:outline-none focus:!border-blue-500 focus:!ring-1 focus:!ring-blue-500/50 transition-all shadow-sm shrink-0 flex items-center justify-between">
-              <span className="flex items-center gap-1.5 sm:gap-2 truncate">
-                <Filter className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 transition-colors ${statusFilter !== 'All' ? 'text-blue-400' : 'text-gray-400'}`} />
-                <SelectValue placeholder="All Statuses" />
-              </span>
-            </SelectTrigger>
-            <SelectContent className="bg-popover border-gray-800 text-gray-200 rounded-xl shadow-xl">
-              <SelectItem value="All">All Statuses</SelectItem>
-              <SelectItem value="Received">Received</SelectItem>
-              <SelectItem value="In Progress">In Progress</SelectItem>
-              <SelectItem value="Waiting for Parts">Waiting for Parts</SelectItem>
-              <SelectItem value="Ready for Delivery">Ready for Delivery</SelectItem>
-              <SelectItem value="Delivered">Delivered</SelectItem>
-              <SelectItem value="Returned (Unrepaired)">Returned</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-          <div className="hidden sm:flex flex-row items-center gap-2 w-full sm:w-auto">
+          <div className="hidden sm:flex flex-row items-center gap-2">
             <Button 
               onClick={handleExportCSV}
-              className="items-center gap-2 bg-secondary hover:bg-gray-800 text-gray-300 border border-gray-800 px-4 py-2.5 rounded-lg text-sm font-medium transition-all"
+              className="items-center gap-2 bg-secondary hover:bg-gray-800 text-gray-300 border border-gray-800 px-3.5 h-10 rounded-xl text-xs sm:text-sm font-medium transition-all"
             >
               <Download className="w-4 h-4" />
               Export CSV
             </Button>
             <Button 
               onClick={openAddModal}
-              className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 flex-1 sm:flex-none"
+              className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-4 h-10 rounded-xl text-xs sm:text-sm font-medium transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 flex-1 sm:flex-none whitespace-nowrap"
             >
               <Plus className="w-5 h-5" />
               <span className="whitespace-nowrap">Add Customer</span>
             </Button>
           </div>
         </div>
+      </div>
 
       <div id="customer-list-container" className="scroll-mt-20">
         {/* Customer Table */}
@@ -815,16 +852,29 @@ export default function CustomersPage() {
                     ) : null}
                   </td>
                   <td className="px-4 py-3.5">
-                    <div className="text-gray-300 font-medium">Tot: {formatCurrency(customer.totalBill)}</div>
-                    <div className="text-xs text-gray-500 mt-0.5">Adv: {formatCurrency(customer.advance || 0)}</div>
-                    {customer.due > 0 ? (
-                      <div className="text-xs font-medium text-red-400 mt-1 flex items-center gap-1">
-                        Due: {formatCurrency(customer.due)}
+                    {customer.isBillPending ? (
+                      <div>
+                        <div className="text-amber-400 font-bold text-xs flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded w-fit">
+                          ⏳ বিল পেন্ডিং
+                        </div>
+                        {customer.advance ? (
+                          <div className="text-xs text-gray-400 mt-1">Adv: {formatCurrency(customer.advance)}</div>
+                        ) : null}
                       </div>
                     ) : (
-                      <div className="text-xs font-bold text-emerald-400 mt-1 flex items-center gap-1">
-                        Paid ✓
-                      </div>
+                      <>
+                        <div className="text-gray-300 font-medium">Tot: {formatCurrency(customer.totalBill)}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">Adv: {formatCurrency(customer.advance || 0)}</div>
+                        {customer.due > 0 ? (
+                          <div className="text-xs font-medium text-red-400 mt-1 flex items-center gap-1">
+                            Due: {formatCurrency(customer.due)}
+                          </div>
+                        ) : (
+                          <div className="text-xs font-bold text-emerald-400 mt-1 flex items-center gap-1">
+                            Paid ✓
+                          </div>
+                        )}
+                      </>
                     )}
                   </td>
                   <td className="px-4 py-3.5">
@@ -835,13 +885,23 @@ export default function CustomersPage() {
                   </td>
                   <td className="px-4 py-3.5 text-right">
                     <div className="flex items-center justify-end gap-1.5 transition-opacity">
-                      {customer.due > 0 && (
+                      {customer.isBillPending ? (
+                        <Button 
+                          variant="ghost" 
+                          onClick={() => setSetBillCustomer(customer)} 
+                          className="text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2 py-1 h-auto rounded text-xs font-semibold mr-1 flex items-center gap-1 shadow-sm"
+                          title="Set Customer Bill"
+                        >
+                          <Coins className="w-3.5 h-3.5" />
+                          <span>Set Bill</span>
+                        </Button>
+                      ) : customer.due > 0 ? (
                         <Button variant="ghost" onClick={() => setPaymentModalCustomer(customer)} className="text-emerald-500 hover:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1 h-auto rounded text-xs font-medium mr-1"
                           title="Receive Payment"
                         >
                           Pay
                         </Button>
-                      )}
+                      ) : null}
                       <Button variant="ghost" size="icon" onClick={() => setInvoiceModalCustomer(customer)} className="text-gray-400 hover:text-white hover:bg-gray-800 transition-colors h-8 w-8" 
                         title="Print Invoice"
                       >
@@ -1025,17 +1085,28 @@ export default function CustomersPage() {
             {/* Financials Strip (Sleek Horizontal Bar) */}
             <div className="flex items-center justify-between bg-secondary/40 rounded-lg px-2.5 py-1 text-xs border border-gray-800/50">
               <div className="flex items-center gap-2.5 text-[11px]">
-                <span className="text-gray-400">
-                  Total: <strong className="font-semibold text-gray-200">{formatCurrency(customer.totalBill)}</strong>
-                </span>
-                {customer.advance > 0 && (
+                {customer.isBillPending ? (
+                  <span className="text-amber-400 font-medium flex items-center gap-1">
+                    <span>বিল:</span>
+                    <strong className="font-bold">⏳ পেন্ডিং</strong>
+                  </span>
+                ) : (
                   <span className="text-gray-400">
-                    Adv: <strong className="font-medium text-gray-300">{formatCurrency(customer.advance)}</strong>
+                    Total: <strong className="font-semibold text-gray-200">{formatCurrency(customer.totalBill)}</strong>
+                  </span>
+                )}
+                {(customer.advance || 0) > 0 && (
+                  <span className="text-gray-400">
+                    Adv: <strong className="font-medium text-gray-300">{formatCurrency(customer.advance || 0)}</strong>
                   </span>
                 )}
               </div>
               <div className="shrink-0 text-right">
-                {customer.due > 0 ? (
+                {customer.isBillPending ? (
+                  <span className="inline-flex items-center gap-0.5 font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full text-[10px]">
+                    বিল নির্ধারণ বাকি
+                  </span>
+                ) : customer.due > 0 ? (
                   <span className="inline-flex items-center gap-1 font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full text-[11px]">
                     Due: {formatCurrency(customer.due)}
                   </span>
@@ -1067,9 +1138,9 @@ export default function CustomersPage() {
                       .replace(/{name}/g, customer.name || '')
                       .replace(/{brand}/g, customer.deviceBrand || '')
                       .replace(/{type}/g, customer.deviceType || '')
-                      .replace(/{total}/g, `${customer.totalBill || 0}`)
+                      .replace(/{total}/g, customer.isBillPending ? 'চেক করে জানানো হবে' : `${customer.totalBill || 0}`)
                       .replace(/{advance}/g, `${customer.advance || 0}`)
-                      .replace(/{due}/g, `${customer.due || 0}`)
+                      .replace(/{due}/g, customer.isBillPending ? 'পেন্ডিং' : `${customer.due || 0}`)
                   )}`} 
                   target="_blank" 
                   rel="noopener noreferrer"
@@ -1080,8 +1151,18 @@ export default function CustomersPage() {
                   <span>WA</span>
                 </a>
 
-                {/* Receive Due Button (Only when customer has due) */}
-                {customer.due > 0 && (
+                {/* Set Bill Button or Receive Due Button */}
+                {customer.isBillPending ? (
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => setSetBillCustomer(customer)} 
+                    className="bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 hover:text-amber-300 px-2 py-0 h-6 text-[11px] font-semibold rounded-lg border border-amber-500/30 flex items-center gap-1 shadow-sm"
+                    title="Set Customer Bill"
+                  >
+                    <Coins className="w-3 h-3" />
+                    <span>Set Bill</span>
+                  </Button>
+                ) : customer.due > 0 ? (
                   <Button 
                     variant="ghost" 
                     onClick={() => setPaymentModalCustomer(customer)} 
@@ -1091,7 +1172,7 @@ export default function CustomersPage() {
                     <Coins className="w-3 h-3" />
                     <span>Pay</span>
                   </Button>
-                )}
+                ) : null}
               </div>
 
               {/* Utility Action Icons */}
@@ -1214,6 +1295,15 @@ export default function CustomersPage() {
         onClose={closeProfileSidebar}
         customer={profileSidebarCustomer}
         allCustomers={customers}
+        onOpenSetBill={(c) => setSetBillCustomer(c)}
+      />
+
+      <SetBillModal
+        isOpen={!!setBillCustomer}
+        onClose={() => setSetBillCustomer(null)}
+        customer={setBillCustomer}
+        onSave={handleSaveSetBill}
+        smsSettings={smsSettings}
       />
 
       <CustomerModal 

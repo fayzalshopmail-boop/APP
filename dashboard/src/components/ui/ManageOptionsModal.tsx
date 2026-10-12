@@ -60,7 +60,7 @@ export function ManageOptionsModal({ isOpen, onClose, category, title, parentKey
   return (
     <>
       <Dialog open={isOpen && !confirmModal.isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-[400px] bg-popover text-white border-gray-800 shadow-2xl p-0 overflow-hidden z-[60]">
+        <DialogContent className="w-[92vw] sm:max-w-[400px] bg-popover text-white border-gray-800 shadow-2xl p-0 overflow-hidden z-[60] rounded-2xl">
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-purple-500" />
           
           <div className="p-5">

@@ -54,6 +54,9 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  const currentBrands = currentType ? (storeBrands[currentType] || []) : [];
  const currentProblems = currentBrand ? (storeProblems[currentBrand] || []) : [];
 
+ // Automatically bill pending if totalBill is blank or 0
+ const isBillPending = !formData.totalBill || Number(formData.totalBill) <= 0;
+
  useEffect(() => {
  setMatchedCustomer(null);
  if (initialData) {
@@ -67,7 +70,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  deviceProblem: initialData.deviceProblem || '',
  deviceDetails: initialData.deviceDetails || '',
  serialNumber: initialData.serialNumber || '',
- totalBill: initialData.totalBill,
+ totalBill: initialData.isBillPending ? 0 : (initialData.totalBill || 0),
  advance: initialData.advance || 0,
  warrantyMonths: initialData.warrantyMonths ? String(initialData.warrantyMonths) : '', expectedDeliveryDate: initialData.expectedDeliveryDate || '' });
  } else {
@@ -92,8 +95,10 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  e.preventDefault();
  setIsSubmitting(true);
  try {
- const due = formData.totalBill - formData.advance;
- await onSave({ ...formData, due }, instantDelivery);
+ const isPending = !formData.totalBill || Number(formData.totalBill) <= 0;
+ const numBill = isPending ? 0 : Number(formData.totalBill);
+ const due = isPending ? 0 : Math.max(0, numBill - (formData.advance || 0));
+ await onSave({ ...formData, totalBill: numBill, due, isBillPending: isPending }, instantDelivery);
  onClose();
  } catch (error) {
  console.error(error);
@@ -104,24 +109,24 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
 
  return (
  <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
- <DialogContent className="sm:max-w-3xl w-[95vw] bg-popover text-white border-gray-800 shadow-2xl shadow-blue-900/10 p-0 overflow-hidden rounded-xl">
+ <DialogContent className="w-[95vw] sm:max-w-3xl max-h-[92vh] sm:max-h-[88vh] bg-popover text-white border-gray-800 shadow-2xl shadow-blue-900/10 p-0 overflow-hidden rounded-2xl flex flex-col">
  {/* Gradient Header Background */}
- <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500" />
+ <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 z-10 shrink-0" />
  
- <div className="p-5 sm:p-6 overflow-y-auto custom-scrollbar max-h-[85vh]">
- <DialogHeader className="mb-6">
- <DialogTitle className="text-xl font-bold tracking-tight">
+ <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-1">
+ <DialogHeader className="mb-4 sm:mb-6 text-left">
+ <DialogTitle className="text-lg sm:text-xl font-bold tracking-tight">
  {initialData ? 'Edit Customer Details' : 'Add New Customer'}
  </DialogTitle>
- <DialogDescription className="text-gray-400 mt-1.5">
+ <DialogDescription className="text-gray-400 mt-1 text-xs sm:text-sm">
  {initialData ? 'Update the details below to save changes.' : 'Enter the customer details to add them to your POS system.'}
  </DialogDescription>
  </DialogHeader>
 
- <form onSubmit={handleSubmit} className="space-y-5">
+ <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
  {/* 1. Customer Info */}
- <div className="bg-[#1a1d2d]/30 p-4 sm:p-5 rounded-xl border border-gray-800/60 space-y-4">
- <h4 className="text-sm font-semibold text-blue-400 flex items-center gap-2 mb-1">
+ <div className="bg-[#1a1d2d]/30 p-3.5 sm:p-5 rounded-xl border border-gray-800/60 space-y-3.5 sm:space-y-4">
+ <h4 className="text-xs sm:text-sm font-semibold text-blue-400 flex items-center gap-2 mb-1">
  <User className="w-4 h-4" /> Customer Information
  </h4>
  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -166,9 +171,9 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  />
  </div>
  {matchedCustomer && (
- <div className="flex items-center gap-2 p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs text-blue-400 mt-2">
- <CheckCircle className="w-4 h-4 shrink-0 text-blue-400" />
- <span>পূর্বের কাস্টমার পাওয়া গেছে: <strong>{matchedCustomer.name}</strong>। নতুন তথ্যগুলো এই কাস্টমারের হিস্ট্রিতে যুক্ত হবে।</span>
+ <div className="flex items-start gap-2 p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs text-blue-400 mt-2">
+ <CheckCircle className="w-4 h-4 shrink-0 text-blue-400 mt-0.5" />
+ <span className="leading-tight">পূর্বের কাস্টমার পাওয়া গেছে: <strong>{matchedCustomer.name}</strong>। নতুন তথ্যগুলো এই কাস্টমারের হিস্ট্রিতে যুক্ত হবে।</span>
  </div>
  )}
  </div>
@@ -211,17 +216,17 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  </div>
 
  {/* 2. Device Info */}
- <div className="bg-[#1a1d2d]/30 p-4 sm:p-5 rounded-xl border border-gray-800/60 space-y-4">
- <h4 className="text-sm font-semibold text-orange-400 flex items-center gap-2 mb-1">
+ <div className="bg-[#1a1d2d]/30 p-3.5 sm:p-5 rounded-xl border border-gray-800/60 space-y-3.5 sm:space-y-4">
+ <h4 className="text-xs sm:text-sm font-semibold text-orange-400 flex items-center gap-2 mb-1">
  <Tv className="w-4 h-4" /> Device Information
  </h4>
  
- <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+ <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
  {/* Device Type */}
    <div className="space-y-1.5">
    <div className="flex items-center justify-between">
    <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Device Type</label>
-   <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceTypes')} className="h-6 w-6 text-gray-500 hover:text-blue-400">
+   <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceTypes')} className="h-6 w-6 text-gray-500 hover:text-blue-400 p-0" title="Manage Types">
    <Settings2 className="w-3.5 h-3.5" />
    </Button>
    </div>
@@ -238,7 +243,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
    <div className="space-y-1.5">
      <div className="flex items-center justify-between">
      <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Device Brand</label>
-     <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceBrands')} className="h-6 w-6 text-gray-500 hover:text-blue-400">
+     <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceBrands')} className="h-6 w-6 text-gray-500 hover:text-blue-400 p-0" title="Manage Brands">
      <Settings2 className="w-3.5 h-3.5" />
      </Button>
      </div>
@@ -252,12 +257,12 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
      </div>
    </div>
 
-   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
    {/* Device Problem */}
    <div className="space-y-1.5">
      <div className="flex items-center justify-between">
      <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Primary Issue</label>
-     <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceProblems')} className="h-6 w-6 text-gray-500 hover:text-blue-400">
+     <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceProblems')} className="h-6 w-6 text-gray-500 hover:text-blue-400 p-0" title="Manage Problems">
      <Settings2 className="w-3.5 h-3.5" />
      </Button>
      </div>
@@ -278,7 +283,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  <Input 
  value={formData.deviceDetails}
  onChange={(e) => setFormData({ ...formData, deviceDetails: e.target.value })}
- className="pl-10" 
+ className="pl-10 text-sm" 
  placeholder="e.g. 55 inch Bravia"
  />
  </div>
@@ -294,63 +299,69 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  <Input 
  value={formData.serialNumber}
  onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
- className="pl-10" 
+ className="pl-10 text-sm" 
  placeholder="e.g. SN-123456789"
  />
  </div>
  <Button 
  type="button"
  onClick={() => setIsScannerOpen(true)}
- className="bg-blue-600/10 hover:bg-blue-600/20 text-blue-500 border border-blue-500/20 px-4 rounded-lg flex items-center justify-center transition-colors"
+ className="h-10 w-10 sm:w-auto sm:px-4 bg-blue-600/10 hover:bg-blue-600/20 text-blue-500 border border-blue-500/20 rounded-lg flex items-center justify-center transition-colors shrink-0 p-0 sm:py-2"
  title="Scan Barcode using Camera"
  >
- <Camera className="w-5 h-5" />
+ <Camera className="w-4 h-4" />
+ <span className="hidden sm:inline-block ml-1.5 text-xs font-medium">Scan</span>
  </Button>
  </div>
  </div>
  </div>
 
  {/* 3. Billing & Warranty */}
- <div className="bg-[#1a1d2d]/30 p-4 sm:p-5 rounded-xl border border-gray-800/60 space-y-4">
- <h4 className="text-sm font-semibold text-emerald-400 flex items-center gap-2 mb-1">
+ <div className="bg-[#1a1d2d]/30 p-3.5 sm:p-5 rounded-xl border border-gray-800/60 space-y-3.5 sm:space-y-4">
+ <h4 className="text-xs sm:text-sm font-semibold text-emerald-400 flex items-center gap-2 mb-1">
  <FileText className="w-4 h-4" /> Billing & Warranty
  </h4>
  
- <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
- {/* Total Bill Input */}
+ {/* Row 1: Financials & Warranty (3 columns on PC) */}
+ <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
+ {/* Total Bill */}
  <div className="space-y-1.5">
  <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Total Bill</label>
  <div className="relative">
- <span className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center text-blue-500 font-bold"></span>
+ <span className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center text-blue-500 font-bold">৳</span>
  <Input 
  type="text"
  inputMode="numeric"
- required
  value={formData.totalBill || ''}
- onChange={(e) => setFormData({ ...formData, totalBill: Number(e.target.value.replace(/\D/g, '')) })}
- className="pl-10 border-blue-500/30 focus-visible:ring-blue-500/50 focus-visible:border-blue-500/50" 
- placeholder="5000"
+ onChange={(e) => {
+ const val = e.target.value.replace(/\D/g, '');
+ setFormData({ ...formData, totalBill: val ? Number(val) : 0 });
+ }}
+ className="pl-10 text-sm border-blue-500/30 focus-visible:ring-blue-500/50" 
+ placeholder="0"
  />
  </div>
+ <p className="text-[11px] text-gray-500">ফাঁকা রাখলে বিল পেন্ডিং হবে</p>
  </div>
 
- {/* Advance Input */}
+ {/* Advance */}
  <div className="space-y-1.5">
  <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Advance</label>
  <div className="relative">
- <span className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center text-green-500 font-bold"></span>
+ <span className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center text-green-500 font-bold">৳</span>
  <Input 
  type="text"
  inputMode="numeric"
  value={formData.advance || ''}
  onChange={(e) => setFormData({ ...formData, advance: Number(e.target.value.replace(/\D/g, '')) })}
- className="pl-10 border-green-500/30 focus-visible:ring-green-500/50 focus-visible:border-green-500/50" 
- placeholder="1000"
+ className="pl-10 text-sm border-green-500/30 focus-visible:ring-green-500/50" 
+ placeholder="0"
  />
  </div>
+ <p className="text-[11px] text-gray-500">অগ্রিম জমা থাকলে লিখুন</p>
  </div>
  
- {/* Warranty Input */}
+ {/* Warranty */}
  <div className="space-y-1.5">
  <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Warranty</label>
  <CustomSelect 
@@ -361,56 +372,78 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  options={['No Warranty', '7 Days', '15 Days', '1 Month', '3 Months', '6 Months', '12 Months', '24 Months']}
  placeholder="Select warranty"
  />
+ <p className="text-[11px] text-gray-500">সার্ভিসিং ওয়ারেন্টি সময়</p>
  </div>
  </div>
 
- {/* Expected Delivery Date */}
-   {!instantDelivery && (
-   <div className="space-y-1.5 pt-2 pb-2">
-   <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Expected Delivery Date</label>
-   <Input 
-   type="date"
-   value={formData.expectedDeliveryDate}
-   onChange={(e) => setFormData({ ...formData, expectedDeliveryDate: e.target.value })}
-   className="bg-secondary text-gray-200"
-   />
-   </div>
-   )}
-
-   {/* Status Row */}
- <div className="flex flex-col sm:flex-row gap-4 items-center justify-between pt-2">
- <label className="flex items-center gap-2 cursor-pointer bg-blue-500/10 hover:bg-blue-500/20 px-3 py-2 rounded-lg border border-blue-500/20 transition-colors w-full sm:w-auto">
- <input type="checkbox" 
+ {/* Row 2: Delivery & Due Calculation (2 balanced columns) */}
+ <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4 pt-1 items-end">
+ {/* Expected Delivery */}
+ <div className="space-y-1.5">
+ <div className="flex items-center justify-between">
+ <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Expected Delivery</label>
+ <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium text-blue-400 hover:text-blue-300 transition-colors select-none">
+ <input 
+ type="checkbox" 
  checked={instantDelivery} 
  onChange={(e) => setInstantDelivery(e.target.checked)}
- className="w-4 h-4 rounded border-gray-700 bg-gray-900 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900"
+ className="w-3.5 h-3.5 rounded border-gray-700 bg-gray-900 text-blue-500 focus:ring-blue-500"
  />
- <span className="text-sm font-medium text-blue-400">
- Instant Delivery (Quick Service)
- </span>
+ <span>Instant Delivery (তাৎক্ষণিক)</span>
  </label>
- 
- <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg px-4 py-2 flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
- <span className="text-sm font-medium text-orange-400">Calculated Due:</span>
- <span className="text-lg font-bold text-orange-400">{Math.max(0, (formData.totalBill || 0) - (formData.advance || 0))}</span>
+ </div>
+
+ {instantDelivery ? (
+ <div className="h-10 px-3 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center text-xs text-blue-400 font-medium">
+ ⚡ তাৎক্ষণিক সার্ভিস (আজকেই ডেলিভারি হবে)
+ </div>
+ ) : (
+ <Input 
+ type="date"
+ value={formData.expectedDeliveryDate}
+ onChange={(e) => setFormData({ ...formData, expectedDeliveryDate: e.target.value })}
+ className="bg-secondary text-gray-200 text-sm h-10"
+ />
+ )}
+ </div>
+
+ {/* Due / Bill Status Box */}
+ <div className={`h-10 px-4 rounded-lg flex items-center justify-between border transition-all font-medium text-sm ${
+ isBillPending 
+ ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' 
+ : ((formData.totalBill || 0) - (formData.advance || 0) <= 0)
+ ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+ : 'bg-orange-500/10 border-orange-500/30 text-orange-400'
+ }`}>
+ <span className="text-xs uppercase tracking-wider text-gray-400">
+ {isBillPending ? 'বিল স্ট্যাটাস:' : 'বাকি (Due):'}
+ </span>
+ <span className="text-base font-bold">
+ {isBillPending 
+ ? ((formData.advance || 0) > 0 ? `Adv: ৳${formData.advance} (বিল পেন্ডিং)` : '⏳ বিল পেন্ডিং') 
+ : formatCurrency(Math.max(0, (formData.totalBill || 0) - (formData.advance || 0)))}
+ </span>
  </div>
  </div>
  </div>
 
  {/* Footer Buttons */}
- <div className="pt-4 mt-2 flex items-center justify-end gap-3 border-t border-gray-800/50">
+ <div className="pt-4 mt-2 flex flex-row items-center justify-end gap-2.5 sm:gap-3 border-t border-gray-800/50">
  <Button 
  type="button" 
  onClick={onClose}
- className="px-4 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800/50 transition-all"
+ className="flex-1 sm:flex-none h-10 px-4 rounded-xl text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800/50 border border-gray-800 sm:border-transparent transition-all flex items-center justify-center"
  >
  Cancel
  </Button>
- <Button type="submit" disabled={isSubmitting} className="px-8 shadow-blue-500/20"
+ <Button 
+ type="submit" 
+ disabled={isSubmitting} 
+ className="flex-1 sm:flex-none h-10 px-6 sm:px-8 rounded-xl text-sm font-medium shadow-lg shadow-blue-500/20 bg-blue-600 hover:bg-blue-500 text-white transition-all flex items-center justify-center"
  >
  {isSubmitting ? (
  <>
- <Loader2 className="w-4 h-4 animate-spin" />
+ <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
  Saving...
  </>
  ) : (

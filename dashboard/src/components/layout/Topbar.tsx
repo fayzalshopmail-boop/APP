@@ -291,9 +291,9 @@ export function Topbar() {
           .replace(/{brand}/g, data.deviceBrand || '')
           .replace(/{type}/g, data.deviceType || '')
           .replace(/{problem}/g, data.deviceProblem || '')
-          .replace(/{total}/g, `${data.totalBill || 0}`)
+          .replace(/{total}/g, (data as any).isBillPending ? 'চেক করে জানানো হবে' : `${data.totalBill || 0}`)
           .replace(/{advance}/g, `${data.advance || 0}`)
-          .replace(/{due}/g, `${data.due || 0}`);
+          .replace(/{due}/g, (data as any).isBillPending ? 'পেন্ডিং' : `${data.due || 0}`);
           
         await sendSMS(data.phone, msg, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
       }
