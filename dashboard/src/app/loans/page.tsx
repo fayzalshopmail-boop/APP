@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { 
   CreditCard, Plus, ArrowUpRight, ArrowDownRight, Edit2, Trash2, 
   CheckCircle, Coins, CalendarClock, History, MessageSquare, Phone, 
-  Search, X, Filter 
+  Search, X, Filter, ChevronLeft, ChevronRight 
 } from 'lucide-react';
 import { loanService, Loan } from '@/lib/services/loan';
 import { formatCurrency } from '@/lib/currency';
@@ -24,6 +24,7 @@ export default function LoansPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [currentPage, setCurrentPage] = useState(1);
   
   const [editingLoan, setEditingLoan] = useState<Loan | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -323,6 +324,60 @@ export default function LoansPage() {
     });
   }, [loans, activeFilter, searchQuery]);
 
+  const ITEMS_PER_PAGE = 10;
+  const totalPages = Math.ceil(filteredLoans.length / ITEMS_PER_PAGE) || 1;
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedLoans = filteredLoans.slice(startIndex, endIndex);
+
+  // Reset to first page when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeFilter]);
+
+  // Adjust page if current page exceeds total pages
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    if (typeof window !== 'undefined') {
+      const el = document.getElementById('loans-list-container');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  };
+
+  const getPageNumbers = (isMobile: boolean = false) => {
+    if (isMobile) {
+      if (totalPages <= 4) {
+        return Array.from({ length: totalPages }, (_, i) => i + 1);
+      }
+      if (currentPage <= 2) {
+        return [1, 2, 3, '...', totalPages];
+      }
+      if (currentPage >= totalPages - 1) {
+        return [1, '...', totalPages - 2, totalPages - 1, totalPages];
+      }
+      return [1, '...', currentPage, '...', totalPages];
+    }
+
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    if (currentPage <= 4) {
+      return [1, 2, 3, 4, 5, '...', totalPages];
+    }
+    if (currentPage >= totalPages - 3) {
+      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+    return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+  };
+
   return (
     <div className="space-y-3 sm:space-y-6 max-w-[1600px] mx-auto pb-6 sm:pb-10 px-1 sm:px-0">
       
@@ -354,7 +409,7 @@ export default function LoansPage() {
       </div>
 
       {/* Unified Loan List */}
-      <div className="bg-card border border-gray-800 rounded-xl sm:rounded-2xl overflow-hidden shadow-xl">
+      <div id="loans-list-container" className="bg-card border border-gray-800 rounded-xl sm:rounded-2xl overflow-hidden shadow-xl">
         
         {/* Header with Title and Search/Filters */}
         <div className="p-3 sm:p-5 border-b border-gray-800 flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-4">
@@ -445,7 +500,7 @@ export default function LoansPage() {
           <>
             {/* 1. Mobile High-Density Compact List (<640px) */}
             <div className="divide-y divide-gray-800/60 p-1 sm:hidden">
-              {filteredLoans.map((l) => {
+              {paginatedLoans.map((l) => {
                 const remainingDue = l.amount - (l.paidAmount || 0);
                 const isPaid = l.status === 'Paid' || remainingDue <= 0;
                 const isGiven = l.type === 'Given';
@@ -580,7 +635,7 @@ export default function LoansPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800/50">
-                  {filteredLoans.map((l) => {
+                  {paginatedLoans.map((l) => {
                     const remainingDue = l.amount - (l.paidAmount || 0);
                     const isPaid = l.status === 'Paid' || remainingDue <= 0;
                     const isGiven = l.type === 'Given';
@@ -684,6 +739,124 @@ export default function LoansPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Desktop Pagination (>=640px) */}
+            {totalPages > 1 && (
+              <div className="hidden sm:flex items-center justify-between px-5 py-3.5 border-t border-gray-800/80 bg-secondary/20">
+                <div className="text-xs text-gray-400">
+                  Showing <span className="font-semibold text-white">{startIndex + 1}</span> to <span className="font-semibold text-white">{Math.min(endIndex, filteredLoans.length)}</span> of <span className="font-semibold text-white">{filteredLoans.length}</span> records
+                  <span className="text-gray-500 ml-1.5">(Page {currentPage} of {totalPages})</span>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="h-8 w-8 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
+                    title="Previous Page"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+
+                  {getPageNumbers(false).map((pageNum, idx) => {
+                    if (pageNum === '...') {
+                      return (
+                        <span key={`desktop-ellipsis-${idx}`} className="px-1 text-gray-500 text-xs select-none">
+                          ...
+                        </span>
+                      );
+                    }
+                    const page = Number(pageNum);
+                    const isActive = currentPage === page;
+                    return (
+                      <button
+                        key={`desktop-page-${page}`}
+                        onClick={() => handlePageChange(page)}
+                        className={`h-8 min-w-[32px] px-2 rounded-lg text-xs font-medium transition-all ${
+                          isActive
+                            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 font-bold'
+                            : 'bg-card border border-gray-800 text-gray-300 hover:text-white hover:bg-secondary hover:border-gray-700'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="h-8 w-8 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
+                    title="Next Page"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Mobile Pagination (<640px) */}
+            {totalPages > 1 && (
+              <div className="flex sm:hidden flex-col items-center gap-2 pt-2.5 pb-2.5 px-3 border-t border-gray-800/80 bg-secondary/20">
+                <div className="text-[11px] text-gray-400">
+                  দেখাচ্ছে <span className="font-semibold text-white">{startIndex + 1}</span> - <span className="font-semibold text-white">{Math.min(endIndex, filteredLoans.length)}</span> / মোট <span className="font-semibold text-white">{filteredLoans.length}</span> টি
+                  <span className="text-gray-500 ml-1">({currentPage}/{totalPages} পৃষ্ঠা)</span>
+                </div>
+
+                <div className="flex items-center gap-1 flex-wrap justify-center">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="h-7 w-7 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-md p-0"
+                    title="Previous Page"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </Button>
+
+                  {getPageNumbers(true).map((pageNum, idx) => {
+                    if (pageNum === '...') {
+                      return (
+                        <span key={`mobile-ellipsis-${idx}`} className="px-1 text-gray-500 text-xs select-none">
+                          ...
+                        </span>
+                      );
+                    }
+                    const page = Number(pageNum);
+                    const isActive = currentPage === page;
+                    return (
+                      <button
+                        key={`mobile-page-${page}`}
+                        onClick={() => handlePageChange(page)}
+                        className={`h-7 min-w-[28px] px-1.5 rounded-md text-xs font-medium transition-all ${
+                          isActive
+                            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 font-bold'
+                            : 'bg-card border border-gray-800 text-gray-300 hover:text-white hover:bg-secondary hover:border-gray-700'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="h-7 w-7 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-md p-0"
+                    title="Next Page"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
