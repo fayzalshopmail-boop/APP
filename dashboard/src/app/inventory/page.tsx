@@ -410,7 +410,7 @@ export default function InventoryPage() {
         </div>
         <div className="bg-card border border-gray-800 rounded-xl p-5">
           <div className="text-gray-400 text-sm font-medium mb-1">Total Inventory Value</div>
-          <div className="text-2xl font-bold text-blue-400">৳{totalInventoryValue.toLocaleString()}</div>
+          <div className="text-2xl font-bold text-blue-400">{formatCurrency(totalInventoryValue)}</div>
         </div>
         <div className="bg-card border border-red-900/30 rounded-xl p-5 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-10">
@@ -496,10 +496,10 @@ export default function InventoryPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-gray-400">
-                      ৳{item.purchasePrice}
+                      {formatCurrency(item.purchasePrice)}
                     </td>
                     <td className="px-6 py-4 text-gray-200 font-medium">
-                      ৳{item.sellingPrice}
+                      {formatCurrency(item.sellingPrice)}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
@@ -775,7 +775,7 @@ export default function InventoryPage() {
                   <h4 className="text-sm font-semibold text-emerald-400">{restockItem.name}</h4>
                   <div className="flex justify-between text-xs text-gray-400">
                     <span>Current Stock: <strong className="text-gray-200">{restockItem.stock} {restockItem.unit}</strong></span>
-                    <span>Current Avg Cost: <strong className="text-gray-200">৳{restockItem.purchasePrice}</strong></span>
+                    <span>Current Avg Cost: <strong className="text-gray-200">{formatCurrency(restockItem.purchasePrice)}</strong></span>
                   </div>
                 </div>
 
@@ -840,7 +840,7 @@ export default function InventoryPage() {
                     <div className="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-lg flex items-center justify-between mt-2">
                       <span className="text-xs text-emerald-400/80">Calculated Average Cost:</span>
                       <span className="text-sm font-bold text-emerald-400">
-                        ৳{(((restockItem.stock * restockItem.purchasePrice) + (restockData.addQuantity * restockData.newPurchasePrice)) / (restockItem.stock + restockData.addQuantity)).toFixed(2)}
+                        {formatCurrency(((restockItem.stock * restockItem.purchasePrice) + (restockData.addQuantity * restockData.newPurchasePrice)) / (restockItem.stock + restockData.addQuantity))}
                       </span>
                     </div>
                   )}
@@ -895,7 +895,7 @@ export default function InventoryPage() {
                   <h4 className="text-sm font-semibold text-blue-400">{sellItem.name}</h4>
                   <div className="flex justify-between text-xs text-gray-400">
                     <span>Available Stock: <strong className="text-emerald-400">{sellItem.stock} {sellItem.unit}</strong></span>
-                    <span>Selling Price: <strong className="text-gray-200">৳{sellItem.sellingPrice}</strong></span>
+                    <span>Selling Price: <strong className="text-gray-200">{formatCurrency(sellItem.sellingPrice)}</strong></span>
                   </div>
                 </div>
 
@@ -942,7 +942,7 @@ export default function InventoryPage() {
                     <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-lg flex items-center justify-between mt-2">
                       <span className="text-xs text-blue-400/80">Total Revenue to Collect:</span>
                       <span className="text-base font-bold text-blue-400">
-                        ৳{formatNumber(sellData.quantity * sellData.price)}
+                        {formatCurrency(sellData.quantity * sellData.price)}
                       </span>
                     </div>
                   )}

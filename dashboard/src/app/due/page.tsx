@@ -10,6 +10,7 @@ import { Coins, Search, ArrowUpRight, Phone, Calendar, AlertCircle } from 'lucid
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { PaymentModal } from '@/components/ui/PaymentModal';
+import toast from 'react-hot-toast';
 
 export default function DuePage() {
   const { user } = useAppStore();
@@ -54,9 +55,10 @@ export default function DuePage() {
       }).filter(c => c.due > 0));
       
       setPaymentModalCustomer(null);
+      toast.success('পেমেন্ট সফলভাবে সম্পন্ন হয়েছে!');
     } catch (err: any) {
       console.error("Payment error", err);
-      alert(err.message || 'Failed to process payment');
+      toast.error(err.message || 'পেমেন্ট সম্পন্ন করতে সমস্যা হয়েছে');
     }
   };
 

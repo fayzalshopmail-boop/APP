@@ -24,6 +24,7 @@ import { inventoryService } from '@/lib/services/inventory';
 import { PartUsed } from '@/lib/services/customer';
 import { sendSMS } from '@/lib/sms';
 import { smsConfigService } from '@/lib/services/smsConfig';
+import toast from 'react-hot-toast';
 
 export default function CustomersPage() {
   const { user, highlightCustomerId, highlightCustomerSearch, setHighlightCustomerId, setHighlightCustomerSearch } = useAppStore();
@@ -289,7 +290,7 @@ export default function CustomersPage() {
           sendSMS(data.phone, msg, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
         }
       }
-    } catch (error) { console.error("Firebase error", error); alert("Error: " + ((error as any).message || String(error))); }
+    } catch (error) { console.error("Firebase error", error); toast.error("Error: " + ((error as any).message || String(error))); }
   };
 
   const handleSaveSetBill = async (customerId: string, totalBill: number, discount?: number, expectedDeliveryDate?: string) => {
@@ -318,7 +319,7 @@ export default function CustomersPage() {
       setSetBillCustomer(null);
     } catch (err) {
       console.error("Failed to set customer bill:", err);
-      alert("বিল সংরক্ষণ করতে সমস্যা হয়েছে।");
+      toast.error("বিল সংরক্ষণ করতে সমস্যা হয়েছে।");
     }
   };
 
@@ -367,7 +368,7 @@ export default function CustomersPage() {
           }
         }
       }
-    } catch (error) { console.error("Firebase error", error); alert("Error: Failed to update status. Please check your internet connection."); }
+    } catch (error) { console.error("Firebase error", error); toast.error("Error: Failed to update status. Please check your internet connection."); }
   };
 
   const handleConfirmParts = async (data: PartsConfirmData) => {
@@ -431,7 +432,7 @@ export default function CustomersPage() {
       setPartsModalCustomer(null);
     } catch (error: any) {
       console.error("Error confirming parts and delivery checkout", error);
-      alert(error.message || "Error: Failed to process delivery checkout.");
+      toast.error(error.message || "ডেলিভারি চেকআউট সম্পন্ন করতে সমস্যা হয়েছে।");
     }
   };
 
@@ -455,9 +456,10 @@ export default function CustomersPage() {
         } : c
       ));
       setPaymentModalCustomer(null);
+      toast.success("পেমেন্ট সফলভাবে সংরক্ষিত হয়েছে!");
     } catch (error: any) { 
       console.error("Firebase error", error); 
-      alert(error.message || "Error: Failed to save payment."); 
+      toast.error(error.message || "পেমেন্ট সংরক্ষণ করতে সমস্যা হয়েছে।"); 
     }
   };
 
@@ -497,9 +499,10 @@ export default function CustomersPage() {
     try {
       await customerService.delete(id);
       setCustomers(customers.filter(c => c.id !== id));
+      toast.success("কাস্টমার সফলভাবে মুছে ফেলা হয়েছে");
     } catch (error) { 
       console.error("Firebase error", error); 
-      alert("Error: Failed to delete customer. Please check your internet connection."); 
+      toast.error("কাস্টমার মুছতে সমস্যা হয়েছে। ইন্টারনেট সংযোগ চেক করুন।"); 
     }
   };
 
@@ -551,9 +554,10 @@ export default function CustomersPage() {
           await sendSMS(c.phone, `Your device has been returned unrepaired. Please collect it from shop.`, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
         }
       }
+      toast.success("ডিভাইস আনরিপেয়ার্ড ফেরত মার্ক করা হয়েছে");
     } catch (err: any) {
       console.error('Error marking as returned', err);
-      alert(err.message || 'Failed to mark as returned');
+      toast.error(err.message || 'ফেরত মার্ক করতে সমস্যা হয়েছে');
     }
   };
 

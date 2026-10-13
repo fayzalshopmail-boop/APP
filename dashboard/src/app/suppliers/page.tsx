@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatCurrency } from '@/lib/currency';
 import { supplierService, Supplier } from '@/lib/services/supplier';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import toast from 'react-hot-toast';
 
 export default function SuppliersPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -92,11 +93,12 @@ export default function SuppliersPage() {
           due: 0
         };
         setSuppliers([...suppliers, newSupplier].sort((a, b) => a.name.localeCompare(b.name)));
+        toast.success("সাপ্লায়ার সফলভাবে যোগ করা হয়েছে!");
       }
       setIsModalOpen(false);
     } catch (err) {
       console.error(err);
-      alert("Failed to save supplier");
+      toast.error("সাপ্লায়ার সংরক্ষণ করতে সমস্যা হয়েছে");
     }
   };
 
@@ -106,9 +108,10 @@ export default function SuppliersPage() {
       await supplierService.delete(confirmModal.id);
       setSuppliers(suppliers.filter(s => s.id !== confirmModal.id));
       setConfirmModal({ isOpen: false, id: null });
+      toast.success("সাপ্লায়ার মুছে ফেলা হয়েছে");
     } catch (err) {
       console.error(err);
-      alert("Failed to delete supplier");
+      toast.error("সাপ্লায়ার মুছে ফেলতে সমস্যা হয়েছে");
     }
   };
 
@@ -116,7 +119,7 @@ export default function SuppliersPage() {
     e.preventDefault();
     if (!billModalSupplier) return;
     const amount = Number(billAmount);
-    if (amount <= 0) return alert("Invalid amount");
+    if (amount <= 0) return toast.error("সঠিক টাকার পরিমাণ লিখুন");
 
     try {
       const { newPurchase, newDue } = await supplierService.addBill(billModalSupplier.id, amount);
@@ -125,9 +128,10 @@ export default function SuppliersPage() {
       ));
       setBillModalSupplier(null);
       setBillAmount('');
+      toast.success("বিল সফলভাবে যোগ করা হয়েছে!");
     } catch (err) {
       console.error(err);
-      alert("Failed to add bill");
+      toast.error("বিল যোগ করতে সমস্যা হয়েছে");
     }
   };
 
@@ -135,7 +139,7 @@ export default function SuppliersPage() {
     e.preventDefault();
     if (!paymentModalSupplier) return;
     const amount = Number(paymentAmount);
-    if (amount <= 0 || amount > paymentModalSupplier.due) return alert("Invalid amount");
+    if (amount <= 0 || amount > paymentModalSupplier.due) return toast.error("সঠিক টাকার পরিমাণ লিখুন");
 
     try {
       const { newPaid, newDue } = await supplierService.addPayment(paymentModalSupplier.id, amount);
@@ -144,9 +148,10 @@ export default function SuppliersPage() {
       ));
       setPaymentModalSupplier(null);
       setPaymentAmount('');
+      toast.success("পেমেন্ট সফলভাবে সম্পন্ন হয়েছে!");
     } catch (err) {
       console.error(err);
-      alert("Payment failed");
+      toast.error("পেমেন্ট সম্পন্ন করতে সমস্যা হয়েছে");
     }
   };
 

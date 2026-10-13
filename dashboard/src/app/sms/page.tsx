@@ -10,6 +10,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { smsConfigService, SmsSettings, defaultSmsSettings } from '@/lib/services/smsConfig';
 import { customerService, Customer } from '@/lib/services/customer';
 import { sendSMS } from '@/lib/sms';
+import toast from 'react-hot-toast';
 
 export default function SmsMarketingPage() {
   const { user: currentUser } = useAppStore();
@@ -18,7 +19,7 @@ export default function SmsMarketingPage() {
   const [saving, setSaving] = useState(false);
   const [balance, setBalance] = useState<string | null>(null);
   const [checkingBalance, setCheckingBalance] = useState(false);
-  const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
+  const [sendProgress, setSendProgress] = useState<{ current: number; total: number } | null>(null);
 
   // Bulk SMS states
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -73,12 +74,10 @@ export default function SmsMarketingPage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      setMessage(null);
       await smsConfigService.saveSettings(settings);
-      setMessage({ text: 'SMS Settings saved successfully!', type: 'success' });
-      setTimeout(() => setMessage(null), 3000);
+      toast.success('SMS Settings saved successfully!');
     } catch (error: any) {
-      setMessage({ text: error.message || 'Failed to save settings', type: 'error' });
+      toast.error(error.message || 'Failed to save settings');
     } finally {
       setSaving(false);
     }
@@ -86,7 +85,7 @@ export default function SmsMarketingPage() {
 
   const handleCheckBalance = async () => {
     if (!settings.apiKey) {
-      setMessage({ text: 'Please enter and save your API Key first.', type: 'error' });
+      toast.error('Please enter and save your API Key first.');
       return;
     }
     try {
@@ -104,11 +103,12 @@ export default function SmsMarketingPage() {
         } catch (e) {
           setBalance(data.balance);
         }
+        toast.success(`SMS Balance: ৳${data.balance}`);
       } else {
-        setMessage({ text: data.error || 'Failed to fetch balance', type: 'error' });
+        toast.error(data.error || 'Failed to fetch balance');
       }
     } catch (error: any) {
-      setMessage({ text: 'Error fetching balance', type: 'error' });
+      toast.error('Error fetching balance');
     } finally {
       setCheckingBalance(false);
     }
@@ -116,11 +116,11 @@ export default function SmsMarketingPage() {
 
   const handleSendBulkSMS = async () => {
     if (!settings.enabled || !settings.apiKey || !settings.senderId) {
-      setMessage({ text: 'SMS API is not configured or disabled.', type: 'error' });
+      toast.error('SMS API is not configured or disabled.');
       return;
     }
     if (!bulkMessage.trim()) {
-      setMessage({ text: 'Message cannot be empty.', type: 'error' });
+      toast.error('Message cannot be empty.');
       return;
     }
 
@@ -131,9 +131,15 @@ export default function SmsMarketingPage() {
       targetCustomers = customers.filter(c => c.status === 'Delivered');
     }
 
+    const validCustomers = targetCustomers.filter(c => c.phone && c.phone.length >= 10);
+    if (validCustomers.length === 0) {
+      toast.error('No valid phone numbers found.');
+      return;
+    }
+
     try {
       setSendingBulk(true);
-      setMessage(null);
+      setSendProgress({ current: 0, total: validCustomers.length });
 
       // Check if message contains variables
       const hasVariables = /{name}|{brand}|{type}|{due}|{total}|{advance}|{problem}/.test(bulkMessage);
@@ -141,8 +147,9 @@ export default function SmsMarketingPage() {
       if (hasVariables) {
         // Send individually to resolve variables
         let successCount = 0;
-        for (const c of targetCustomers) {
-          if (!c.phone || c.phone.length < 10) continue;
+        for (let i = 0; i < validCustomers.length; i++) {
+          const c = validCustomers[i];
+          setSendProgress({ current: i + 1, total: validCustomers.length });
           
           let personalizedMsg = bulkMessage
             .replace(/{name}/g, c.name || '')
@@ -156,52 +163,50 @@ export default function SmsMarketingPage() {
           const result = await sendSMS(c.phone, personalizedMsg, settings.apiKey, settings.senderId, settings.apiUrl);
           if (result.success) successCount++; else console.error("Bulk SMS individual error:", result.error);
         }
-        setMessage({ text: `Successfully sent personalized SMS to ${successCount} customers!`, type: 'success' });
+        toast.success(`Successfully sent personalized SMS to ${successCount} customers!`);
         setBulkMessage('');
       } else {
         // Send as a single bulk request
-        const validNumbers = targetCustomers.map(c => c.phone).filter(phone => phone && phone.length >= 10);
-        if (validNumbers.length === 0) {
-          setMessage({ text: 'No valid phone numbers found.', type: 'error' });
-          return;
-        }
-        
+        const validNumbers = validCustomers.map(c => c.phone);
         const result = await sendSMS(validNumbers, bulkMessage, settings.apiKey, settings.senderId, settings.apiUrl);
         if (result.success) {
-          setMessage({ text: `Successfully sent Bulk SMS to ${validNumbers.length} customers!`, type: 'success' });
+          toast.success(`Successfully sent Bulk SMS to ${validNumbers.length} customers!`);
           setBulkMessage('');
         } else {
-          setMessage({ text: `Failed to send bulk SMS: ${result.error}`, type: 'error' });
+          toast.error(`Failed to send bulk SMS: ${result.error}`);
         }
       }
     } catch (error: any) {
-      setMessage({ text: error.message || 'An error occurred while sending SMS.', type: 'error' });
+      toast.error(error.message || 'An error occurred while sending SMS.');
     } finally {
       setSendingBulk(false);
+      setSendProgress(null);
     }
   };
 
   const handleSendFollowups = async () => {
     if (!settings.enabled || !settings.apiKey || !settings.senderId) {
-      setMessage({ text: 'SMS API is not configured or disabled.', type: 'error' });
+      toast.error('SMS API is not configured or disabled.');
       return;
     }
     if (!followupMessage.trim()) {
-      setMessage({ text: 'Message cannot be empty.', type: 'error' });
+      toast.error('Message cannot be empty.');
       return;
     }
-    if (sixMonthOldCustomers.length === 0) {
-      setMessage({ text: 'No eligible customers found.', type: 'error' });
+    const eligible = sixMonthOldCustomers.filter(c => c.phone && c.phone.length >= 10);
+    if (eligible.length === 0) {
+      toast.error('No eligible customers found.');
       return;
     }
 
     try {
       setSendingFollowup(true);
-      setMessage(null);
+      setSendProgress({ current: 0, total: eligible.length });
 
       let successCount = 0;
-      for (const c of sixMonthOldCustomers) {
-        if (!c.phone || c.phone.length < 10) continue;
+      for (let i = 0; i < eligible.length; i++) {
+        const c = eligible[i];
+        setSendProgress({ current: i + 1, total: eligible.length });
         
         let personalizedMsg = followupMessage
           .replace(/{name}/g, c.name || '')
@@ -212,11 +217,12 @@ export default function SmsMarketingPage() {
         if (result.success) successCount++; else console.error("Bulk SMS individual error:", result.error);
       }
       
-      setMessage({ text: `Successfully sent follow-up SMS to ${successCount} customers!`, type: 'success' });
+      toast.success(`Successfully sent follow-up SMS to ${successCount} customers!`);
     } catch (error: any) {
-      setMessage({ text: error.message || 'An error occurred while sending SMS.', type: 'error' });
+      toast.error(error.message || 'An error occurred while sending SMS.');
     } finally {
       setSendingFollowup(false);
+      setSendProgress(null);
     }
   };
 
@@ -243,44 +249,71 @@ export default function SmsMarketingPage() {
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">
 
-      {message && (
-        <div className={`p-4 rounded-xl text-sm flex items-center gap-2 ${message.type === 'success' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
-          <CheckCircle className="w-4 h-4" />
-          {message.text}
-        </div>
-      )}
-
       {/* Tabs */}
-        <div className="flex overflow-x-auto whitespace-nowrap space-x-2 border-b border-gray-800 pb-px mb-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex bg-[#131622] p-1.5 rounded-2xl border border-gray-800/80 gap-1.5 overflow-x-auto scrollbar-none mb-6">
         <button
           onClick={() => setActiveTab('api')}
-          className={`flex items-center gap-2 px-5 py-3 rounded-t-xl font-medium text-sm transition-all ${activeTab === 'api' ? 'bg-card text-white border-t border-x border-gray-800 shadow-lg' : 'text-gray-500 hover:text-gray-300 hover:bg-card/50'}`}
+          className={`flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all shrink-0 select-none ${
+            activeTab === 'api'
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 font-bold'
+              : 'text-gray-400 hover:text-white hover:bg-secondary/40'
+          }`}
         >
           <Settings className="w-4 h-4" />
           API Setup
         </button>
         <button
           onClick={() => setActiveTab('templates')}
-          className={`flex items-center gap-2 px-5 py-3 rounded-t-xl font-medium text-sm transition-all ${activeTab === 'templates' ? 'bg-card text-white border-t border-x border-gray-800 shadow-lg' : 'text-gray-500 hover:text-gray-300 hover:bg-card/50'}`}
+          className={`flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all shrink-0 select-none ${
+            activeTab === 'templates'
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 font-bold'
+              : 'text-gray-400 hover:text-white hover:bg-secondary/40'
+          }`}
         >
           <FileText className="w-4 h-4" />
           SMS Templates
         </button>
         <button
           onClick={() => setActiveTab('bulk')}
-          className={`flex items-center gap-2 px-5 py-3 rounded-t-xl font-medium text-sm transition-all ${activeTab === 'bulk' ? 'bg-card text-white border-t border-x border-gray-800 shadow-lg' : 'text-gray-500 hover:text-gray-300 hover:bg-card/50'}`}
+          className={`flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all shrink-0 select-none ${
+            activeTab === 'bulk'
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 font-bold'
+              : 'text-gray-400 hover:text-white hover:bg-secondary/40'
+          }`}
         >
           <Users className="w-4 h-4" />
           Bulk SMS
         </button>
         <button
           onClick={() => setActiveTab('followup')}
-          className={`flex items-center gap-2 px-5 py-3 rounded-t-xl font-medium text-sm transition-all ${activeTab === 'followup' ? 'bg-card text-white border-t border-x border-gray-800 shadow-lg' : 'text-gray-500 hover:text-gray-300 hover:bg-card/50'}`}
+          className={`flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all shrink-0 select-none ${
+            activeTab === 'followup'
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 font-bold'
+              : 'text-gray-400 hover:text-white hover:bg-secondary/40'
+          }`}
         >
           <Clock className="w-4 h-4" />
-          Follow-ups
+          6-Month Follow-ups
         </button>
       </div>
+
+      {/* Send Progress Indicator */}
+      {sendProgress && (
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4 space-y-2 mb-6">
+          <div className="flex justify-between text-xs sm:text-sm text-blue-400 font-semibold">
+            <span className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-blue-400" /> Sending SMS in progress...
+            </span>
+            <span>{sendProgress.current} / {sendProgress.total}</span>
+          </div>
+          <div className="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden">
+            <div 
+              className="bg-gradient-to-r from-blue-600 to-indigo-500 h-2.5 transition-all duration-200" 
+              style={{ width: `${Math.round((sendProgress.current / sendProgress.total) * 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Tab Content */}
       <div className="bg-card border border-gray-800 rounded-2xl p-6 md:p-8 min-h-[400px]">

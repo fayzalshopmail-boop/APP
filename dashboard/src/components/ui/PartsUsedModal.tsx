@@ -27,6 +27,7 @@ import {
  Check
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
+import toast from 'react-hot-toast';
 
 export interface PartsConfirmData {
  parts: PartUsed[];
@@ -166,9 +167,9 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
 
  const handleSubmit = () => {
  if (isOverpaid) return;
- if (paymentReceived < 0) return alert("Payment cannot be negative");
+ if (paymentReceived < 0) return toast.error("পেমেন্ট নেতিবাচক হতে পারবে না");
  if (pendingStatus === "Delivered" && finalDue > 0 && !dueDate) {
- alert("Please select a Due Date for the remaining balance.");
+ toast.error("বকেয়া টাকার জন্য অনুগ্রহ করে তাগাদার তারিখ নির্বাচন করুন।");
  return;
  }
  

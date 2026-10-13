@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface ConfirmModalProps {
  isOpen: boolean;
@@ -20,6 +20,8 @@ interface ConfirmModalProps {
  confirmText?: string;
  cancelText?: string;
  variant?: 'danger' | 'warning';
+ requireMatchString?: string;
+ requireMatchPlaceholder?: string;
 }
 
 export function ConfirmModal({ 
@@ -30,11 +32,23 @@ export function ConfirmModal({
  message = "This action cannot be undone. Do you want to proceed?", 
  confirmText = "Confirm", 
  cancelText = "Cancel",
- variant = 'danger'
+ variant = 'danger',
+ requireMatchString,
+ requireMatchPlaceholder
 }: ConfirmModalProps) {
  const [isLoading, setIsLoading] = useState(false);
+ const [matchInput, setMatchInput] = useState('');
+
+ useEffect(() => {
+   if (isOpen) {
+     setMatchInput('');
+   }
+ }, [isOpen]);
+
+ const canConfirm = !requireMatchString || matchInput.trim() === requireMatchString;
 
  const handleConfirm = async () => {
+ if (!canConfirm) return;
  setIsLoading(true);
  try {
  await onConfirm();
@@ -67,14 +81,30 @@ export function ConfirmModal({
  </div>
  </div>
 
- <div className="flex items-center gap-3 mt-8">
+ {requireMatchString && (
+   <div className="space-y-2 text-left w-full mt-4 bg-background/50 p-3 rounded-xl border border-gray-800">
+     <label className="text-xs text-gray-400 block">
+       নিশ্চিত করতে নিচে <span className="font-mono font-bold text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/20">{requireMatchString}</span> লিখুন:
+     </label>
+     <Input
+       type="text"
+       value={matchInput}
+       onChange={(e) => setMatchInput(e.target.value)}
+       placeholder={requireMatchPlaceholder || `Type "${requireMatchString}" here`}
+       className="bg-card border-gray-800 text-white font-mono text-center tracking-wider focus:border-red-500/50"
+       autoFocus
+     />
+   </div>
+ )}
+
+ <div className="flex items-center gap-3 mt-6">
  <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading} className="flex-1">
  {cancelText}
  </Button>
  <Button 
  onClick={handleConfirm}
- disabled={isLoading}
- className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-white transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 
+ disabled={isLoading || !canConfirm}
+ className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-white transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed
  ${isDanger 
  ? 'bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 shadow-red-500/20' 
  : 'bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 shadow-orange-500/20'

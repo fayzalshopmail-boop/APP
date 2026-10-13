@@ -9,6 +9,7 @@ import { ShopSettings, shopSettingsService, defaultShopSettings } from '@/lib/se
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { backupService } from '@/lib/services/backup';
+import toast from 'react-hot-toast';
 
 export default function SettingsPage() {
   const { user: currentUser, shop: globalShop, setShop: setGlobalShop } = useAppStore();
@@ -30,7 +31,12 @@ export default function SettingsPage() {
 
   const getModalProps = () => {
     switch (confirmModal.actionType) {
-      case 'wipe': return { title: "Wipe All Data?", message: "CRITICAL WARNING: This will PERMANENTLY DELETE ALL shop data.", confirmText: "Wipe Database" };
+      case 'wipe': return { 
+        title: "Wipe All Data?", 
+        message: "CRITICAL WARNING: This will PERMANENTLY DELETE ALL shop data (Customers, Inventory, Transactions, Loans, Expenses). This action is irreversible.", 
+        confirmText: "Wipe Database",
+        requireMatchString: "DELETE"
+      };
       case 'merge': return { title: "Merge Backup?", message: "WARNING: This will merge data from the backup file into your database.", confirmText: "Merge Data" };
       case 'deleteStaff': return { title: "Delete Staff Member?", message: "Are you sure you want to completely DELETE this staff member?", confirmText: "Delete Staff" };
       default: return { title: "Confirm", message: "Are you sure?", confirmText: "Confirm" };
@@ -78,12 +84,17 @@ export default function SettingsPage() {
   }, []);
 
   const handleExportData = async () => {
+    if (currentUser?.role !== 'Owner') {
+      return toast.error("শুধুমাত্র দোকানের মালিক (Owner) ব্যাকআপ ডাউনলোড করতে পারবেন।");
+    }
     try {
       setBackupLoading(true);
       await backupService.exportAllData();
+      toast.success('Full backup downloaded successfully!');
       setSuccess('Full backup downloaded successfully!');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
+      toast.error(err.message || 'Failed to export data');
       setError(err.message || 'Failed to export data');
     } finally {
       setBackupLoading(false);
@@ -94,9 +105,11 @@ export default function SettingsPage() {
     try {
       setBackupLoading(true);
       await backupService.exportCustomerContactsCSV();
+      toast.success('Customer contacts downloaded successfully!');
       setSuccess('Customer contacts downloaded successfully!');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
+      toast.error(err.message || 'Failed to export contacts');
       setError(err.message || 'Failed to export contacts');
     } finally {
       setBackupLoading(false);
@@ -104,6 +117,9 @@ export default function SettingsPage() {
   };
 
   const handleRestoreData = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (currentUser?.role !== 'Owner') {
+      return toast.error("শুধুমাত্র দোকানের মালিক (Owner) ডেটা রিস্টোর করতে পারবেন।");
+    }
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -119,9 +135,11 @@ export default function SettingsPage() {
         try {
           const json = event.target?.result as string;
           await backupService.restoreData(json);
+          toast.success('Data restored successfully!');
           setSuccess('Data restored successfully!');
           setTimeout(() => setSuccess(null), 3000);
         } catch (err: any) {
+          toast.error(err.message || 'Failed to parse or restore file');
           setError(err.message || 'Failed to parse or restore file');
         } finally {
           setBackupLoading(false);
@@ -129,28 +147,28 @@ export default function SettingsPage() {
       };
       reader.readAsText(file);
     } catch (err: any) {
+      toast.error(err.message || 'Failed to read file');
       setError(err.message || 'Failed to read file');
       setBackupLoading(false);
     }
   };
 
     const handleClearData = async () => {
+      if (currentUser?.role !== 'Owner') {
+        return toast.error("শুধুমাত্র দোকানের মালিক (Owner) ডেটাবেজ মুছে ফেলতে পারবেন।");
+      }
       setConfirmModal({isOpen: true, actionType: 'wipe', payload: null});
     };
 
     const executeWipeDatabase = async () => {
-    
-    if (prompt("Type 'DELETE' to confirm:") !== 'DELETE') {
-      alert('Operation cancelled.');
-      return;
-    }
-
     try {
       setBackupLoading(true);
       await backupService.clearAllData();
+      toast.success('সমস্ত ডেটা সফলভাবে মুছে ফেলা হয়েছে! সিস্টেম প্রস্তুত।');
       setSuccess('All data cleared successfully! System is ready for live use.');
       setTimeout(() => setSuccess(null), 5000);
     } catch (err: any) {
+      toast.error(err.message || 'Failed to clear data');
       setError(err.message || 'Failed to clear data');
     } finally {
       setBackupLoading(false);
@@ -247,7 +265,7 @@ export default function SettingsPage() {
 
   const handleDeleteStaff = (email: string) => {
     if (currentUser?.email === email) {
-      alert("You cannot delete your own account.");
+      toast.error("আপনি নিজের অ্যাকাউন্ট মুছতে পারবেন না।");
       return;
     }
     setConfirmModal({
@@ -261,9 +279,10 @@ export default function SettingsPage() {
     try {
         await userService.deleteUser(email);
         setStaffList(prev => prev.filter(s => s.email !== email));
+        toast.success("স্টাফ সফলভাবে মুছে ফেলা হয়েছে");
       } catch (err) {
         console.error("Failed to delete user", err);
-        alert("Failed to delete user. Please try again.");
+        toast.error("স্টাফ মুছতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
       }
   };
 
@@ -686,6 +705,7 @@ export default function SettingsPage() {
         title={getModalProps().title}
         message={getModalProps().message}
         confirmText={getModalProps().confirmText}
+        requireMatchString={(getModalProps() as any).requireMatchString}
         variant={confirmModal.actionType === 'wipe' ? 'danger' : 'warning'}
       />
     </div>
