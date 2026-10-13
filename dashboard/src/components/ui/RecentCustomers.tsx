@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, Star, Users, Phone, ArrowRight } from 'lucide-react';
+import { Clock, Star, Users, Phone, ArrowRight, Tv } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { customerService, Customer } from '@/lib/services/customer';
 import Link from 'next/link';
@@ -11,20 +11,50 @@ export function RecentCustomers() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const data = await customerService.getRecent(5);
+      setCustomers(data);
+    } catch (error) {
+      console.error("Error loading recent customers", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        const data = await customerService.getRecent(5);
-        setCustomers(data);
-      } catch (error) {
-        console.error("Error loading recent customers", error);
-      } finally {
-        setLoading(false);
-      }
-    };
     loadData();
+
+    window.addEventListener('focus', loadData);
+    window.addEventListener('online', loadData);
+    window.addEventListener('app:refresh-dashboard', loadData);
+
+    return () => {
+      window.removeEventListener('focus', loadData);
+      window.removeEventListener('online', loadData);
+      window.removeEventListener('app:refresh-dashboard', loadData);
+    };
   }, []);
+
+  const getStatusBadge = (status?: string) => {
+    switch (status) {
+      case 'Received':
+        return { label: 'জমা নেওয়া', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' };
+      case 'In Progress':
+        return { label: 'মেরামত চলছে', color: 'bg-orange-500/10 text-orange-400 border-orange-500/20' };
+      case 'Waiting for Parts':
+        return { label: 'পার্টস অপেক্ষা', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' };
+      case 'Ready for Delivery':
+        return { label: 'ডেলিভারি প্রস্তুত', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' };
+      case 'Delivered':
+        return { label: 'ডেলিভারি সম্পন্ন', color: 'bg-purple-500/10 text-purple-400 border-purple-500/20' };
+      case 'Returned (Unrepaired)':
+        return { label: 'ফেরত দেওয়া', color: 'bg-rose-500/10 text-rose-400 border-rose-500/20' };
+      default:
+        return { label: status || 'জমা নেওয়া', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' };
+    }
+  };
 
   return (
     <motion.div 
@@ -36,7 +66,7 @@ export function RecentCustomers() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <Clock className="w-5 h-5 text-blue-400" />
-          <h3 className="text-gray-200 font-semibold text-lg">সাম্প্রতিক কাস্টমার</h3>
+          <h3 className="text-gray-200 font-semibold text-lg">সাম্প্রতিক কাস্টমার ও মেরামত</h3>
         </div>
         <Link href="/customers" className="text-xs bg-secondary border border-gray-700/50 hover:bg-gray-800 text-gray-300 px-4 py-2 rounded-lg transition-colors flex items-center gap-1">
           সকল দেখুন <ArrowRight className="w-3 h-3" />
@@ -61,38 +91,47 @@ export function RecentCustomers() {
         <>
           {/* Mobile Card Layout (<640px) */}
           <div className="grid grid-cols-1 gap-3 sm:hidden">
-            {customers.map((c) => (
-              <Link href={`/customers?customerId=${c.id}`} key={c.id} className="bg-secondary p-4 rounded-xl border border-gray-800/60 flex flex-col gap-3 hover:border-gray-700 transition-colors">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h4 className="text-purple-400 font-semibold text-sm">{c.name}</h4>
-                    <div className="flex items-center gap-1.5 text-gray-400 text-xs mt-1">
-                      <Phone className="w-3 h-3" /> {c.phone}
+            {customers.map((c) => {
+              const statusInfo = getStatusBadge(c.status);
+              return (
+                <Link href={`/customers?customerId=${c.id}`} key={c.id} className="bg-secondary p-4 rounded-xl border border-gray-800/60 flex flex-col gap-3 hover:border-gray-700 transition-colors">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-purple-400 font-semibold text-sm truncate">{c.name}</h4>
+                      {(c.deviceBrand || c.deviceType) && (
+                        <p className="text-[11px] text-gray-400 flex items-center gap-1 mt-0.5 truncate">
+                          <Tv className="w-3 h-3 text-gray-500 shrink-0" />
+                          <span>{c.deviceBrand} {c.deviceType}</span>
+                        </p>
+                      )}
+                      <div className="flex items-center gap-1.5 text-gray-400 text-xs mt-1">
+                        <Phone className="w-3 h-3" /> {c.phone}
+                      </div>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-medium border shrink-0 ${statusInfo.color}`}>
+                      {statusInfo.label}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-800/50">
+                    <div>
+                      {c.isBillPending ? (
+                        <span className="text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded text-xs font-semibold">
+                          ⏳ বিল পেন্ডিং
+                        </span>
+                      ) : (
+                        <span className="text-gray-300 font-bold text-sm">
+                          {formatCurrency(c.totalBill)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-orange-400 text-xs font-medium flex items-center gap-1 bg-orange-500/10 px-2 py-1 rounded-md">
+                      <Star className="w-3 h-3 fill-orange-400" />
+                      {c.points} pts
                     </div>
                   </div>
-                  <span className="bg-blue-500/10 text-blue-400 px-2.5 py-1 rounded-md text-[10px] font-medium border border-blue-500/20">
-                    {c.status || 'Received'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between pt-3 border-t border-gray-800/50">
-                  <div>
-                    {c.isBillPending ? (
-                      <span className="text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded text-xs font-semibold">
-                        ⏳ বিল পেন্ডিং
-                      </span>
-                    ) : (
-                      <span className="text-gray-300 font-bold text-sm">
-                        {formatCurrency(c.totalBill)}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-orange-400 text-xs font-medium flex items-center gap-1 bg-orange-500/10 px-2 py-1 rounded-md">
-                    <Star className="w-3 h-3 fill-orange-400" />
-                    {c.points} pts
-                  </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
 
           {/* Desktop Table Layout (>=640px) */}
@@ -100,7 +139,7 @@ export function RecentCustomers() {
             <table className="w-full text-left text-sm whitespace-nowrap">
               <thead>
                 <tr className="text-gray-400 uppercase tracking-wider border-b border-gray-800 text-xs">
-                  <th className="pb-3 font-medium min-w-[150px]">কাস্টমারের নাম</th>
+                  <th className="pb-3 font-medium min-w-[200px]">কাস্টমার ও ডিভাইস</th>
                   <th className="pb-3 font-medium min-w-[120px]">ফোন নম্বর</th>
                   <th className="pb-3 font-medium min-w-[100px]">মোট বিল</th>
                   <th className="pb-3 font-medium min-w-[80px]">পয়েন্ট</th>
@@ -109,45 +148,58 @@ export function RecentCustomers() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800/50">
-                {customers.map((c) => (
-                  <tr key={c.id} className="hover:bg-gray-800/30 transition-colors">
-                    <td className="py-3.5">
-                      <div className="text-purple-400 font-medium">{c.name}</div>
-                    </td>
-                    <td className="py-3.5 text-gray-300 font-medium">{c.phone}</td>
-                    <td className="py-3.5">
-                      {c.isBillPending ? (
-                        <span className="text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded text-xs font-semibold">
-                          ⏳ বিল পেন্ডিং
+                {customers.map((c) => {
+                  const statusInfo = getStatusBadge(c.status);
+                  return (
+                    <tr key={c.id} className="hover:bg-gray-800/30 transition-colors">
+                      <td className="py-3.5">
+                        <div className="flex flex-col">
+                          <span className="text-purple-400 font-semibold">{c.name}</span>
+                          {(c.deviceBrand || c.deviceType) && (
+                            <span className="text-[11px] text-gray-400 flex items-center gap-1 mt-0.5">
+                              <Tv className="w-3 h-3 text-gray-500 shrink-0" />
+                              <span className="truncate max-w-[220px]">
+                                {c.deviceBrand} {c.deviceType} {c.deviceProblem ? `• ${c.deviceProblem}` : ''}
+                              </span>
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3.5 text-gray-300 font-medium">{c.phone}</td>
+                      <td className="py-3.5">
+                        {c.isBillPending ? (
+                          <span className="text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded text-xs font-semibold">
+                            ⏳ বিল পেন্ডিং
+                          </span>
+                        ) : (
+                          <span className="text-gray-200 font-medium">
+                            {formatCurrency(c.totalBill)}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3.5 text-orange-400 font-medium">
+                        <div className="flex items-center gap-1.5 bg-orange-500/10 w-fit px-2 py-0.5 rounded-md border border-orange-500/20">
+                          <Star className="w-3.5 h-3.5 fill-orange-400" />
+                          {c.points}
+                        </div>
+                      </td>
+                      <td className="py-3.5">
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusInfo.color}`}>
+                          {statusInfo.label}
                         </span>
-                      ) : (
-                        <span className="text-gray-200 font-medium">
-                          {formatCurrency(c.totalBill)}
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3.5 text-orange-400 font-medium">
-                      <div className="flex items-center gap-1.5 bg-orange-500/10 w-fit px-2 py-0.5 rounded-md border border-orange-500/20">
-                        <Star className="w-3.5 h-3.5 fill-orange-400" />
-                        {c.points}
-                      </div>
-                    </td>
-                    <td className="py-3.5">
-                      <span className="bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full text-xs font-medium border border-blue-500/20">
-                        {c.status || 'Received'}
-                      </span>
-                    </td>
-                    <td className="py-3.5 text-right pr-3">
-                      <Link 
-                        href={`/customers?customerId=${c.id}`}
-                        className="inline-flex items-center gap-1 text-xs font-medium text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 px-2.5 py-1 rounded-lg transition-colors"
-                      >
-                        <span>বিস্তারিত</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="py-3.5 text-right pr-3">
+                        <Link 
+                          href={`/customers?customerId=${c.id}`}
+                          className="inline-flex items-center gap-1 text-xs font-medium text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 px-2.5 py-1 rounded-lg transition-colors"
+                        >
+                          <span>বিস্তারিত</span>
+                          <ArrowRight className="w-3 h-3" />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -1,6 +1,11 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { 
+  getFirestore, 
+  initializeFirestore, 
+  persistentLocalCache, 
+  persistentMultipleTabManager 
+} from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -21,6 +26,25 @@ if (typeof window !== 'undefined' && firebaseConfig.apiKey) {
 
 export const auth = app ? getAuth(app) : null;
 export const googleProvider = app ? new GoogleAuthProvider() : null;
-export const db = app ? getFirestore(app) : (null as any);
+
+// Initialize Firestore with IndexedDB multi-tab offline persistence
+let firestoreDb: any = null;
+if (app) {
+  if (typeof window !== 'undefined') {
+    try {
+      firestoreDb = initializeFirestore(app, {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager()
+        })
+      });
+    } catch (e) {
+      firestoreDb = getFirestore(app);
+    }
+  } else {
+    firestoreDb = getFirestore(app);
+  }
+}
+
+export const db = firestoreDb;
 
 

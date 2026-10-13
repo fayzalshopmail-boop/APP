@@ -1,8 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { CreditCard, Plus, ArrowUpRight, ArrowDownRight, Edit2, Trash2, CheckCircle, Coins, CalendarClock, History, MessageSquare, Send, Phone } from 'lucide-react';
+import { 
+  CreditCard, Plus, ArrowUpRight, ArrowDownRight, Edit2, Trash2, 
+  CheckCircle, Coins, CalendarClock, History, MessageSquare, Phone, 
+  Search, X, Filter 
+} from 'lucide-react';
 import { loanService, Loan } from '@/lib/services/loan';
 import { formatCurrency } from '@/lib/currency';
 import { Button } from '@/components/ui/button';
@@ -12,20 +16,15 @@ import { CustomSelect } from "@/components/ui/CustomSelect";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import toast from "react-hot-toast";
 
+type FilterType = 'all' | 'pending' | 'paid' | 'given' | 'taken';
+
 export default function LoansPage() {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   
-  const closePaymentModal = () => {
-    setPaymentModalData(null);
-    if (window.history.state?.modal === 'loans-modal') window.history.back();
-  };
-  const closeHistoryModal = () => {
-    setHistoryModalData(null);
-    if (window.history.state?.modal === 'loans-modal') window.history.back();
-  };
-
   const [editingLoan, setEditingLoan] = useState<Loan | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [historyModalData, setHistoryModalData] = useState<Loan | null>(null);
@@ -35,7 +34,22 @@ export default function LoansPage() {
   const [paymentModalData, setPaymentModalData] = useState<Loan | null>(null);
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
   const [nextDate, setNextDate] = useState<string>('');
+  const [paymentNote, setPaymentNote] = useState<string>('');
 
+  // Form State
+  const [formData, setFormData] = useState({
+    personName: '',
+    phone: '+880',
+    type: 'Given' as 'Given' | 'Taken',
+    amount: 0,
+    paidAmount: 0,
+    status: 'Pending' as 'Pending' | 'Paid',
+    notes: '',
+    nextPaymentDate: '',
+    date: new Date().toISOString().split('T')[0]
+  });
+
+  // Popstate Modal Management
   useEffect(() => {
     const handlePopState = () => {
       if (isModalOpen) setIsModalOpen(false);
@@ -53,26 +67,28 @@ export default function LoansPage() {
 
   const closeLoanModal = () => {
     setIsModalOpen(false);
+    setEditingLoan(null);
     if (window.history.state?.modal === 'loans-modal') window.history.back();
   };
 
+  const closePaymentModal = () => {
+    setPaymentModalData(null);
+    setPaymentAmount(0);
+    setNextDate('');
+    setPaymentNote('');
+    if (window.history.state?.modal === 'loans-modal') window.history.back();
+  };
 
-  const [formData, setFormData] = useState({
-      personName: '',
-      phone: '+880',
-    type: 'Given' as 'Given' | 'Taken',
-    amount: 0,
-    paidAmount: 0,
-    status: 'Pending' as 'Pending' | 'Paid',
-    notes: '',
-    nextPaymentDate: '',
-    date: new Date().toISOString().split('T')[0]
-  });
+  const closeHistoryModal = () => {
+    setHistoryModalData(null);
+    if (window.history.state?.modal === 'loans-modal') window.history.back();
+  };
 
   useEffect(() => {
     fetchLoans();
   }, []);
 
+  // Topbar "+ Add Record" button integration
   useEffect(() => {
     const handleOpenAdd = () => {
       handleOpenModal();
@@ -88,17 +104,32 @@ export default function LoansPage() {
       setLoans(data);
     } catch (err) {
       console.error(err);
+      toast.error("Failed to load loan records.");
     } finally {
       setLoading(false);
     }
   };
 
+  // Open Modal (Bug Fixed: properly populates fields when editing)
   const handleOpenModal = (loan?: Loan) => {
     if (loan) {
       setEditingLoan(loan);
       setFormData({
-          personName: '',
-          phone: '+880',
+        personName: loan.personName || '',
+        phone: loan.phone || '+880',
+        type: loan.type || 'Given',
+        amount: loan.amount || 0,
+        paidAmount: loan.paidAmount || 0,
+        status: loan.status || 'Pending',
+        notes: loan.notes || '',
+        nextPaymentDate: loan.nextPaymentDate || '',
+        date: loan.date || new Date().toISOString().split('T')[0]
+      });
+    } else {
+      setEditingLoan(null);
+      setFormData({
+        personName: '',
+        phone: '+880',
         type: 'Given',
         amount: 0,
         paidAmount: 0,
@@ -113,17 +144,30 @@ export default function LoansPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.personName || formData.amount <= 0) return toast.error("Please fill required fields properly.");
+    if (!formData.personName.trim() || formData.amount <= 0) {
+      return toast.error("Please fill required fields properly.");
+    }
 
     try {
       if (editingLoan) {
         await loanService.update(editingLoan.id, formData);
-        setLoans(loans.map(l => l.id === editingLoan.id ? { ...l, ...formData } as Loan : l));
+        setLoans(prev => prev.map(l => l.id === editingLoan.id ? { ...l, ...formData } as Loan : l));
         toast.success("Loan updated!");
       } else {
         const newId = await loanService.add(formData);
-        const newLoan: Loan = { id: newId, ...formData, createdAt: new Date() };
-        setLoans([newLoan, ...loans]);
+        const newLoan: Loan = { 
+          id: newId, 
+          ...formData, 
+          paidAmount: 0,
+          history: [{
+            amount: formData.amount,
+            date: new Date().toISOString(),
+            type: formData.type,
+            note: 'Initial entry'
+          }],
+          createdAt: new Date() 
+        };
+        setLoans(prev => [newLoan, ...prev]);
         toast.success("Loan recorded!");
       }
       closeLoanModal();
@@ -136,7 +180,7 @@ export default function LoansPage() {
   const handleDelete = async (id: string) => {
     try {
       await loanService.delete(id);
-      setLoans(loans.filter(l => l.id !== id));
+      setLoans(prev => prev.filter(l => l.id !== id));
       toast.success("Loan deleted!");
       setDeleteId(null);
     } catch (error) {
@@ -158,27 +202,35 @@ export default function LoansPage() {
         paymentModalData.paidAmount || 0, 
         paymentAmount, 
         paymentModalData.amount,
-        paymentAmount < remaining ? nextDate : undefined
+        paymentAmount < remaining ? nextDate : undefined,
+        paymentModalData.type,
+        paymentNote.trim() || undefined
       );
       
-      setLoans(loans.map(l => l.id === paymentModalData.id ? { 
+      setLoans(prev => prev.map(l => l.id === paymentModalData.id ? { 
         ...l, 
         paidAmount: newPaid, 
         status, 
-        nextPaymentDate: status === 'Paid' ? undefined : (paymentAmount < remaining && nextDate ? nextDate : l.nextPaymentDate) 
+        nextPaymentDate: status === 'Paid' ? undefined : (paymentAmount < remaining && nextDate ? nextDate : l.nextPaymentDate),
+        history: [
+          ...(l.history || []),
+          {
+            amount: paymentAmount,
+            date: new Date().toISOString(),
+            type: 'Payment',
+            note: paymentNote.trim() || (paymentModalData.type === 'Taken' ? 'দেনা পরিশোধ করা হয়েছে' : 'পাওনা টাকা আদায় হয়েছে')
+          }
+        ]
       } : l));
       
       toast.success("Payment recorded!");
       closePaymentModal();
-      setPaymentAmount(0);
-      setNextDate('');
     } catch (error) {
       console.error(error);
       toast.error("Failed to add payment.");
     }
   };
 
-  
   const handleSendSms = async (loan: Loan) => {
     try {
       setSendingSmsId(loan.id);
@@ -193,33 +245,32 @@ export default function LoansPage() {
         return;
       }
       
-      // We need a phone number. We don't store phone numbers in loans currently!
-      // Wait, we can ask for a phone number using a prompt.
       let phone = loan.phone;
       if (phone && !phone.startsWith('+880') && phone.length === 11) {
-        phone = '+880' + phone.substring(1); // convert 017... to +88017...
+        phone = '+880' + phone.substring(1);
       } else if (phone && !phone.startsWith('+880') && phone.length === 10) {
         phone = '+880' + phone;
       }
       
       if (!phone || phone.length < 11) {
         const manualPhone = window.prompt(`Enter mobile number for ${loan.personName} to send SMS:`, loan.phone || "");
-        if (!manualPhone || manualPhone.length < 11) {
+        if (!manualPhone || manualPhone.replace(/\D/g, '').length < 10) {
           toast.error("Valid phone number required.");
           return;
         }
-        phone = manualPhone;
-      }
-      if (!phone || phone.length < 11) {
-        toast.error("Valid phone number required.");
-        return;
+        let clean = manualPhone.replace(/\D/g, '');
+        if (clean.startsWith('880')) clean = clean.substring(3);
+        if (clean.startsWith('0')) clean = clean.substring(1);
+        phone = '+880' + clean;
       }
 
       const dueAmount = loan.amount - (loan.paidAmount || 0);
       let template = loan.type === 'Given' ? smsSettings.loanGivenTemplate : smsSettings.loanTakenTemplate;
       
       if (!template) {
-        template = 'Dear {name}, your unpaid loan of {due} TK at {shop} is due. Please clear it ASAP. Thank you.';
+        template = loan.type === 'Given'
+          ? 'জনাব {name}, {shop} এ আপনার ধার/পাওনা বাবদ {due} টাকা বাকি রয়েছে। অতিসত্বর পরিশোধ করার অনুরোধ করা হলো।'
+          : 'জনাব {name}, {shop} আপনার থেকে নেওয়া ধার বাবদ {due} টাকা বাকি রয়েছে। অতিসত্বর পরিশোধ করা হবে। ধন্যবাদ।';
       }
       
       const msg = template
@@ -241,140 +292,400 @@ export default function LoansPage() {
     }
   };
 
-  const pendingGiven = loans.filter(l => l.type === 'Given' && l.status === 'Pending').reduce((acc, l) => acc + (l.amount - (l.paidAmount || 0)), 0);
-  const pendingTaken = loans.filter(l => l.type === 'Taken' && l.status === 'Pending').reduce((acc, l) => acc + (l.amount - (l.paidAmount || 0)), 0);
+  // Financial Summaries
+  const pendingGiven = useMemo(() => {
+    return loans.filter(l => l.type === 'Given' && l.status === 'Pending').reduce((acc, l) => acc + (l.amount - (l.paidAmount || 0)), 0);
+  }, [loans]);
+
+  const pendingTaken = useMemo(() => {
+    return loans.filter(l => l.type === 'Taken' && l.status === 'Pending').reduce((acc, l) => acc + (l.amount - (l.paidAmount || 0)), 0);
+  }, [loans]);
+
+  // Unified Search and Filter
+  const filteredLoans = useMemo(() => {
+    return loans.filter(loan => {
+      // Filter tab
+      if (activeFilter === 'pending' && loan.status !== 'Pending') return false;
+      if (activeFilter === 'paid' && loan.status !== 'Paid') return false;
+      if (activeFilter === 'given' && loan.type !== 'Given') return false;
+      if (activeFilter === 'taken' && loan.type !== 'Taken') return false;
+
+      // Search query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchesName = loan.personName.toLowerCase().includes(q);
+        const matchesPhone = loan.phone ? loan.phone.includes(q) : false;
+        const matchesNotes = loan.notes ? loan.notes.toLowerCase().includes(q) : false;
+        if (!matchesName && !matchesPhone && !matchesNotes) return false;
+      }
+
+      return true;
+    });
+  }, [loans, activeFilter, searchQuery]);
 
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-[#1a1d2d]/50 border border-orange-500/20 rounded-2xl p-6 relative overflow-hidden group">
-          <div className="absolute inset-0 bg-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-medium text-gray-400">Total Money Given (পাবো)</p>
-            <div className="p-2 bg-orange-500/10 rounded-lg">
-              <ArrowUpRight className="w-4 h-4 text-orange-400" />
+    <div className="space-y-3 sm:space-y-6 max-w-[1600px] mx-auto pb-6 sm:pb-10 px-1 sm:px-0">
+      
+      {/* 2 Core Summary Cards (Compact 2-col on mobile to prevent excessive scrolling) */}
+      <div className="grid grid-cols-2 gap-2 sm:gap-6">
+        {/* Total Money Given (পাবো) */}
+        <div className="bg-[#1a1d2d]/60 border border-orange-500/25 rounded-xl sm:rounded-2xl p-3 sm:p-6 relative overflow-hidden group">
+          <div className="flex items-center justify-between mb-1 sm:mb-4">
+            <p className="text-[11px] sm:text-sm font-medium text-gray-400 truncate">পাবো (Given)</p>
+            <div className="p-1 sm:p-2 bg-orange-500/10 rounded-lg shrink-0">
+              <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-400" />
             </div>
           </div>
-          <h3 className="text-2xl font-bold text-orange-400">{formatCurrency(pendingGiven)}</h3>
+          <h3 className="text-base sm:text-3xl font-bold text-orange-400 truncate">{formatCurrency(pendingGiven)}</h3>
+          <p className="text-[10px] sm:text-xs text-gray-500 mt-1 hidden sm:block">অন্যদের কাছে মোট বাকি পাওনা</p>
         </div>
 
-        <div className="bg-[#1a1d2d]/50 border border-red-500/20 rounded-2xl p-6 relative overflow-hidden group">
-          <div className="absolute inset-0 bg-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-medium text-gray-400">Total Money Taken (দিতে হবে)</p>
-            <div className="p-2 bg-red-500/10 rounded-lg">
-              <ArrowDownRight className="w-4 h-4 text-red-400" />
+        {/* Total Money Taken (দিতে হবে) */}
+        <div className="bg-[#1a1d2d]/60 border border-red-500/25 rounded-xl sm:rounded-2xl p-3 sm:p-6 relative overflow-hidden group">
+          <div className="flex items-center justify-between mb-1 sm:mb-4">
+            <p className="text-[11px] sm:text-sm font-medium text-gray-400 truncate">দিতে হবে (Taken)</p>
+            <div className="p-1 sm:p-2 bg-red-500/10 rounded-lg shrink-0">
+              <ArrowDownRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-400" />
             </div>
           </div>
-          <h3 className="text-2xl font-bold text-red-400">{formatCurrency(pendingTaken)}</h3>
+          <h3 className="text-base sm:text-3xl font-bold text-red-400 truncate">{formatCurrency(pendingTaken)}</h3>
+          <p className="text-[10px] sm:text-xs text-gray-500 mt-1 hidden sm:block">অন্যদের কাছে মোট বাকি দেনা</p>
         </div>
       </div>
 
-      {/* Loan List */}
-      <div className="bg-card border border-gray-800 rounded-2xl overflow-hidden">
-        <div className="p-4 border-b border-gray-800">
-          <h2 className="text-lg font-semibold text-gray-200 flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-blue-400" /> All Records
-          </h2>
+      {/* Unified Loan List */}
+      <div className="bg-card border border-gray-800 rounded-xl sm:rounded-2xl overflow-hidden shadow-xl">
+        
+        {/* Header with Title and Search/Filters */}
+        <div className="p-3 sm:p-5 border-b border-gray-800 flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-4">
+          <div className="flex items-center justify-between w-full md:w-auto">
+            <div className="flex items-center gap-2 min-w-0">
+              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 shrink-0" />
+              <h2 className="text-sm sm:text-lg font-semibold text-gray-200 truncate">সকল খতিয়ান</h2>
+              <span className="text-[10px] sm:text-xs text-gray-400 bg-secondary px-2 py-0.5 rounded-full border border-gray-800 shrink-0">
+                {filteredLoans.length}
+              </span>
+            </div>
+
+            <button
+              onClick={() => handleOpenModal()}
+              className="md:hidden text-xs bg-blue-600 hover:bg-blue-700 text-white font-medium px-2.5 py-1 rounded-lg flex items-center gap-1 shadow shrink-0"
+            >
+              <Plus className="w-3 h-3" /> এন্ট্রি
+            </button>
+          </div>
+
+          {/* Search Box & Filter Chips */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full md:w-auto">
+            <div className="relative w-full sm:w-[220px]">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="নাম, ফোন বা নোট খুঁজুন..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 h-8 sm:h-9 bg-secondary/80 border-gray-800 text-white rounded-lg sm:rounded-xl text-xs sm:text-sm focus:border-blue-500 w-full"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+
+            {/* Quick Filter Chips (Horizontal compact scrollable on mobile) */}
+            <div className="flex items-center gap-1 overflow-x-auto pb-0.5 sm:pb-0 scrollbar-none w-full sm:w-auto">
+              <button
+                onClick={() => setActiveFilter('all')}
+                className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg text-[11px] sm:text-xs font-medium transition-colors shrink-0 ${
+                  activeFilter === 'all' ? 'bg-gray-800 text-white shadow' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setActiveFilter('pending')}
+                className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg text-[11px] sm:text-xs font-medium transition-colors shrink-0 ${
+                  activeFilter === 'pending' ? 'bg-amber-500/20 text-amber-300 font-semibold' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                বাকি
+              </button>
+              <button
+                onClick={() => setActiveFilter('paid')}
+                className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg text-[11px] sm:text-xs font-medium transition-colors shrink-0 ${
+                  activeFilter === 'paid' ? 'bg-emerald-500/20 text-emerald-300 font-semibold' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                পরিশোধিত
+              </button>
+              <button
+                onClick={() => setActiveFilter('given')}
+                className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg text-[11px] sm:text-xs font-medium transition-colors shrink-0 ${
+                  activeFilter === 'given' ? 'bg-orange-500/20 text-orange-400 font-semibold' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                পাবো
+              </button>
+              <button
+                onClick={() => setActiveFilter('taken')}
+                className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg text-[11px] sm:text-xs font-medium transition-colors shrink-0 ${
+                  activeFilter === 'taken' ? 'bg-red-500/20 text-red-400 font-semibold' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                দিতে হবে
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-240px)] relative">
-          <table className="w-full whitespace-nowrap">
-            <thead className="bg-background/50">
-              <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-800/50">
-                <th className="px-6 py-4">Person/Entity</th>
-                <th className="px-6 py-4">Type</th>
-                <th className="px-6 py-4">Total Amount</th>
-                <th className="px-6 py-4">Remaining Due</th>
-                <th className="px-6 py-4">Date</th>
-                <th className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-800/50">
-              {loading ? (
-                <tr><td colSpan={6} className="text-center py-8 text-gray-500">Loading records...</td></tr>
-              ) : loans.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-8 text-gray-500">No loan records found.</td></tr>
-              ) : loans.map((l) => (
-                <tr key={l.id} className="hover:bg-gray-800/20 transition-colors">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-200">
-                    {l.personName}
-                    {l.notes && <p className="text-xs text-gray-500 font-normal mt-0.5">{l.notes}</p>}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`text-xs font-medium px-2 py-1 rounded ${
-                      l.type === 'Given' ? 'bg-orange-500/10 text-orange-400' : 'bg-red-500/10 text-red-400'
-                    }`}>
-                      {l.type === 'Given' ? 'Given (পাবো)' : 'Taken (দিতে হবে)'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-200">{formatCurrency(l.amount)}</td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm font-bold text-yellow-500">
-                      {l.status === 'Paid' ? formatCurrency(0) : formatCurrency(l.amount - (l.paidAmount || 0))}
-                    </div>
-                    {l.status === 'Pending' && l.nextPaymentDate && (
-                      <div className="flex items-center gap-1 text-xs text-blue-400 mt-1">
-                        <CalendarClock className="w-3 h-3" />
-                        Next: {l.nextPaymentDate}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-400">
-                    {l.date}
-                    {l.status === 'Paid' && (
-                      <span className="block mt-1 text-xs font-medium px-2 py-0.5 rounded w-fit bg-emerald-500/10 text-emerald-400">
-                        Paid
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      {l.status === 'Pending' && (
-                          <>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              onClick={() => { setPaymentModalData(l); setNextDate(''); }} 
-                              className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10" 
-                              title="Add Payment (আংশিক পরিশোধ)"
-                            >
-                              <Coins className="w-4 h-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              onClick={() => handleSendSms(l)} 
-                              disabled={sendingSmsId === l.id}
-                              className="h-8 w-8 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-400/10" 
-                              title="Send SMS Reminder"
-                            >
-                              <MessageSquare className="w-4 h-4" />
-                            </Button>
-                          </>
+
+        {/* Loading State */}
+        {loading ? (
+          <div className="text-center py-12 text-gray-500">
+            <div className="w-7 h-7 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-2" />
+            <p className="text-xs">রেকর্ড লোড হচ্ছে...</p>
+          </div>
+        ) : filteredLoans.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            <CreditCard className="w-8 h-8 mx-auto mb-2 opacity-30" />
+            <p className="text-xs">কোনো রেকর্ড পাওয়া যায়নি।</p>
+          </div>
+        ) : (
+          <>
+            {/* 1. Mobile High-Density Compact List (<640px) */}
+            <div className="divide-y divide-gray-800/60 p-1 sm:hidden">
+              {filteredLoans.map((l) => {
+                const remainingDue = l.amount - (l.paidAmount || 0);
+                const isPaid = l.status === 'Paid' || remainingDue <= 0;
+                const isGiven = l.type === 'Given';
+
+                return (
+                  <div key={l.id} className="py-2.5 px-2 hover:bg-secondary/20 rounded-xl transition-colors">
+                    {/* Top Row: Name, Phone & Type vs Amount & Remaining */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-bold text-white text-xs truncate max-w-[140px]">{l.personName}</span>
+                          <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border shrink-0 ${
+                            isGiven ? 'bg-orange-500/10 text-orange-400 border-orange-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'
+                          }`}>
+                            {isGiven ? 'পাবো' : 'দিতে হবে'}
+                          </span>
+                          {isPaid && (
+                            <span className="text-[9px] font-semibold px-1 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                              পরিশোধিত
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2 text-[10px] text-gray-400 mt-0.5">
+                          {l.phone && (
+                            <a href={`tel:${l.phone}`} className="text-blue-400 hover:underline flex items-center gap-0.5">
+                              <Phone className="w-2.5 h-2.5" />
+                              <span>{l.phone}</span>
+                            </a>
+                          )}
+                          <span>• {l.date}</span>
+                        </div>
+                        {l.notes && <p className="text-[10px] text-gray-500 truncate italic mt-0.5">{l.notes}</p>}
+                        {!isPaid && l.nextPaymentDate && (
+                          <span className="text-[10px] text-blue-400 flex items-center gap-1 mt-0.5 font-medium">
+                            <CalendarClock className="w-2.5 h-2.5" />
+                            তাগাদা: {l.nextPaymentDate}
+                          </span>
                         )}
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => setHistoryModalData(l)} 
-                          className="h-8 w-8 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-400/10" 
-                          title="View History"
-                        >
-                          <History className="w-4 h-4" />
-                        </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleOpenModal(l)} className="h-8 w-8 text-gray-400 hover:text-white" title="Edit">
-                        <Edit2 className="w-4 h-4" />
+                      </div>
+
+                      {/* Right side: Amount and Due */}
+                      <div className="text-right shrink-0">
+                        <div className={`text-xs font-black ${isPaid ? 'text-emerald-400' : isGiven ? 'text-orange-400' : 'text-red-400'}`}>
+                          {isPaid ? 'পরিশোধিত' : formatCurrency(remainingDue)}
+                        </div>
+                        <div className="text-[9px] text-gray-500">
+                          মোট: {formatCurrency(l.amount)}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions inline toolbar */}
+                    <div className="flex items-center justify-end gap-1 mt-2 pt-1.5 border-t border-gray-800/40">
+                      {!isPaid && (
+                        <>
+                          <Button 
+                            size="sm"
+                            onClick={() => { setPaymentModalData(l); setNextDate(''); setPaymentNote(''); }}
+                            className="h-6 px-2 text-[10px] bg-blue-600 hover:bg-blue-700 text-white rounded font-medium"
+                          >
+                            <Coins className="w-2.5 h-2.5 mr-1" />
+                            পরিশোধ
+                          </Button>
+                          {isGiven && (
+                            <Button 
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleSendSms(l)}
+                              disabled={sendingSmsId === l.id}
+                              className="h-6 px-1.5 text-[10px] border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10 rounded"
+                              title="তাগাদা SMS"
+                            >
+                              <MessageSquare className="w-2.5 h-2.5" />
+                            </Button>
+                          )}
+                        </>
+                      )}
+                      <Button 
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setHistoryModalData(l)}
+                        className="h-6 px-1.5 text-[10px] text-emerald-400 hover:bg-emerald-500/10 rounded"
+                        title="হিস্ট্রি"
+                      >
+                        <History className="w-2.5 h-2.5" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => setDeleteId(l.id)} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-400/10" title="Delete">
-                        <Trash2 className="w-4 h-4" />
+                      <Button 
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleOpenModal(l)}
+                        className="h-6 w-6 p-0 text-gray-400 hover:text-white rounded"
+                        title="এডিট"
+                      >
+                        <Edit2 className="w-2.5 h-2.5" />
+                      </Button>
+                      <Button 
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setDeleteId(l.id)}
+                        className="h-6 w-6 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded"
+                        title="ডিলিট"
+                      >
+                        <Trash2 className="w-2.5 h-2.5" />
                       </Button>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 2. Desktop Table View (>=640px) */}
+            <div className="hidden sm:block overflow-x-auto overflow-y-auto max-h-[calc(100vh-280px)] relative">
+              <table className="w-full whitespace-nowrap">
+                <thead className="bg-background/50">
+                  <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-800/50">
+                    <th className="px-6 py-4">Person/Entity</th>
+                    <th className="px-6 py-4">Type</th>
+                    <th className="px-6 py-4">Total Amount</th>
+                    <th className="px-6 py-4">Remaining Due</th>
+                    <th className="px-6 py-4">Date</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-800/50">
+                  {filteredLoans.map((l) => {
+                    const remainingDue = l.amount - (l.paidAmount || 0);
+                    const isPaid = l.status === 'Paid' || remainingDue <= 0;
+                    const isGiven = l.type === 'Given';
+
+                    return (
+                      <tr key={l.id} className="hover:bg-gray-800/20 transition-colors">
+                        <td className="px-6 py-4 text-sm font-medium text-gray-200">
+                          <div className="font-semibold text-white">{l.personName}</div>
+                          {l.phone && (
+                            <span className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                              <Phone className="w-3 h-3 text-gray-500" />
+                              {l.phone}
+                            </span>
+                          )}
+                          {l.notes && <p className="text-xs text-gray-500 font-normal mt-0.5 truncate max-w-[200px]">{l.notes}</p>}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`text-xs font-medium px-2.5 py-1 rounded ${
+                            isGiven ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                          }`}>
+                            {isGiven ? 'Given (পাবো)' : 'Taken (দিতে হবে)'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm font-bold text-gray-200">{formatCurrency(l.amount)}</td>
+                        <td className="px-6 py-4">
+                          <div className={`text-sm font-bold ${isPaid ? 'text-emerald-400' : 'text-yellow-500'}`}>
+                            {isPaid ? formatCurrency(0) : formatCurrency(remainingDue)}
+                          </div>
+                          {!isPaid && l.nextPaymentDate && (
+                            <div className="flex items-center gap-1 text-xs text-blue-400 mt-1">
+                              <CalendarClock className="w-3 h-3" />
+                              Next: {l.nextPaymentDate}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-400">
+                          {l.date}
+                          {isPaid && (
+                            <span className="block mt-1 text-xs font-medium px-2 py-0.5 rounded w-fit bg-emerald-500/10 text-emerald-400">
+                              Paid
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex justify-end gap-1.5">
+                            {!isPaid && (
+                              <>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  onClick={() => { setPaymentModalData(l); setNextDate(''); setPaymentNote(''); }} 
+                                  className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10" 
+                                  title="Add Payment (পরিশোধ)"
+                                >
+                                  <Coins className="w-4 h-4" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  onClick={() => handleSendSms(l)} 
+                                  disabled={sendingSmsId === l.id}
+                                  className="h-8 w-8 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-400/10" 
+                                  title="Send SMS Reminder"
+                                >
+                                  <MessageSquare className="w-4 h-4" />
+                                </Button>
+                              </>
+                            )}
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => setHistoryModalData(l)} 
+                              className="h-8 w-8 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-400/10" 
+                              title="View History"
+                            >
+                              <History className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => handleOpenModal(l)} 
+                              className="h-8 w-8 text-gray-400 hover:text-white" 
+                              title="Edit"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => setDeleteId(l.id)} 
+                              className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-400/10" 
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Partial Payment Modal */}
@@ -404,6 +715,15 @@ export default function LoansPage() {
                 placeholder="Amount..."
               />
             </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-gray-400">Note (Optional)</label>
+              <Input 
+                value={paymentNote}
+                onChange={(e) => setPaymentNote(e.target.value)}
+                placeholder="Cash / bKash / remarks..."
+              />
+            </div>
             
             {/* Show Next Payment Date ONLY if amount entered is less than remaining due */}
             {paymentModalData && paymentAmount > 0 && paymentAmount < (paymentModalData.amount - (paymentModalData.paidAmount || 0)) && (
@@ -425,14 +745,14 @@ export default function LoansPage() {
             )}
 
             <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={() => closePaymentModal()}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={closePaymentModal}>Cancel</Button>
               <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white">Save Payment</Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* Add/Edit Modal */}
+      {/* Add/Edit Modal (Bug Fixed: Perfectly populates on Edit) */}
       <Dialog open={isModalOpen} onOpenChange={(v) => !v && closeLoanModal()}>
         <DialogContent className="sm:max-w-[425px] bg-popover border-border">
           <DialogHeader>
@@ -447,35 +767,35 @@ export default function LoansPage() {
           <form onSubmit={handleSave} className="space-y-4 mt-4">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-gray-400">Person / Entity Name <span className="text-red-400">*</span></label>
+              <Input 
+                required
+                value={formData.personName}
+                onChange={(e) => setFormData({...formData, personName: e.target.value})}
+                placeholder="Name..."
+              />
+            </div>
+            
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Phone Number (Optional)</label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <span className="absolute left-9 top-1/2 -translate-y-1/2 font-medium text-gray-300 pointer-events-none text-xs">+880</span>
                 <Input 
-                  required
-                  value={formData.personName}
-                  onChange={(e) => setFormData({...formData, personName: e.target.value})}
-                  placeholder="Name..."
+                  type="tel"
+                  maxLength={11}
+                  value={formData.phone ? formData.phone.replace(/^\+880/, '') : ''}
+                  onChange={(e) => {
+                    let digits = e.target.value.replace(/\D/g, ''); 
+                    if (digits.startsWith('0')) digits = digits.substring(1);
+                    if (digits.length > 10) digits = digits.substring(0, 10);
+                    setFormData({ ...formData, phone: '+880' + digits });
+                  }}
+                  className="pl-[76px]" 
+                  placeholder="1711000000"
                 />
               </div>
-              
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Phone Number (Optional)</label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                  <span className="absolute left-9 top-1/2 -translate-y-1/2 font-medium text-gray-300 pointer-events-none">+880</span>
-                  <Input 
-                    type="tel"
-                    maxLength={11}
-                    value={formData.phone ? formData.phone.replace(/^\+880/, '') : ''}
-                    onChange={(e) => {
-                      let digits = e.target.value.replace(/\D/g, ''); 
-                      if (digits.startsWith('0')) digits = digits.substring(1);
-                      if (digits.length > 10) digits = digits.substring(0, 10);
-                      setFormData({ ...formData, phone: '+880' + digits });
-                    }}
-                    className="pl-[76px]" 
-                    placeholder="1711000000"
-                  />
-                </div>
-              </div>
-            
+            </div>
+          
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-gray-400">Type</label>
@@ -537,13 +857,16 @@ export default function LoansPage() {
             </div>
 
             <div className="pt-4 flex justify-end gap-3">
-              <Button type="button" variant="outline" onClick={() => closeLoanModal()}>Cancel</Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">Save Record</Button>
+              <Button type="button" variant="outline" onClick={closeLoanModal}>Cancel</Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">
+                {editingLoan ? 'Update Record' : 'Save Record'}
+              </Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
 
+      {/* Delete Confirmation Modal */}
       <ConfirmModal 
         isOpen={!!deleteId}
         onClose={() => setDeleteId(null)}
@@ -567,7 +890,9 @@ export default function LoansPage() {
                 {historyModalData.history.map((h, i) => (
                   <div key={i} className="flex justify-between items-center p-3 rounded-lg bg-background border border-gray-800">
                     <div>
-                      <p className="text-sm font-medium text-gray-200">{h.type === 'Payment' ? 'Partial Payment' : 'Initial Entry'}</p>
+                      <p className="text-sm font-medium text-gray-200">
+                        {h.note || (h.type === 'Payment' ? 'Partial Payment' : 'Initial Entry')}
+                      </p>
                       <p className="text-xs text-gray-500">{new Date(h.date).toLocaleString()}</p>
                     </div>
                     <div className={`font-bold ${h.type === 'Payment' ? 'text-emerald-400' : 'text-orange-400'}`}>
@@ -577,7 +902,9 @@ export default function LoansPage() {
                 ))}
                 <div className="flex justify-between items-center p-3 rounded-lg bg-gray-800/50 mt-4 border border-gray-700">
                   <span className="text-sm font-bold text-white">Total Due</span>
-                  <span className="text-lg font-bold text-red-400">{formatCurrency((historyModalData.amount || 0) - (historyModalData.paidAmount || 0))}</span>
+                  <span className="text-lg font-bold text-red-400">
+                    {formatCurrency((historyModalData.amount || 0) - (historyModalData.paidAmount || 0))}
+                  </span>
                 </div>
               </div>
             ) : (
@@ -589,4 +916,3 @@ export default function LoansPage() {
     </div>
   );
 }
-

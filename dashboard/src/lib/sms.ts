@@ -1,6 +1,13 @@
 import toast from 'react-hot-toast';
+import { offlineSyncService } from './services/offlineSync';
 
 export const sendSMS = async (number: string | string[], message: string, apiKey: string, senderId: string, apiUrl?: string) => {
+  // Check if browser is offline
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    offlineSyncService.queueSMS({ number, message, apiKey, senderId, apiUrl });
+    return { success: true, queued: true };
+  }
+
   try {
     const res = await fetch('/api/sms', {
       method: 'POST',
@@ -27,9 +34,14 @@ export const sendSMS = async (number: string | string[], message: string, apiKey
     
     toast.success("SMS Sent Successfully!");
     return { success: true, data: data.result };
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error("Failed to send SMS:", error);
-    toast.error(`SMS Failed: ${(error as any).message}`);
-    return { success: false, error: (error as any).message };
+    // If failed due to sudden network loss, enqueue for background sync
+    if (typeof navigator !== 'undefined' && (!navigator.onLine || error?.message?.includes('fetch'))) {
+      offlineSyncService.queueSMS({ number, message, apiKey, senderId, apiUrl });
+      return { success: true, queued: true };
+    }
+    toast.error(`SMS Failed: ${error.message}`);
+    return { success: false, error: error.message };
   }
 };

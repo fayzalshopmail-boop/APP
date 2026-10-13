@@ -6,7 +6,7 @@ import { StatCard } from '@/components/ui/StatCard';
 import { QuickAlerts } from '@/components/ui/QuickAlerts';
 import { RevenueChart } from '@/components/ui/RevenueChart';
 import { RecentCustomers } from '@/components/ui/RecentCustomers';
-import { customerService, Customer } from '@/lib/services/customer';
+import { customerService, Customer, normalizePhone } from '@/lib/services/customer';
 import { transactionService, Transaction } from '@/lib/services/transaction';
 import { formatCurrency } from '@/lib/currency';
 import { useAppStore } from '@/store/useAppStore';
@@ -27,6 +27,7 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({ 
     totalCustomers: 0, 
+    totalJobs: 0,
     totalRevenue: 0, 
     pendingJobs: 0, 
     completedRepairs: 0,
@@ -74,22 +75,65 @@ export default function Dashboard() {
         const qPending = query(collection(db, 'customers'), where('status', 'in', ['Received', 'In Progress', 'Waiting for Parts']));
         const qCompleted = query(collection(db, 'customers'), where('status', 'in', ['Delivered', 'Ready for Delivery']));
 
+        // Offline-resilient safe count helper (uses server when online, falls back to local cache when offline)
+        const safeCount = async (q: any) => {
+          if (typeof navigator !== 'undefined' && !navigator.onLine) {
+            const snap = await getDocs(q);
+            return snap.size;
+          }
+          try {
+            const countSnap = await getCountFromServer(q);
+            return countSnap.data().count;
+          } catch (e) {
+            const snap = await getDocs(q);
+            return snap.size;
+          }
+        };
+
         // Execute all aggregations and queries in parallel
         const [
           snapCustomers,
           docsSnap,
           snapExpenses,
           snapDues,
-          snapPending,
+          pendingCount,
           completedResult
         ] = await Promise.all([
-          getCountFromServer(qCustomers),
+          getDocs(qCustomers),
           getDocs(qTransactions),
           getDocs(qExpenses),
           getDocs(qDues),
-          getCountFromServer(qPending),
-          startDate ? getDocs(qCompleted) : getCountFromServer(qCompleted)
+          safeCount(qPending),
+          startDate ? getDocs(qCompleted) : safeCount(qCompleted)
         ]);
+
+        // Process Customers (Deduplicate by phone to match customers page)
+        const uniqueCustomerKeys = new Set<string>();
+        let totalCustomerJobs = 0;
+        snapCustomers.forEach((doc: any) => {
+          const data = doc.data();
+          const key = normalizePhone(data.phone) || doc.id;
+          uniqueCustomerKeys.add(key);
+          totalCustomerJobs += 1;
+
+          if (startDate) {
+            if (Array.isArray(data.repairHistory)) {
+              data.repairHistory.forEach((rec: any) => {
+                let recDate = null;
+                if (rec.createdAt?.toDate) recDate = rec.createdAt.toDate();
+                else if (rec.createdAt?.seconds) recDate = new Date(rec.createdAt.seconds * 1000);
+                else if (rec.createdAt) recDate = new Date(rec.createdAt);
+                if (recDate && !isNaN(recDate.getTime()) && recDate >= startDate) {
+                  totalCustomerJobs += 1;
+                }
+              });
+            }
+          } else {
+            const historyCount = Array.isArray(data.repairHistory) ? data.repairHistory.length : 0;
+            totalCustomerJobs += historyCount;
+          }
+        });
+        const customersCount = uniqueCustomerKeys.size;
 
         // Process Transactions (Revenue & Outflows)
         let totalRevenue = 0;
@@ -140,13 +184,14 @@ export default function Dashboard() {
               if (dateObj && !isNaN(dateObj.getTime()) && dateObj >= startDate) completedCount++;
            });
         } else {
-           completedCount = (completedResult as any).data().count;
+           completedCount = typeof completedResult === 'number' ? completedResult : (completedResult as any).data().count;
         }
 
         setStats({
-           totalCustomers: snapCustomers.data().count,
+           totalCustomers: customersCount,
+           totalJobs: totalCustomerJobs,
            totalRevenue: totalRevenue,
-           pendingJobs: snapPending.data().count,
+           pendingJobs: pendingCount,
            completedRepairs: completedCount,
            totalExpenses: totalExpenses,
            netProfit: netProfit,
@@ -162,14 +207,16 @@ export default function Dashboard() {
 
     loadAggregatedData();
 
-    // Auto-refresh when tab gains focus or on app custom refresh event
+    // Auto-refresh when tab gains focus, on app refresh, or when reconnected online
     const handleRefresh = () => {
       loadAggregatedData();
     };
     window.addEventListener('focus', handleRefresh);
+    window.addEventListener('online', handleRefresh);
     window.addEventListener('app:refresh-dashboard', handleRefresh);
     return () => {
       window.removeEventListener('focus', handleRefresh);
+      window.removeEventListener('online', handleRefresh);
       window.removeEventListener('app:refresh-dashboard', handleRefresh);
     };
   }, [timeFilter]);
@@ -183,7 +230,17 @@ return (
         <StatCard 
           title="মোট কাস্টমার" 
           value={isLoading ? '...' : filteredStats.totalCustomers.toString()} 
-          subtitle={timeFilter === 'Today' ? 'আজকের এন্ট্রি' : timeFilter === 'This Week' ? 'এই সপ্তাহের এন্ট্রি' : timeFilter === 'This Month' ? 'এই মাসের এন্ট্রি' : timeFilter === 'This Year' ? 'এই বছরের এন্ট্রি' : 'সর্বমোট এন্ট্রি'} 
+          subtitle={
+            timeFilter === 'Today' 
+              ? 'আজকের কাস্টমার' 
+              : timeFilter === 'This Week' 
+              ? 'এই সপ্তাহের কাস্টমার' 
+              : timeFilter === 'This Month' 
+              ? 'এই মাসের কাস্টমার' 
+              : timeFilter === 'This Year' 
+              ? 'এই বছরের কাস্টমার' 
+              : 'সর্বমোট কাস্টমার'
+          } 
           icon={<Users className="w-5 h-5 text-blue-500" />} 
           iconBgColor="bg-blue-500/10" 
           iconColor="text-blue-500" 
@@ -285,7 +342,7 @@ return (
               <Loader2 className="w-8 h-8 animate-spin text-gray-600" />
             </div>
           ) : (
-            <RevenueChart />
+            <RevenueChart timeFilter={timeFilter} />
           )}
         </div>
         <div>

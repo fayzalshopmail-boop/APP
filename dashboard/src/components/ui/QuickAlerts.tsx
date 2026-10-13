@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { AlertCircle, Coins, CheckCircle } from 'lucide-react';
-import { collection, query, where, getCountFromServer, getDocs } from 'firebase/firestore';
+import { AlertCircle, Coins, CheckCircle, Truck } from 'lucide-react';
+import { collection, query, where, getCountFromServer, getDocs, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { formatCurrency } from '@/lib/currency';
 import Link from 'next/link';
 
 export function QuickAlerts() {
@@ -45,6 +46,8 @@ export function QuickAlerts() {
   ]);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchAlerts = async () => {
       try {
         const qReady = query(
@@ -56,11 +59,27 @@ export function QuickAlerts() {
           where('due', '>', 0)
         );
 
-        // Execute all 3 alert queries in parallel
-        const [snapshotReady, snapshotDues, snapshotStock] = await Promise.all([
+        // Execute queries in parallel with optimized single-field inventory scan
+        const [snapshotReady, snapshotDues, snapshotStock, snapshotSuppliers] = await Promise.all([
           getCountFromServer(qReady),
           getDocs(qDues),
-          getDocs(collection(db, 'inventory'))
+          (async () => {
+            try {
+              // Only query items where stock is low (<= 15) up to 100 items instead of full table scan
+              const qLow = query(collection(db, 'inventory'), where('stock', '<=', 15), limit(100));
+              return await getDocs(qLow);
+            } catch (e) {
+              return await getDocs(collection(db, 'inventory'));
+            }
+          })(),
+          (async () => {
+            try {
+              const qSup = query(collection(db, 'suppliers'), where('due', '>', 0));
+              return await getDocs(qSup);
+            } catch (e) {
+              return null;
+            }
+          })()
         ]);
 
         const readyCount = snapshotReady.data().count;
@@ -71,7 +90,7 @@ export function QuickAlerts() {
         const now = new Date().getTime();
         const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
 
-        snapshotDues.forEach(doc => {
+        snapshotDues.forEach((doc) => {
           dueCount++;
           const customer = doc.data();
           if (customer.dueDate) {
@@ -85,14 +104,28 @@ export function QuickAlerts() {
 
         // Process Low Stock
         let lowStockCount = 0;
-        snapshotStock.forEach(doc => {
+        snapshotStock.forEach((doc) => {
           const item = doc.data();
           if (item.stock <= (item.minStockLevel || 5)) {
             lowStockCount++;
           }
         });
 
-        setAlerts([
+        // Process Supplier Payables
+        let supplierDueCount = 0;
+        let supplierTotalDue = 0;
+        if (snapshotSuppliers) {
+          snapshotSuppliers.forEach((doc: any) => {
+            const sup = doc.data();
+            const d = Number(sup.due) || 0;
+            if (d > 0) {
+              supplierDueCount++;
+              supplierTotalDue += d;
+            }
+          });
+        }
+
+        const alertList: any[] = [
           {
             id: 1,
             title: 'কম স্টক সতর্কতা',
@@ -135,7 +168,25 @@ export function QuickAlerts() {
             countColor: readyCount > 0 ? 'text-emerald-400' : 'text-green-500',
             link: '/customers?status=Ready for Delivery',
           },
-        ]);
+        ];
+
+        if (supplierDueCount > 0) {
+          alertList.push({
+            id: 4,
+            title: 'মহাজন/সাপ্লায়ার দেনা',
+            desc: `${supplierDueCount} জন মহাজনের মোট ${formatCurrency(supplierTotalDue)} দেনা`,
+            icon: Truck,
+            count: supplierDueCount,
+            color: 'text-amber-400',
+            bgColor: 'bg-amber-500/20',
+            countColor: 'text-amber-400',
+            link: '/suppliers',
+          });
+        }
+
+        if (isMounted) {
+          setAlerts(alertList);
+        }
       } catch (error) {
         console.error("Error loading alerts data", error);
       }
@@ -143,14 +194,18 @@ export function QuickAlerts() {
 
     fetchAlerts();
 
-    // Auto-refresh when tab gains focus
+    // Auto-refresh when tab gains focus or on app refresh
     const handleRefresh = () => {
       fetchAlerts();
     };
     window.addEventListener('focus', handleRefresh);
+    window.addEventListener('online', handleRefresh);
     window.addEventListener('app:refresh-dashboard', handleRefresh);
+
     return () => {
+      isMounted = false;
       window.removeEventListener('focus', handleRefresh);
+      window.removeEventListener('online', handleRefresh);
       window.removeEventListener('app:refresh-dashboard', handleRefresh);
     };
   }, []);

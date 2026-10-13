@@ -99,16 +99,30 @@ export const loanService = {
     });
   },
 
-  addPayment: async (id: string, currentPaid: number, payment: number, totalAmount: number, nextDate?: string): Promise<{ newPaid: number, status: 'Pending' | 'Paid' }> => {
+  addPayment: async (
+    id: string, 
+    currentPaid: number, 
+    payment: number, 
+    totalAmount: number, 
+    nextDate?: string,
+    loanType?: 'Given' | 'Taken',
+    customNote?: string
+  ): Promise<{ newPaid: number, status: 'Pending' | 'Paid' }> => {
     if (!db) throw new Error('Firebase DB is not initialized');
     const newPaid = (currentPaid || 0) + payment;
     const newStatus = newPaid >= totalAmount ? 'Paid' : 'Pending';
     
+    const defaultNote = customNote 
+      ? customNote 
+      : loanType === 'Taken' 
+        ? 'দেনা পরিশোধ করা হয়েছে' 
+        : 'পাওনা টাকা আদায় হয়েছে';
+
     const historyEntry: LoanHistoryEntry = {
       amount: payment,
       date: new Date().toISOString(),
       type: 'Payment',
-      note: 'Partial payment received'
+      note: defaultNote
     };
 
     const updateData: any = {

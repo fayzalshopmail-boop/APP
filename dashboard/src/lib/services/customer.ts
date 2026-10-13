@@ -73,16 +73,45 @@ export interface Customer {
 const COLLECTION_NAME = 'customers';
 
 export const customerService = {
-  // Get recent customers safely
-  getRecent: async (limitCount: number): Promise<Customer[]> => {
+  // Get recent customers safely by latest activity (updatedAt or createdAt)
+  getRecent: async (limitCount: number = 5): Promise<Customer[]> => {
     try {
       if (!db) return [];
-      const q = query(collection(db, COLLECTION_NAME), orderBy('createdAt', 'desc'), limit(limitCount));
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Customer));
+      
+      // Fetch both recent updates and recent creates in parallel to capture all activity
+      const [snapUpdated, snapCreated] = await Promise.all([
+        getDocs(query(collection(db, COLLECTION_NAME), orderBy('updatedAt', 'desc'), limit(limitCount * 2))).catch(() => null),
+        getDocs(query(collection(db, COLLECTION_NAME), orderBy('createdAt', 'desc'), limit(limitCount * 2))).catch(() => null)
+      ]);
+
+      const map = new Map<string, Customer>();
+
+      const addDocs = (snap: any) => {
+        if (!snap) return;
+        snap.forEach((doc: any) => {
+          if (!map.has(doc.id)) {
+            map.set(doc.id, { id: doc.id, ...doc.data() } as Customer);
+          }
+        });
+      };
+
+      addDocs(snapUpdated);
+      addDocs(snapCreated);
+
+      const all = Array.from(map.values());
+
+      const getEffectiveTime = (c: Customer) => {
+        const raw = c.updatedAt || c.createdAt;
+        if (!raw) return 0;
+        if (typeof raw.toMillis === 'function') return raw.toMillis();
+        if (raw.seconds) return raw.seconds * 1000;
+        if (raw instanceof Date) return raw.getTime();
+        const parsed = new Date(raw).getTime();
+        return isNaN(parsed) ? 0 : parsed;
+      };
+
+      all.sort((a, b) => getEffectiveTime(b) - getEffectiveTime(a));
+      return all.slice(0, limitCount);
     } catch (error) {
       console.error('Error fetching recent customers: ', error);
       return [];

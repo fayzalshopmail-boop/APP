@@ -1,16 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
   Home, Users, Box, Clock, CreditCard, Star, 
-  Wrench, Truck, Receipt, BarChart2, Settings, MessageSquare, LogOut, Lock 
+  Wrench, Truck, Receipt, BarChart2, Settings, MessageSquare, LogOut, Lock,
+  WifiOff, RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/useAppStore';
 import { auth } from '@/lib/firebase';
+import { offlineSyncService } from '@/lib/services/offlineSync';
 
 const navItemsAll = [
   { name: 'Dashboard', href: '/', icon: Home },
@@ -31,6 +33,33 @@ export function Sidebar() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);  const pathname = usePathname();
   const router = useRouter();
   const { user, setUser, setUnlocked, isSidebarOpen, toggleSidebar, setSidebarOpen, shop } = useAppStore();
+
+  // Smart Offline/Online State
+  const [isOnline, setIsOnline] = useState(true);
+  const [pendingSyncCount, setPendingSyncCount] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  useEffect(() => {
+    setIsOnline(typeof navigator !== 'undefined' ? navigator.onLine : true);
+    setPendingSyncCount(offlineSyncService.getPendingCount());
+
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    const handleQueueUpdate = (e: any) => setPendingSyncCount(e.detail?.count ?? offlineSyncService.getPendingCount());
+    const handleSyncStatus = (e: any) => setIsSyncing(!!e.detail?.syncing);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('app:offline-sync-queue-updated', handleQueueUpdate);
+    window.addEventListener('app:sync-in-progress', handleSyncStatus);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('app:offline-sync-queue-updated', handleQueueUpdate);
+      window.removeEventListener('app:sync-in-progress', handleSyncStatus);
+    };
+  }, []);
 
   const handleLogoutRequest = () => setShowLogoutConfirm(true);
 
@@ -65,23 +94,46 @@ export function Sidebar() {
         )}
       >
       {/* Logo */}
-      <div className="p-6 flex items-start justify-between">
-        <div className="flex flex-col gap-2 overflow-hidden">
+      <div className="p-6 flex items-center justify-between">
+        <div className="flex items-center overflow-hidden">
           {shop?.logoUrl ? (
-            <img src={shop.logoUrl} alt="Logo" className="h-12 w-auto max-w-[180px] rounded-lg object-contain " />
+            <img 
+              src={shop.logoUrl} 
+              alt={shop?.shopName || 'Logo'} 
+              className="h-12 w-auto max-w-[170px] rounded-lg object-contain" 
+            />
           ) : (
             <div className="text-blue-500 font-bold text-2xl tracking-wider flex items-center truncate">
               {shop?.shopName || 'ViSC'}
             </div>
           )}
-          {shop?.logoUrl && (
-            <div className="text-white font-bold text-xl truncate">{shop.shopName}</div>
-          )}
         </div>
-        <div className="flex items-center gap-1.5 bg-green-500/10 text-green-500 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 mt-1">
-          <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-          ONLINE
-        </div>
+        {/* Smart Online/Offline Indicator */}
+        {isSyncing ? (
+          <div 
+            className="flex items-center gap-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 animate-pulse"
+            title="অফলাইন ডাটা ক্লাউডে সিঙ্ক হচ্ছে..."
+          >
+            <RefreshCw className="w-2.5 h-2.5 animate-spin text-blue-400" />
+            <span>সিঙ্ক হচ্ছে</span>
+          </div>
+        ) : isOnline ? (
+          <div 
+            className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 rounded-full text-[10px] font-bold shrink-0"
+            title="ক্লাউড ডাটাবেজের সাথে সরাসরি সংযুক্ত"
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span>ONLINE</span>
+          </div>
+        ) : (
+          <div 
+            className="flex items-center gap-1.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-0.5 rounded-full text-[10px] font-bold shrink-0 cursor-help"
+            title="ইন্টারনেট সংযোগ নেই। অফলাইন মোড সক্রিয়, সব কাজ লোকালি সেভ হচ্ছে।"
+          >
+            <WifiOff className="w-3 h-3 text-amber-400" />
+            <span>{pendingSyncCount > 0 ? `অফলাইন (${pendingSyncCount})` : 'OFFLINE'}</span>
+          </div>
+        )}
       </div>
 
       {/* Nav Links */}

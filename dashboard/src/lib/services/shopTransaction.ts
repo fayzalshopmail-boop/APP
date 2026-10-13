@@ -82,32 +82,32 @@ export const shopTransactionService = {
         });
       }
 
-      await runTransaction(db, async (transaction) => {
-        const targetRef = doc(db, 'customers', existingId);
-        transaction.update(targetRef, {
-          ...customerData,
-          name: customerData.name || prevData.name,
-          address: customerData.address || prevData.address,
-          points: prevData.points || 0,
-          status: 'Received',
-          partsUsed: [],
-          totalCost: 0,
-          repairHistory: prevHistory,
+      const batch = writeBatch(db);
+      const targetRef = doc(db, 'customers', existingId);
+      batch.update(targetRef, {
+        ...customerData,
+        name: customerData.name || prevData.name,
+        address: customerData.address || prevData.address,
+        points: prevData.points || 0,
+        status: 'Received',
+        partsUsed: [],
+        totalCost: 0,
+        repairHistory: prevHistory,
+        createdAt: serverTimestamp()
+      });
+
+      if (customerData.advance && customerData.advance > 0) {
+        const transRef = doc(collection(db, 'transactions'));
+        batch.set(transRef, {
+          customerId: existingId,
+          customerName: customerData.name || prevData.name,
+          amount: customerData.advance,
+          type: 'Advance Payment',
+          receivedBy: userEmail,
           createdAt: serverTimestamp()
         });
-
-        if (customerData.advance && customerData.advance > 0) {
-          const transRef = doc(collection(db, 'transactions'));
-          transaction.set(transRef, {
-            customerId: existingId,
-            customerName: customerData.name || prevData.name,
-            amount: customerData.advance,
-            type: 'Advance Payment',
-            receivedBy: userEmail,
-            createdAt: serverTimestamp()
-          });
-        }
-      });
+      }
+      await batch.commit();
 
       try {
         await notificationService.add({
@@ -128,27 +128,27 @@ export const shopTransactionService = {
     const customerRef = doc(collection(db, 'customers'));
     const newId = customerRef.id;
 
-    await runTransaction(db, async (transaction) => {
-      transaction.set(customerRef, {
-        ...customerData,
-        status: 'Received',
-        points: 0,
-        repairHistory: [],
+    const batch = writeBatch(db);
+    batch.set(customerRef, {
+      ...customerData,
+      status: 'Received',
+      points: 0,
+      repairHistory: [],
+      createdAt: serverTimestamp()
+    });
+
+    if (customerData.advance && customerData.advance > 0) {
+      const transRef = doc(collection(db, 'transactions'));
+      batch.set(transRef, {
+        customerId: newId,
+        customerName: customerData.name,
+        amount: customerData.advance,
+        type: 'Advance Payment',
+        receivedBy: userEmail,
         createdAt: serverTimestamp()
       });
-
-      if (customerData.advance && customerData.advance > 0) {
-        const transRef = doc(collection(db, 'transactions'));
-        transaction.set(transRef, {
-          customerId: newId,
-          customerName: customerData.name,
-          amount: customerData.advance,
-          type: 'Advance Payment',
-          receivedBy: userEmail,
-          createdAt: serverTimestamp()
-        });
-      }
-    });
+    }
+    await batch.commit();
 
     try {
       await notificationService.add({
