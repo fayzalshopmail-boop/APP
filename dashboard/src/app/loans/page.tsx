@@ -358,21 +358,12 @@ export default function LoansPage() {
         
         {/* Header with Title and Search/Filters */}
         <div className="p-3 sm:p-5 border-b border-gray-800 flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-4">
-          <div className="flex items-center justify-between w-full md:w-auto">
-            <div className="flex items-center gap-2 min-w-0">
-              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 shrink-0" />
-              <h2 className="text-sm sm:text-lg font-semibold text-gray-200 truncate">সকল খতিয়ান</h2>
-              <span className="text-[10px] sm:text-xs text-gray-400 bg-secondary px-2 py-0.5 rounded-full border border-gray-800 shrink-0">
-                {filteredLoans.length}
-              </span>
-            </div>
-
-            <button
-              onClick={() => handleOpenModal()}
-              className="md:hidden text-xs bg-blue-600 hover:bg-blue-700 text-white font-medium px-2.5 py-1 rounded-lg flex items-center gap-1 shadow shrink-0"
-            >
-              <Plus className="w-3 h-3" /> এন্ট্রি
-            </button>
+          <div className="flex items-center gap-2 min-w-0">
+            <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 shrink-0" />
+            <h2 className="text-sm sm:text-lg font-semibold text-gray-200 truncate">সকল খতিয়ান</h2>
+            <span className="text-[10px] sm:text-xs text-gray-400 bg-secondary px-2 py-0.5 rounded-full border border-gray-800 shrink-0">
+              {filteredLoans.length}
+            </span>
           </div>
 
           {/* Search Box & Filter Chips */}
