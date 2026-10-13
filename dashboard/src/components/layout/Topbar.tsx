@@ -88,6 +88,14 @@ export function Topbar() {
     };
   }, [isCustomerModalOpen]);
 
+  useEffect(() => {
+    const handleOpenAddCustomer = () => {
+      setIsCustomerModalOpen(true);
+    };
+    window.addEventListener('app:open-add-customer', handleOpenAddCustomer);
+    return () => window.removeEventListener('app:open-add-customer', handleOpenAddCustomer);
+  }, []);
+
   const handleCloseCustomerModal = () => {
     setIsCustomerModalOpen(false);
     if (window.history.state && window.history.state.modal === 'add-customer') {
@@ -313,17 +321,17 @@ export function Topbar() {
         >
           <Menu className="w-5 h-5" />
         </button>
-        <div className="flex flex-col">
-          <h1 className="text-lg md:text-2xl font-bold text-white leading-tight truncate max-w-[140px] xs:max-w-[180px] sm:max-w-[240px] md:max-w-[400px]">{title}</h1>
-          {subtitle && <p className="text-[10px] md:text-sm text-gray-400 leading-tight truncate max-w-[140px] xs:max-w-[180px] sm:max-w-[240px] md:max-w-[400px]">{subtitle}</p>}
+        <div className="flex flex-col min-w-0">
+          <h1 className="text-lg md:text-2xl font-bold text-white leading-tight truncate">{title}</h1>
+          {subtitle && <p className="text-[10px] md:text-sm text-gray-400 leading-tight truncate">{subtitle}</p>}
         </div>
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
         
-        {/* DASHBOARD TOPBAR ACTION BUTTONS */}
+        {/* DASHBOARD TOPBAR ACTION BUTTONS (DESKTOP ONLY) */}
         {pathname === '/' && (
-          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto max-w-[45vw] sm:max-w-none scrollbar-none py-1">
+          <div className="hidden sm:flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none py-1">
             <button
               onClick={() => setIsCustomerModalOpen(true)}
               className="flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-md shadow-blue-500/20 shrink-0"

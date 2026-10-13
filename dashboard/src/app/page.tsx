@@ -224,7 +224,50 @@ export default function Dashboard() {
   const filteredStats = stats;
 
 return (
-    <div className="space-y-6 max-w-[1600px] mx-auto">
+    <div className="space-y-3 sm:space-y-6 max-w-[1600px] mx-auto pb-6">
+      {/* Mobile Quick Action Buttons (Phone Only <640px) */}
+      <div className="sm:hidden grid grid-cols-2 gap-2">
+        <button
+          onClick={() => {
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('app:open-add-customer'));
+            }
+          }}
+          className="flex items-center justify-center gap-2 p-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 active:scale-95 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-all"
+          title="নতুন কাস্টমার যোগ করুন"
+        >
+          <UserPlus className="w-4 h-4 shrink-0" />
+          <span className="truncate">+ নতুন কাস্টমার</span>
+        </button>
+
+        <Link
+          href="/inventory"
+          className="flex items-center justify-center gap-2 p-2.5 bg-secondary/80 hover:bg-secondary active:scale-95 text-gray-200 border border-gray-800 rounded-xl text-xs font-medium transition-all"
+          title="সরাসরি পার্টস বিক্রি"
+        >
+          <ShoppingCart className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span className="truncate">সরাসরি বিক্রি</span>
+        </Link>
+
+        <Link
+          href="/expenses"
+          className="flex items-center justify-center gap-2 p-2.5 bg-secondary/80 hover:bg-secondary active:scale-95 text-gray-200 border border-gray-800 rounded-xl text-xs font-medium transition-all"
+          title="খরচ এন্ট্রি"
+        >
+          <Receipt className="w-4 h-4 text-rose-400 shrink-0" />
+          <span className="truncate">খরচ এন্ট্রি</span>
+        </Link>
+
+        <Link
+          href="/due"
+          className="flex items-center justify-center gap-2 p-2.5 bg-secondary/80 hover:bg-secondary active:scale-95 text-gray-200 border border-gray-800 rounded-xl text-xs font-medium transition-all"
+          title="বকেয়া কালেকশন"
+        >
+          <Coins className="w-4 h-4 text-amber-400 shrink-0" />
+          <span className="truncate">বকেয়া কালেকশন</span>
+        </Link>
+      </div>
+
       {/* 4 Core StatCards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <StatCard 
