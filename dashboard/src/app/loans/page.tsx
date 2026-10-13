@@ -498,59 +498,68 @@ export default function LoansPage() {
                       </div>
                     </div>
 
-                    {/* Actions inline toolbar */}
-                    <div className="flex items-center justify-end gap-1 mt-2 pt-1.5 border-t border-gray-800/40">
-                      {!isPaid && (
-                        <>
+                    {/* Actions toolbar: Perfectly Aligned Left vs Right */}
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-800/50">
+                      {/* Left: Primary Action (Always at the exact same left position in every card) */}
+                      <div>
+                        {!isPaid ? (
                           <Button 
                             size="sm"
                             onClick={() => { setPaymentModalData(l); setNextDate(''); setPaymentNote(''); }}
-                            className="h-6 px-2 text-[10px] bg-blue-600 hover:bg-blue-700 text-white rounded font-medium"
+                            className="h-7 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm flex items-center gap-1"
                           >
-                            <Coins className="w-2.5 h-2.5 mr-1" />
-                            পরিশোধ
+                            <Coins className="w-3.5 h-3.5" />
+                            <span>পরিশোধ</span>
                           </Button>
-                          {isGiven && (
-                            <Button 
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleSendSms(l)}
-                              disabled={sendingSmsId === l.id}
-                              className="h-6 px-1.5 text-[10px] border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10 rounded"
-                              title="তাগাদা SMS"
-                            >
-                              <MessageSquare className="w-2.5 h-2.5" />
-                            </Button>
-                          )}
-                        </>
-                      )}
-                      <Button 
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setHistoryModalData(l)}
-                        className="h-6 px-1.5 text-[10px] text-emerald-400 hover:bg-emerald-500/10 rounded"
-                        title="হিস্ট্রি"
-                      >
-                        <History className="w-2.5 h-2.5" />
-                      </Button>
-                      <Button 
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleOpenModal(l)}
-                        className="h-6 w-6 p-0 text-gray-400 hover:text-white rounded"
-                        title="এডিট"
-                      >
-                        <Edit2 className="w-2.5 h-2.5" />
-                      </Button>
-                      <Button 
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setDeleteId(l.id)}
-                        className="h-6 w-6 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded"
-                        title="ডিলিট"
-                      >
-                        <Trash2 className="w-2.5 h-2.5" />
-                      </Button>
+                        ) : (
+                          <span className="text-[11px] font-medium text-emerald-400 flex items-center gap-1">
+                            <CheckCircle className="w-3.5 h-3.5" /> পরিশোধিত
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Right: Secondary Actions (Uniform row of icons) */}
+                      <div className="flex items-center gap-1">
+                        {!isPaid && (
+                          <Button 
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleSendSms(l)}
+                            disabled={sendingSmsId === l.id}
+                            className="h-7 w-7 p-0 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg"
+                            title="SMS পাঠান"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                        <Button 
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setHistoryModalData(l)}
+                          className="h-7 w-7 p-0 text-emerald-400 hover:bg-emerald-500/10 rounded-lg"
+                          title="হিস্ট্রি"
+                        >
+                          <History className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button 
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleOpenModal(l)}
+                          className="h-7 w-7 p-0 text-gray-400 hover:text-white rounded-lg"
+                          title="এডিট"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button 
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setDeleteId(l.id)}
+                          className="h-7 w-7 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg"
+                          title="ডিলিট"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 );
