@@ -408,11 +408,9 @@ export default function LoansPage() {
         </div>
       </div>
 
-      {/* Unified Loan List */}
-      <div id="loans-list-container" className="bg-card border border-gray-800 rounded-xl sm:rounded-2xl overflow-hidden shadow-xl">
-        
-        {/* Header with Title and Search/Filters */}
-        <div className="p-3 sm:p-5 border-b border-gray-800 flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-4">
+      {/* Search & Filter Header Card */}
+      <div id="loans-list-container" className="bg-card border border-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-4">
           <div className="flex items-center gap-2 min-w-0">
             <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 shrink-0" />
             <h2 className="text-sm sm:text-lg font-semibold text-gray-200 truncate">সকল খতিয়ান</h2>
@@ -484,8 +482,234 @@ export default function LoansPage() {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Loading State */}
+      {/* 1. Mobile Individual Cards (<640px) - Separate cards like Customers page */}
+      <div className="block sm:hidden space-y-2.5">
+        {loading ? (
+          <div className="bg-card rounded-xl border border-gray-800 p-8 text-center text-gray-500 text-xs">
+            <div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-2" />
+            <p>রেকর্ড লোড হচ্ছে...</p>
+          </div>
+        ) : filteredLoans.length === 0 ? (
+          <div className="bg-card rounded-xl border border-gray-800 p-8 text-center text-gray-500 text-xs">
+            <CreditCard className="w-8 h-8 mx-auto mb-2 opacity-30" />
+            <p>কোনো রেকর্ড পাওয়া যায়নি।</p>
+          </div>
+        ) : (
+          <>
+            {paginatedLoans.map((l) => {
+              const remainingDue = l.amount - (l.paidAmount || 0);
+              const isPaid = l.status === 'Paid' || remainingDue <= 0;
+              const isGiven = l.type === 'Given';
+
+              return (
+                <div 
+                  key={l.id} 
+                  className="bg-card border border-gray-800/80 rounded-xl p-3.5 shadow-sm space-y-2.5 hover:border-gray-700/80 transition-all"
+                >
+                  {/* Top Row: Name, Phone & Date | Type & Status Badge */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-bold text-white text-sm truncate max-w-[170px]">{l.personName}</span>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border shrink-0 ${
+                          isGiven ? 'bg-orange-500/10 text-orange-400 border-orange-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'
+                        }`}>
+                          {isGiven ? 'পাবো' : 'দিতে হবে'}
+                        </span>
+                        {isPaid && (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            পরিশোধিত
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 text-[11px] text-gray-400 mt-1">
+                        {l.phone && (
+                          <a href={`tel:${l.phone}`} className="text-blue-400 hover:underline flex items-center gap-1 font-medium">
+                            <Phone className="w-3 h-3 text-blue-400" />
+                            <span>{l.phone}</span>
+                          </a>
+                        )}
+                        <span>• {l.date}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Appliance / Details style strip: Notes & Due Date */}
+                  {(l.notes || (!isPaid && l.nextPaymentDate)) && (
+                    <div className="bg-[#101322] rounded-lg px-2.5 py-1.5 border border-gray-800/70 text-xs flex items-center justify-between gap-2">
+                      {l.notes ? (
+                        <p className="text-[11px] text-gray-400 truncate italic flex-1">
+                          {l.notes}
+                        </p>
+                      ) : <span />}
+                      {!isPaid && l.nextPaymentDate && (
+                        <span className="text-[10px] text-blue-400 font-medium flex items-center gap-1 shrink-0 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20">
+                          <CalendarClock className="w-3 h-3" />
+                          তাগাদা: {l.nextPaymentDate}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Financials Strip (Exact Sleek Horizontal Bar from Customers Page) */}
+                  <div className="flex items-center justify-between bg-secondary/40 rounded-lg px-2.5 py-1.5 text-xs border border-gray-800/50">
+                    <div className="flex items-center gap-2.5 text-[11px]">
+                      <span className="text-gray-400">
+                        মোট: <strong className="font-semibold text-gray-200">{formatCurrency(l.amount)}</strong>
+                      </span>
+                      {(l.paidAmount || 0) > 0 && (
+                        <span className="text-gray-400">
+                          পরিশোধ: <strong className="font-medium text-emerald-400">{formatCurrency(l.paidAmount || 0)}</strong>
+                        </span>
+                      )}
+                    </div>
+                    <div className="shrink-0 text-right">
+                      {isPaid ? (
+                        <span className="inline-flex items-center gap-0.5 font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full text-[10px]">
+                          পরিশোধিত ✓
+                        </span>
+                      ) : (
+                        <span className={`inline-flex items-center gap-1 font-bold ${
+                          isGiven ? 'text-orange-400 bg-orange-500/10 border-orange-500/20' : 'text-red-400 bg-red-500/10 border-red-500/20'
+                        } px-2 py-0.5 rounded-full text-[11px]`}>
+                          বাকি: {formatCurrency(remainingDue)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions toolbar */}
+                  <div className="flex items-center justify-between pt-1.5 border-t border-gray-800/50">
+                    <div>
+                      {!isPaid ? (
+                        <Button 
+                          size="sm"
+                          onClick={() => { setPaymentModalData(l); setNextDate(''); setPaymentNote(''); }}
+                          className="h-7 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm flex items-center gap-1"
+                        >
+                          <Coins className="w-3.5 h-3.5" />
+                          <span>পরিশোধ</span>
+                        </Button>
+                      ) : (
+                        <span className="text-[11px] font-medium text-emerald-400 flex items-center gap-1">
+                          <CheckCircle className="w-3.5 h-3.5" /> পরিশোধিত
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      {!isPaid && (
+                        <Button 
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleSendSms(l)}
+                          disabled={sendingSmsId === l.id}
+                          className="h-7 w-7 p-0 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg"
+                          title="SMS পাঠান"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                      <Button 
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setHistoryModalData(l)}
+                        className="h-7 w-7 p-0 text-emerald-400 hover:bg-emerald-500/10 rounded-lg"
+                        title="হিস্ট্রি"
+                      >
+                        <History className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button 
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleOpenModal(l)}
+                        className="h-7 w-7 p-0 text-gray-400 hover:text-white rounded-lg"
+                        title="এডিট"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button 
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setDeleteId(l.id)}
+                        className="h-7 w-7 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg"
+                        title="ডিলিট"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Mobile Pagination Card */}
+            {totalPages > 1 && (
+              <div className="flex flex-col items-center gap-2 pt-3 pb-3 px-3 bg-card border border-gray-800/80 rounded-xl shadow-sm">
+                <div className="text-[11px] text-gray-400">
+                  দেখাচ্ছে <span className="font-semibold text-white">{startIndex + 1}</span> - <span className="font-semibold text-white">{Math.min(endIndex, filteredLoans.length)}</span> / মোট <span className="font-semibold text-white">{filteredLoans.length}</span> টি
+                  <span className="text-gray-500 ml-1">({currentPage}/{totalPages} পৃষ্ঠা)</span>
+                </div>
+
+                <div className="flex items-center gap-1 flex-wrap justify-center">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="h-7 w-7 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-md p-0"
+                    title="Previous Page"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </Button>
+
+                  {getPageNumbers(true).map((pageNum, idx) => {
+                    if (pageNum === '...') {
+                      return (
+                        <span key={`mobile-ellipsis-${idx}`} className="px-1 text-gray-500 text-xs select-none">
+                          ...
+                        </span>
+                      );
+                    }
+                    const page = Number(pageNum);
+                    const isActive = currentPage === page;
+                    return (
+                      <button
+                        key={`mobile-page-${page}`}
+                        onClick={() => handlePageChange(page)}
+                        className={`h-7 min-w-[28px] px-1.5 rounded-md text-xs font-medium transition-all ${
+                          isActive
+                            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 font-bold'
+                            : 'bg-card border border-gray-800 text-gray-300 hover:text-white hover:bg-secondary hover:border-gray-700'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="h-7 w-7 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-md p-0"
+                    title="Next Page"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* 2. Desktop Table View (>=640px) */}
+      <div className="hidden sm:block bg-card border border-gray-800 rounded-xl sm:rounded-2xl overflow-hidden shadow-xl">
         {loading ? (
           <div className="text-center py-12 text-gray-500">
             <div className="w-7 h-7 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-2" />
@@ -498,131 +722,7 @@ export default function LoansPage() {
           </div>
         ) : (
           <>
-            {/* 1. Mobile High-Density Compact List (<640px) */}
-            <div className="divide-y divide-gray-800/60 p-1 sm:hidden">
-              {paginatedLoans.map((l) => {
-                const remainingDue = l.amount - (l.paidAmount || 0);
-                const isPaid = l.status === 'Paid' || remainingDue <= 0;
-                const isGiven = l.type === 'Given';
-
-                return (
-                  <div key={l.id} className="py-2.5 px-2 hover:bg-secondary/20 rounded-xl transition-colors">
-                    {/* Top Row: Name, Phone & Type vs Amount & Remaining */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-bold text-white text-xs truncate max-w-[140px]">{l.personName}</span>
-                          <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border shrink-0 ${
-                            isGiven ? 'bg-orange-500/10 text-orange-400 border-orange-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'
-                          }`}>
-                            {isGiven ? 'পাবো' : 'দিতে হবে'}
-                          </span>
-                          {isPaid && (
-                            <span className="text-[9px] font-semibold px-1 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                              পরিশোধিত
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-2 text-[10px] text-gray-400 mt-0.5">
-                          {l.phone && (
-                            <a href={`tel:${l.phone}`} className="text-blue-400 hover:underline flex items-center gap-0.5">
-                              <Phone className="w-2.5 h-2.5" />
-                              <span>{l.phone}</span>
-                            </a>
-                          )}
-                          <span>• {l.date}</span>
-                        </div>
-                        {l.notes && <p className="text-[10px] text-gray-500 truncate italic mt-0.5">{l.notes}</p>}
-                        {!isPaid && l.nextPaymentDate && (
-                          <span className="text-[10px] text-blue-400 flex items-center gap-1 mt-0.5 font-medium">
-                            <CalendarClock className="w-2.5 h-2.5" />
-                            তাগাদা: {l.nextPaymentDate}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Right side: Amount and Due */}
-                      <div className="text-right shrink-0">
-                        <div className={`text-xs font-black ${isPaid ? 'text-emerald-400' : isGiven ? 'text-orange-400' : 'text-red-400'}`}>
-                          {isPaid ? 'পরিশোধিত' : formatCurrency(remainingDue)}
-                        </div>
-                        <div className="text-[9px] text-gray-500">
-                          মোট: {formatCurrency(l.amount)}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Actions toolbar: Perfectly Aligned Left vs Right */}
-                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-800/50">
-                      {/* Left: Primary Action (Always at the exact same left position in every card) */}
-                      <div>
-                        {!isPaid ? (
-                          <Button 
-                            size="sm"
-                            onClick={() => { setPaymentModalData(l); setNextDate(''); setPaymentNote(''); }}
-                            className="h-7 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm flex items-center gap-1"
-                          >
-                            <Coins className="w-3.5 h-3.5" />
-                            <span>পরিশোধ</span>
-                          </Button>
-                        ) : (
-                          <span className="text-[11px] font-medium text-emerald-400 flex items-center gap-1">
-                            <CheckCircle className="w-3.5 h-3.5" /> পরিশোধিত
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Right: Secondary Actions (Uniform row of icons) */}
-                      <div className="flex items-center gap-1">
-                        {!isPaid && (
-                          <Button 
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleSendSms(l)}
-                            disabled={sendingSmsId === l.id}
-                            className="h-7 w-7 p-0 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg"
-                            title="SMS পাঠান"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5" />
-                          </Button>
-                        )}
-                        <Button 
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setHistoryModalData(l)}
-                          className="h-7 w-7 p-0 text-emerald-400 hover:bg-emerald-500/10 rounded-lg"
-                          title="হিস্ট্রি"
-                        >
-                          <History className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button 
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleOpenModal(l)}
-                          className="h-7 w-7 p-0 text-gray-400 hover:text-white rounded-lg"
-                          title="এডিট"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button 
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setDeleteId(l.id)}
-                          className="h-7 w-7 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg"
-                          title="ডিলিট"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* 2. Desktop Table View (>=640px) */}
-            <div className="hidden sm:block overflow-x-auto overflow-y-auto max-h-[calc(100vh-280px)] relative">
+            <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-280px)] relative">
               <table className="w-full whitespace-nowrap">
                 <thead className="bg-background/50">
                   <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-800/50">
@@ -696,7 +796,7 @@ export default function LoansPage() {
                                   variant="ghost" 
                                   size="icon" 
                                   onClick={() => handleSendSms(l)} 
-                                  disabled={sendingSmsId === l.id}
+                                  disabled={sendingSmsId === l.id} 
                                   className="h-8 w-8 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-400/10" 
                                   title="Send SMS Reminder"
                                 >
@@ -742,7 +842,7 @@ export default function LoansPage() {
 
             {/* Desktop Pagination (>=640px) */}
             {totalPages > 1 && (
-              <div className="hidden sm:flex items-center justify-between px-5 py-3.5 border-t border-gray-800/80 bg-secondary/20">
+              <div className="flex items-center justify-between px-5 py-3.5 border-t border-gray-800/80 bg-secondary/20">
                 <div className="text-xs text-gray-400">
                   Showing <span className="font-semibold text-white">{startIndex + 1}</span> to <span className="font-semibold text-white">{Math.min(endIndex, filteredLoans.length)}</span> of <span className="font-semibold text-white">{filteredLoans.length}</span> records
                   <span className="text-gray-500 ml-1.5">(Page {currentPage} of {totalPages})</span>
@@ -794,65 +894,6 @@ export default function LoansPage() {
                     title="Next Page"
                   >
                     <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Mobile Pagination (<640px) */}
-            {totalPages > 1 && (
-              <div className="flex sm:hidden flex-col items-center gap-2 pt-2.5 pb-2.5 px-3 border-t border-gray-800/80 bg-secondary/20">
-                <div className="text-[11px] text-gray-400">
-                  দেখাচ্ছে <span className="font-semibold text-white">{startIndex + 1}</span> - <span className="font-semibold text-white">{Math.min(endIndex, filteredLoans.length)}</span> / মোট <span className="font-semibold text-white">{filteredLoans.length}</span> টি
-                  <span className="text-gray-500 ml-1">({currentPage}/{totalPages} পৃষ্ঠা)</span>
-                </div>
-
-                <div className="flex items-center gap-1 flex-wrap justify-center">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className="h-7 w-7 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-md p-0"
-                    title="Previous Page"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                  </Button>
-
-                  {getPageNumbers(true).map((pageNum, idx) => {
-                    if (pageNum === '...') {
-                      return (
-                        <span key={`mobile-ellipsis-${idx}`} className="px-1 text-gray-500 text-xs select-none">
-                          ...
-                        </span>
-                      );
-                    }
-                    const page = Number(pageNum);
-                    const isActive = currentPage === page;
-                    return (
-                      <button
-                        key={`mobile-page-${page}`}
-                        onClick={() => handlePageChange(page)}
-                        className={`h-7 min-w-[28px] px-1.5 rounded-md text-xs font-medium transition-all ${
-                          isActive
-                            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 font-bold'
-                            : 'bg-card border border-gray-800 text-gray-300 hover:text-white hover:bg-secondary hover:border-gray-700'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    );
-                  })}
-
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                    className="h-7 w-7 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-md p-0"
-                    title="Next Page"
-                  >
-                    <ChevronRight className="w-3.5 h-3.5" />
                   </Button>
                 </div>
               </div>
