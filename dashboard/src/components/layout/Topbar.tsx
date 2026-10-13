@@ -331,7 +331,7 @@ export function Topbar() {
         
         {/* DASHBOARD TOPBAR ACTION BUTTONS (DESKTOP ONLY) */}
         {pathname === '/' && (
-          <div className="hidden sm:flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none py-1">
+          <div className="hidden sm:flex items-center">
             <button
               onClick={() => setIsCustomerModalOpen(true)}
               className="flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-md shadow-blue-500/20 shrink-0"
@@ -340,30 +340,6 @@ export function Topbar() {
               <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span>+ নতুন কাস্টমার</span>
             </button>
-            <Link
-              href="/inventory"
-              className="flex items-center gap-1.5 bg-secondary hover:bg-gray-800 border border-gray-800 hover:border-gray-700 active:scale-95 text-gray-200 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0"
-              title="সরাসরি পার্টস বিক্রি"
-            >
-              <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
-              <span className="hidden sm:inline">সরাসরি বিক্রি</span>
-            </Link>
-            <Link
-              href="/expenses"
-              className="flex items-center gap-1.5 bg-secondary hover:bg-gray-800 border border-gray-800 hover:border-gray-700 active:scale-95 text-gray-200 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0"
-              title="খরচ এন্ট্রি"
-            >
-              <Receipt className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-400" />
-              <span className="hidden sm:inline">খরচ এন্ট্রি</span>
-            </Link>
-            <Link
-              href="/due"
-              className="flex items-center gap-1.5 bg-secondary hover:bg-gray-800 border border-gray-800 hover:border-gray-700 active:scale-95 text-gray-200 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0"
-              title="বকেয়া কালেকশন"
-            >
-              <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
-              <span className="hidden sm:inline">বকেয়া কালেকশন</span>
-            </Link>
           </div>
         )}
 
