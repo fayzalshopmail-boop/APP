@@ -77,8 +77,10 @@ export default function ExpensesPage() {
       setExpenses([{ id, ...newExpense }, ...expenses]);
       setIsModalOpen(false);
       setFormData({ title: '', category: 'Tea & Snacks', amount: '', date: new Date().toISOString().split('T')[0] });
+      toast.success('খরচ সফলভাবে যোগ করা হয়েছে');
     } catch (err) {
       console.error("Failed to add expense", err);
+      toast.error('খরচ যোগ করতে সমস্যা হয়েছে');
     }
   };
 
@@ -91,42 +93,66 @@ export default function ExpensesPage() {
     try {
       await expenseService.delete(confirmModal.id as string);
       setExpenses(expenses.filter(e => e.id !== (confirmModal.id as string)));
+      toast.success('খরচ সফলভাবে মুছে ফেলা হয়েছে');
     } catch (err) {
       console.error(err);
+      toast.error('খরচ মুছতে সমস্যা হয়েছে');
     } finally {
       setConfirmModal({isOpen: false, id: null});
     }
   };
 
   // Calculations
+  const todayStr = new Date().toISOString().split('T')[0];
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+
   const thisMonthExpenses = expenses
     .filter(e => e.date.startsWith(currentMonth))
     .reduce((sum, e) => sum + e.amount, 0);
 
+  const todayExpenses = expenses
+    .filter(e => e.date === todayStr)
+    .reduce((sum, e) => sum + e.amount, 0);
+
+  const totalAllTimeExpenses = expenses
+    .reduce((sum, e) => sum + e.amount, 0);
+
   const filteredExpenses = expenses.filter(expense => {
+    const matchesSearch = 
+      expense.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      expense.category.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!matchesSearch) return false;
+
     if (dateFilter === 'all') return true;
-    
-    const today = new Date();
-    const expDateStr = expense.date; // YYYY-MM-DD
-    
     if (dateFilter === 'today') {
-      const todayStr = today.toISOString().split('T')[0];
-      return expDateStr === todayStr;
+      return expense.date === todayStr;
     }
-    
     if (dateFilter === 'week') {
       const lastWeek = new Date();
       lastWeek.setDate(lastWeek.getDate() - 7);
-      return new Date(expDateStr) >= lastWeek;
+      return new Date(expense.date) >= lastWeek;
     }
-    
     if (dateFilter === 'month') {
-      return expDateStr.startsWith(currentMonth);
+      return expense.date.startsWith(currentMonth);
     }
-    
     return true;
   });
+
+  const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage) || 1;
+  const paginatedExpenses = filteredExpenses.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handleSearchChange = (val: string) => {
+    setSearchTerm(val);
+    setCurrentPage(1);
+  };
+
+  const handleFilterChange = (id: string) => {
+    setDateFilter(id as 'all' | 'today' | 'week' | 'month');
+    setCurrentPage(1);
+  };
 
   const getCategoryIcon = (catName: string) => {
     const cat = EXPENSE_CATEGORIES.find(c => c.name === catName);
@@ -142,121 +168,221 @@ export default function ExpensesPage() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-in fade-in duration-300 pb-10">
+      {/* Page Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <Wallet className="w-6 h-6 text-pink-500" />
-            Shop Expenses
+            Shop Expenses (দোকানের খরচ)
           </h1>
-          <p className="text-sm text-gray-400 mt-1">Track daily expenses and operational costs</p>
+          <p className="text-sm text-gray-400 mt-1">দৈনন্দিন খরচ ও নিয়মিত ব্যয় ট্র্যাকিং</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center bg-[#1a1d2d] rounded-xl border border-gray-800/80 p-1">
-            <Filter className="w-4 h-4 text-gray-500 ml-2" />
-            <select 
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value as any)}
-              className="bg-transparent border-none text-xs text-gray-300 focus:ring-0 cursor-pointer outline-none pl-2 pr-4 py-1"
-            >
-              <option value="all">All Time</option>
-              <option value="today">Today</option>
-              <option value="week">Last 7 Days</option>
-              <option value="month">This Month</option>
-            </select>
-          </div>
-        </div>
+        <Button 
+          onClick={() => setIsModalOpen(true)}
+          className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 shrink-0"
+        >
+          <Plus className="w-4 h-4" />
+          <span>নতুন খরচ (Add Expense)</span>
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-card border border-border rounded-2xl p-6 relative overflow-hidden group">
+      {/* 3-Card Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-card border border-pink-500/20 rounded-2xl p-5 relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
           <div className="flex items-center justify-between relative z-10">
             <div>
-              <p className="text-sm font-medium text-gray-400 mb-1 uppercase tracking-wider">This Month</p>
-              <h2 className="text-3xl font-bold text-white">{formatCurrency(thisMonthExpenses)}</h2>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">চলতি মাসের খরচ (This Month)</p>
+              <h2 className="text-2xl font-bold text-pink-400">{formatCurrency(thisMonthExpenses)}</h2>
+              <p className="text-[11px] text-gray-500 mt-1">চলতি মাসের মোট ব্যয়</p>
             </div>
-            <div className="w-12 h-12 bg-pink-500/20 rounded-xl flex items-center justify-center">
-              <Wallet className="w-6 h-6 text-pink-500" />
+            <div className="w-12 h-12 bg-pink-500/10 rounded-xl flex items-center justify-center border border-pink-500/20">
+              <Wallet className="w-6 h-6 text-pink-400" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-card border border-blue-500/20 rounded-2xl p-5 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+          <div className="flex items-center justify-between relative z-10">
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">আজকের খরচ (Today)</p>
+              <h2 className="text-2xl font-bold text-blue-400">{formatCurrency(todayExpenses)}</h2>
+              <p className="text-[11px] text-gray-500 mt-1">আজকের মোট ব্যয়</p>
+            </div>
+            <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center border border-blue-500/20">
+              <Calendar className="w-6 h-6 text-blue-400" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-card border border-emerald-500/20 rounded-2xl p-5 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+          <div className="flex items-center justify-between relative z-10">
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">সর্বমোট খরচ (All Time)</p>
+              <h2 className="text-2xl font-bold text-emerald-400">{formatCurrency(totalAllTimeExpenses)}</h2>
+              <p className="text-[11px] text-gray-500 mt-1">মোট {expenses.length} টি খরচ রেকর্ড</p>
+            </div>
+            <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20">
+              <Coffee className="w-6 h-6 text-emerald-400" />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-2xl shadow-xl overflow-hidden">
-        {expenses.length === 0 ? (
-          <div className="p-12 text-center flex flex-col items-center">
-            <div className="w-16 h-16 bg-gray-800/50 rounded-full flex items-center justify-center mb-4">
-              <Wallet className="w-8 h-8 text-gray-500" />
-            </div>
-            <h3 className="text-lg font-semibold text-white mb-2">No expenses recorded</h3>
-            <p className="text-gray-400 text-sm">Click "Add Expense" to track your first shop expense.</p>
+      {/* Search and Filter Chip Bar */}
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <Input 
+              type="text" 
+              placeholder="খরচের বিবরণ বা ক্যাটাগরি দিয়ে খুঁজুন..." 
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-9 bg-background/50 h-10"
+            />
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left whitespace-nowrap">
-              <thead className="text-xs text-gray-400 uppercase bg-secondary/50 border-b border-border">
-                <tr>
-                  <th className="px-6 py-4 font-semibold">Date</th>
-                  <th className="px-6 py-4 font-semibold">Category</th>
-                  <th className="px-6 py-4 font-semibold">Title</th>
-                  <th className="px-6 py-4 font-semibold">Amount</th>
-                  <th className="px-6 py-4 font-semibold text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/50">
-                {filteredExpenses.map((expense, idx) => {
-                  const Category = getCategoryIcon(expense.category);
-                  const Icon = Category.icon;
-                  return (
-                    <motion.tr 
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      key={expense.id} 
-                      className="hover:bg-secondary/30 transition-colors"
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-gray-300 flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-gray-500" />
-                          {expense.date}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className={`p-1.5 rounded-md bg-secondary border border-border ${Category.color}`}>
-                            <Icon className="w-3.5 h-3.5" />
-                          </div>
-                          <span className="text-gray-300">{expense.category}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-white">{expense.title}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-white">
-                          {formatCurrency(expense.amount)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <Button 
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteRequest(expense.id)}
-                          className="text-red-500 hover:text-red-400 hover:bg-red-500/10"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </td>
-                    </motion.tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+          <FilterChipBar
+            filters={[
+              { id: 'all', label: 'সব খরচ', count: expenses.length },
+              { id: 'today', label: 'আজকে', count: expenses.filter(e => e.date === todayStr).length },
+              { id: 'week', label: 'গত ৭ দিন' },
+              { id: 'month', label: 'চলতি মাস', count: expenses.filter(e => e.date.startsWith(currentMonth)).length }
+            ]}
+            activeFilter={dateFilter}
+            onFilterChange={handleFilterChange}
+          />
+        </div>
       </div>
 
+      {/* Content Area */}
+      {filteredExpenses.length === 0 ? (
+        <div className="bg-card border border-border rounded-2xl p-12 text-center flex flex-col items-center">
+          <div className="w-16 h-16 bg-pink-500/10 rounded-full flex items-center justify-center mb-4">
+            <Wallet className="w-8 h-8 text-pink-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-white mb-2">কোন খরচ পাওয়া যায়নি</h3>
+          <p className="text-gray-400 text-sm">নতুন খরচ যোগ করতে উপরের "নতুন খরচ" বাটনে ক্লিক করুন।</p>
+        </div>
+      ) : (
+        <>
+          {/* Desktop Table View */}
+          <div className="hidden md:block bg-card border border-border rounded-2xl shadow-xl overflow-hidden">
+            <div className="overflow-x-auto relative">
+              <table className="w-full text-sm text-left whitespace-nowrap">
+                <thead className="text-xs text-gray-400 uppercase bg-secondary/50 border-b border-border">
+                  <tr>
+                    <th className="px-6 py-4 font-semibold">তারিখ</th>
+                    <th className="px-6 py-4 font-semibold">ক্যাটাগরি</th>
+                    <th className="px-6 py-4 font-semibold">বিবরণ</th>
+                    <th className="px-6 py-4 font-semibold">পরিমাণ</th>
+                    <th className="px-6 py-4 font-semibold text-right">পদক্ষেপ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {paginatedExpenses.map((expense, idx) => {
+                    const Category = getCategoryIcon(expense.category);
+                    const Icon = Category.icon;
+                    return (
+                      <motion.tr 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.03 }}
+                        key={expense.id} 
+                        className="hover:bg-secondary/30 transition-colors"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-gray-300 flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-gray-500" />
+                            {expense.date}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <div className={`p-1.5 rounded-md bg-secondary border border-border ${Category.color}`}>
+                              <Icon className="w-3.5 h-3.5" />
+                            </div>
+                            <span className="text-gray-300 font-medium">{expense.category}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="font-semibold text-white">{expense.title}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="font-bold text-white text-base">
+                            {formatCurrency(expense.amount)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <Button 
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteRequest(expense.id)}
+                            className="text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </td>
+                      </motion.tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {paginatedExpenses.map((expense) => {
+              const Category = getCategoryIcon(expense.category);
+              const Icon = Category.icon;
+              return (
+                <MobileDataCard key={expense.id}>
+                  <MobileDataCard.Header
+                    title={expense.title}
+                    subtitle={expense.date}
+                    badge={
+                      <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-secondary/80 ${Category.color}`}>
+                        <Icon className="w-3.5 h-3.5" />
+                        <span>{expense.category}</span>
+                      </div>
+                    }
+                  />
+                  <MobileDataCard.FinancialStrip
+                    items={[
+                      { label: 'খরচের পরিমাণ', value: formatCurrency(expense.amount), highlight: 'danger' },
+                    ]}
+                  />
+                  <MobileDataCard.Actions>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleDeleteRequest(expense.id)} 
+                      className="flex-1 border-red-500/20 text-red-400 hover:bg-red-500/10 text-xs h-8"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-1" /> মুছে ফেলুন (Delete)
+                    </Button>
+                  </MobileDataCard.Actions>
+                </MobileDataCard>
+              );
+            })}
+          </div>
+
+          {/* Pagination */}
+          <PaginationControl
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredExpenses.length}
+            itemsPerPage={itemsPerPage}
+          />
+        </>
+      )}
+
+      {/* Add Expense Dialog */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-md bg-popover border-border">
           <DialogHeader>
