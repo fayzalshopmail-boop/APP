@@ -28,13 +28,15 @@ export function AutoBackupTrigger() {
           // Generate the JSON string
           const jsonString = await backupService.generateFullBackupJSON();
 
-          // Send to our email API route
+          // Send to our email API route with authorization
+          const secret = process.env.NEXT_PUBLIC_CRON_SECRET || 'backup_secret_shop_2026_antigravity';
           const response = await fetch('/api/cron/email-backup', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${secret}`
+            },
             body: JSON.stringify({
-              email: 'fayzalahmedantor@gmail.com',
-              password: 'gupm zcoq hrhs jrrd', // User's provided app password
               dataJSON: jsonString,
               shopName: shop.shopName || 'Shop'
             })

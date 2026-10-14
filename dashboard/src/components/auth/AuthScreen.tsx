@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Fingerprint, LogIn, Lock, ShieldAlert, Loader2, AlertCircle } from 'lucide-react';
+import { LogIn, Lock, ShieldAlert, Loader2, AlertCircle } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { auth, googleProvider } from '@/lib/firebase';
 import { signInWithPopup } from 'firebase/auth';
@@ -344,20 +344,25 @@ export function AuthScreen() {
 
             {/* Custom Numpad */}
             <div className="grid grid-cols-3 gap-3 max-w-[260px] mx-auto mt-8">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 'F', 0, 'DEL'].map((key) => (
-                <button
-                  key={key}
-                  onClick={() => handleKeyClick(key)}
-                  className={`h-16 rounded-xl flex items-center justify-center text-xl font-medium transition-all active:scale-95
-                    ${key === 'F' ? 'text-blue-400 bg-blue-500/10 hover:bg-blue-500/20' : 
-                      key === 'DEL' ? 'text-gray-500 bg-gray-800/30 hover:bg-gray-800' : 
-                      'text-gray-300 bg-gray-800/50 hover:bg-gray-700'
-                    }
-                  `}
-                >
-                  {key === 'F' ? <Fingerprint className="w-6 h-6" /> : key}
-                </button>
-              ))}
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, '', 0, 'DEL'].map((key, idx) => {
+                if (key === '') {
+                  return <div key={`empty-${idx}`} className="h-16" />;
+                }
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => handleKeyClick(key)}
+                    className={`h-16 rounded-xl flex items-center justify-center text-xl font-medium transition-all active:scale-95
+                      ${key === 'DEL' ? 'text-gray-500 bg-gray-800/30 hover:bg-gray-800' : 
+                        'text-gray-300 bg-gray-800/50 hover:bg-gray-700'
+                      }
+                    `}
+                  >
+                    {key}
+                  </button>
+                );
+              })}
             </div>
 
             {pin && (

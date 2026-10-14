@@ -116,31 +116,43 @@ export const backupService = {
       throw new Error("Invalid backup file format.");
     }
 
-    const batch = writeBatch(db);
+    const collectionsToRestore: { name: string; items: any[] }[] = [
+      { name: 'customers', items: data.customers },
+      { name: 'inventory', items: data.inventory },
+      { name: 'transactions', items: data.transactions },
+      { name: 'expenses', items: data.expenses },
+      { name: 'suppliers', items: data.suppliers },
+      { name: 'mechanics', items: data.mechanics },
+      { name: 'loans', items: data.loans },
+    ];
 
-    const restoreCollection = (items: any[], collectionName: string) => {
-      if (!items || !Array.isArray(items)) return;
-      items.forEach(item => {
+    let currentBatch = writeBatch(db);
+    let opCount = 0;
+    const BATCH_LIMIT = 400; // safe margin under Firestore 500 op limit
+
+    for (const col of collectionsToRestore) {
+      if (!col.items || !Array.isArray(col.items)) continue;
+      for (const item of col.items) {
         const { id, ...rest } = item;
         if (id) {
-          const docRef = doc(db, collectionName, id);
-          batch.set(docRef, rest, { merge: true });
+          const docRef = doc(db, col.name, id);
+          currentBatch.set(docRef, rest, { merge: true });
         } else {
-          const docRef = doc(collection(db!, collectionName));
-          batch.set(docRef, rest);
+          const docRef = doc(collection(db, col.name));
+          currentBatch.set(docRef, rest);
         }
-      });
-    };
+        opCount++;
+        if (opCount >= BATCH_LIMIT) {
+          await currentBatch.commit();
+          currentBatch = writeBatch(db);
+          opCount = 0;
+        }
+      }
+    }
 
-    restoreCollection(data.customers, 'customers');
-    restoreCollection(data.inventory, 'inventory');
-    restoreCollection(data.transactions, 'transactions');
-    restoreCollection(data.expenses, 'expenses');
-    restoreCollection(data.suppliers, 'suppliers');
-    restoreCollection(data.mechanics, 'mechanics');
-    restoreCollection(data.loans, 'loans');
-
-    await batch.commit();
+    if (opCount > 0) {
+      await currentBatch.commit();
+    }
   },
 
   clearAllData: async () => {

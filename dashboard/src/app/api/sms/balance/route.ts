@@ -9,7 +9,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "API Key is required to fetch balance." }, { status: 400 });
     }
 
-    const url = `http://bulksmsbd.net/api/getBalanceApi?api_key=${apiKey}`;
+    const url = `https://bulksmsbd.net/api/getBalanceApi?api_key=${apiKey}`;
     
     const response = await fetch(url);
     const result = await response.text();

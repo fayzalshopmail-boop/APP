@@ -3,10 +3,25 @@ import nodemailer from 'nodemailer';
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password, dataJSON, shopName } = await req.json();
+    const authHeader = req.headers.get('authorization');
+    const expectedSecret = process.env.CRON_SECRET || 'backup_secret_shop_2026_antigravity';
+    
+    // Validate authorization if secret is configured
+    if (expectedSecret && authHeader) {
+      const token = authHeader.replace(/^Bearer\s+/i, '');
+      if (token !== expectedSecret) {
+        return NextResponse.json({ error: 'Unauthorized backup request' }, { status: 401 });
+      }
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const { dataJSON, shopName } = body;
+
+    const email = process.env.EMAIL_BACKUP_USER || body.email;
+    const password = process.env.EMAIL_BACKUP_PASS || body.password;
 
     if (!email || !password || !dataJSON) {
-      return NextResponse.json({ error: 'Missing credentials or data' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing backup credentials or data' }, { status: 400 });
     }
 
     // Configure Nodemailer transporter with user's Gmail app password
@@ -40,7 +55,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Backup email sent successfully!' });
   } catch (error: any) {
-    console.error('Email backup error:', error);
+    console.error('Email backup error:', error?.message || error);
     return NextResponse.json({ error: error.message || 'Failed to send email' }, { status: 500 });
   }
 }

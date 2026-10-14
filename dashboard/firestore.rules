@@ -20,12 +20,19 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isManagerOrOwner();
+      allow update: if isManagerOrOwner() || (isAuthenticated() && request.auth.token.email == userId);
+      allow create, delete: if isManagerOrOwner();
     }
 
     match /settings/{docId} {
-      allow read: if true;
+      // General settings (shop, dropdowns, loyalty) are readable by active users
+      // SMS configuration credentials are strictly locked to Manager or Owner
+      allow read: if (docId == 'sms') ? isManagerOrOwner() : isActiveUser();
       allow write: if isManagerOrOwner();
+    }
+
+    match /notifications/{notifId} {
+      allow read, write: if isActiveUser();
     }
 
     match /customers/{customerId} {
@@ -71,4 +78,3 @@ service cloud.firestore {
     }
   }
 }
-

@@ -138,7 +138,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
 
  if (!customer) return null;
 
- const pointsValueTk = (loyaltyConfig?.enabled && customer?.points) ? Math.floor(customer.points / (loyaltyConfig.pointsRequired || 1)) * (loyaltyConfig.pointValueInTk || 0) : 0;
+ const pointsValueTk = (loyaltyConfig?.enabled && (customer?.points || 0) > 0) ? Math.floor((customer?.points || 0) * (loyaltyConfig.pointValueInTk || 1)) : 0;
  const pointsDiscount = redeemPoints ? pointsValueTk : 0;
  
  const currentDue = Math.max(0, editableTotalBill - (customer.advance || 0) - pointsDiscount);
@@ -175,7 +175,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  
  onConfirm({
  parts: selectedParts,
- discount: effectiveDiscount,
+ discount: effectiveDiscount + pointsDiscount,
  paymentReceived,
  dueDate: (pendingStatus === "Delivered" && finalDue > 0) ? dueDate : '',
  newTotalBill: editableTotalBill,
@@ -348,7 +348,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  </div>
 
  {/* Loyalty Check */}
- {loyaltyConfig?.enabled && (customer?.points || 0) >= (loyaltyConfig?.pointsRequired || 1) && (
+ {loyaltyConfig?.enabled && (customer?.points || 0) > 0 && pointsValueTk > 0 && (
    <div className="bg-[#0d0f17] p-3 rounded-xl border border-gray-800/80 space-y-2 mb-4">
      <label className="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-emerald-300 select-none">
        <input type="checkbox"

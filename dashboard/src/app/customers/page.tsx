@@ -387,9 +387,8 @@ export default function CustomersPage() {
         const config = await loyaltyConfigService.getSettings();
         if (config.enabled && partsModalCustomer.pendingStatus === 'Delivered') {
            let newPoints = c.points || 0;
-           if (redeemPoints && newPoints >= config.spendRequiredForOnePoint) {
-              const redeemable = Math.floor(newPoints / config.spendRequiredForOnePoint) * config.spendRequiredForOnePoint;
-              newPoints -= redeemable;
+           if (redeemPoints && newPoints > 0) {
+              newPoints = 0;
            }
            if (paymentReceived > 0 && config.spendRequiredForOnePoint > 0) {
               newPoints += Math.floor(paymentReceived / config.spendRequiredForOnePoint);

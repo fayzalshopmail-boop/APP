@@ -31,7 +31,10 @@ export async function POST(request: Request) {
       baseUrl = baseUrl.replace('http://', 'https://');
     }
     
-    const url = `${baseUrl}?api_key=${apiKey}&type=text&number=${targetNumbers}&senderid=${senderId}&message=${encodeURIComponent(message)}`;
+    const isUnicode = /[\u0980-\u09FF]/.test(message || '') || /[^\u0000-\u007F]/.test(message || '');
+    const smsType = isUnicode ? 'unicode' : 'text';
+    
+    const url = `${baseUrl}?api_key=${apiKey}&type=${smsType}&number=${targetNumbers}&senderid=${senderId}&message=${encodeURIComponent(message)}`;
     
     console.log("Sending SMS to URL:", url.replace(apiKey, 'HIDDEN'));
     

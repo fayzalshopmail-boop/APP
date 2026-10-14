@@ -12,9 +12,11 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { FilterChipBar } from '@/components/ui/FilterChipBar';
 import { MobileDataCard } from '@/components/ui/MobileDataCard';
+import { useAppStore } from '@/store/useAppStore';
 import toast from "react-hot-toast";
 
 export default function MechanicsPage() {
+  const { user } = useAppStore();
   const [mechanics, setMechanics] = useState<Mechanic[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -152,7 +154,11 @@ export default function MechanicsPage() {
     if (paymentAmount > activeMechanic.commissionDue) return toast.error("Payment cannot exceed total due.");
 
     try {
-      const { newPaid, newDue } = await mechanicService.payCommission(activeMechanic.id, paymentAmount);
+      const { newPaid, newDue } = await mechanicService.payCommission(
+        activeMechanic.id, 
+        paymentAmount,
+        user?.email || user?.name || 'Staff'
+      );
       setMechanics(mechanics.map(m => {
         if (m.id === activeMechanic.id) {
           return { ...m, totalCommissionPaid: newPaid, commissionDue: newDue };

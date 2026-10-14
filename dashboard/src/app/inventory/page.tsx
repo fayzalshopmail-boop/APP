@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/currency';
-import { Box, Plus, Search, Edit2, Trash2, Loader2, AlertCircle, Settings, Settings2, X, Package, Tag, Layers, DollarSign, PlusCircle, ShoppingCart, Coins } from 'lucide-react';
+import { Box, Plus, Search, Edit2, Trash2, Loader2, AlertCircle, Settings, Settings2, X, Package, Tag, Layers, PlusCircle, ShoppingCart, Coins } from 'lucide-react';
 import { supplierService, Supplier } from '@/lib/services/supplier';
 import { inventoryService, inventorySettingsService, InventoryItem, InventorySettings } from '@/lib/services/inventory';
 import { transactionService } from '@/lib/services/transaction';

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FileText, TrendingUp, TrendingDown, Wallet, DollarSign, Package, Calendar, Search, ArrowDownRight } from 'lucide-react';
+import { FileText, TrendingUp, TrendingDown, Wallet, Package, Calendar, Search, ArrowDownRight } from 'lucide-react';
 import { transactionService, Transaction } from '@/lib/services/transaction';
 import { expenseService, Expense } from '@/lib/services/expense';
 import { customerService, Customer } from '@/lib/services/customer';
@@ -51,26 +51,43 @@ export default function ReportsPage() {
   // Filter helpers
   const getFilterDate = (filter: TimeFilter) => {
     const now = new Date();
-    if (filter === 'today') return new Date(now.setHours(0,0,0,0));
-    if (filter === 'week') return new Date(now.setDate(now.getDate() - 7));
-    if (filter === 'month') return new Date(now.setMonth(now.getMonth() - 1));
+    if (filter === 'today') {
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    }
+    if (filter === 'week') {
+      const d = new Date(now);
+      d.setDate(d.getDate() - 7);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+    if (filter === 'month') {
+      // Calendar month start to match Dashboard and Expenses
+      return new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    }
     return new Date(0); // all time
   };
 
   const filterDate = getFilterDate(timeFilter);
 
+  const parseItemDate = (itemDate: any): Date => {
+    if (!itemDate) return new Date(0);
+    if (typeof itemDate === 'object' && 'seconds' in itemDate) {
+      return new Date(itemDate.seconds * 1000);
+    }
+    if (itemDate instanceof Date) return itemDate;
+    const parsed = new Date(itemDate);
+    return isNaN(parsed.getTime()) ? new Date(0) : parsed;
+  };
+
   // Filter transactions
   const filteredTransactions = transactions.filter(t => {
-    if (!t.createdAt) return true;
-    const tDate = typeof t.createdAt === 'object' && 'seconds' in t.createdAt 
-      ? new Date((t.createdAt as any).seconds * 1000) 
-      : new Date();
+    const tDate = parseItemDate(t.createdAt);
     return tDate >= filterDate;
   });
 
   // Filter expenses
   const filteredExpenses = expenses.filter(e => {
-    const eDate = new Date(e.date);
+    const eDate = parseItemDate(e.date);
     return eDate >= filterDate;
   });
 
@@ -193,8 +210,8 @@ export default function ReportsPage() {
             <h2 className="text-lg font-semibold text-gray-200 mb-4">Business Insights (All Time)</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-card border border-gray-800 rounded-2xl p-5 flex items-center gap-4">
-                <div className="p-4 bg-yellow-500/10 rounded-full border border-yellow-500/20">
-                  <DollarSign className="w-6 h-6 text-yellow-500" />
+                <div className="w-14 h-14 bg-yellow-500/10 rounded-full border border-yellow-500/20 flex items-center justify-center shrink-0">
+                  <span className="text-2xl font-black text-yellow-500 select-none leading-none">৳</span>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-400">Total Market Dues (Pabona)</p>

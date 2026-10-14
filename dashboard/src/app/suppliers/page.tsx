@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Truck, Plus, Search, Edit, Trash2, Phone, Building, MapPin, DollarSign, Wallet } from 'lucide-react';
+import { Truck, Plus, Search, Edit, Trash2, Phone, Building, MapPin, Wallet } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -13,9 +13,11 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { FilterChipBar } from '@/components/ui/FilterChipBar';
 import { MobileDataCard } from '@/components/ui/MobileDataCard';
+import { useAppStore } from '@/store/useAppStore';
 import toast from 'react-hot-toast';
 
 export default function SuppliersPage() {
+  const { user } = useAppStore();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -148,7 +150,11 @@ export default function SuppliersPage() {
     if (amount <= 0 || amount > paymentModalSupplier.due) return toast.error("সঠিক টাকার পরিমাণ লিখুন");
 
     try {
-      const { newPaid, newDue } = await supplierService.addPayment(paymentModalSupplier.id, amount);
+      const { newPaid, newDue } = await supplierService.addPayment(
+        paymentModalSupplier.id, 
+        amount, 
+        user?.email || user?.name || 'Staff'
+      );
       setSuppliers(suppliers.map(s => 
         s.id === paymentModalSupplier.id ? { ...s, totalPaid: newPaid, due: newDue } : s
       ));
@@ -351,7 +357,7 @@ export default function SuppliersPage() {
                               onClick={() => setPaymentModalSupplier(s)}
                               className="text-[10px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 bg-emerald-400/10 hover:bg-emerald-400/20 px-2 py-0.5 rounded transition-colors"
                             >
-                              <DollarSign className="w-3 h-3" /> Pay Due
+                              <span className="font-bold text-[11px] leading-none">৳</span> Pay Due
                             </button>
                           )}
                           <button 
@@ -425,7 +431,7 @@ export default function SuppliersPage() {
                       onClick={() => setPaymentModalSupplier(s)} 
                       className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs h-8"
                     >
-                      <DollarSign className="w-3.5 h-3.5 mr-1" /> পে ডিউ
+                      <span className="font-bold text-xs mr-1 leading-none">৳</span> পে ডিউ
                     </Button>
                   )}
                   <Button 
