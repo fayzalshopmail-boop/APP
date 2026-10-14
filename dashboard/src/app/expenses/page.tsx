@@ -3,14 +3,17 @@
 import { useState, useEffect } from 'react';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { motion } from 'framer-motion';
-import { Wallet, Plus, Trash2, Calendar, Coffee, Plug, Car, UserCircle, ShoppingBag } from 'lucide-react';
+import { Wallet, Plus, Trash2, Calendar, Coffee, Plug, Car, UserCircle, ShoppingBag, Search, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { formatCurrency } from '@/lib/currency';
 import { expenseService, Expense } from '@/lib/services/expense';
-import { Filter } from 'lucide-react';
+import { PaginationControl } from '@/components/ui/PaginationControl';
+import { FilterChipBar } from '@/components/ui/FilterChipBar';
+import { MobileDataCard } from '@/components/ui/MobileDataCard';
+import toast from 'react-hot-toast';
 
 const EXPENSE_CATEGORIES = [
   { name: 'Tea & Snacks', icon: Coffee, color: 'text-orange-400' },
@@ -26,6 +29,9 @@ export default function ExpensesPage() {
   const [loading, setLoading] = useState(true);
   const [confirmModal, setConfirmModal] = useState<{isOpen: boolean, id: string | null}>({isOpen: false, id: null});
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: '',

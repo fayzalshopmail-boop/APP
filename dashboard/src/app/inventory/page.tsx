@@ -15,6 +15,8 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { InventoryManageModal } from "@/components/ui/InventoryManageModal";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { PaginationControl } from '@/components/ui/PaginationControl';
+import { MobileDataCard } from '@/components/ui/MobileDataCard';
 import toast from "react-hot-toast";
 
 const formatNumber = (num: number) => num.toLocaleString('en-IN');
@@ -26,6 +28,8 @@ export default function InventoryPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   
   const [invSettings, setInvSettings] = useState<InventorySettings>({ categories: [], productNames: {} });
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -363,13 +367,31 @@ export default function InventoryPage() {
     setDeleteConfirm({isOpen: true, id});
   };
 
-  const categories = ['All', ...invSettings.categories];
+  const categories = ['All', 'Low Stock', ...invSettings.categories];
 
   const filteredItems = items.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === 'All' || item.category === categoryFilter;
-    return matchesSearch && matchesCategory;
+    if (!matchesSearch) return false;
+    if (categoryFilter === 'All') return true;
+    if (categoryFilter === 'Low Stock') return item.stock <= (item.minStockLevel || 5);
+    return item.category === categoryFilter;
   });
+
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage) || 1;
+  const paginatedItems = filteredItems.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handleSearchChange = (val: string) => {
+    setSearchTerm(val);
+    setCurrentPage(1);
+  };
+
+  const handleCategoryChange = (cat: string) => {
+    setCategoryFilter(cat);
+    setCurrentPage(1);
+  };
 
   const totalInventoryValue = items.reduce((sum, item) => sum + (item.stock * item.purchasePrice), 0);
   const lowStockItems = items.filter(item => item.stock <= (item.minStockLevel || 5));
@@ -381,11 +403,6 @@ export default function InventoryPage() {
         <h2 className="text-2xl font-bold text-gray-200">Access Denied</h2>
         <p className="text-gray-500 mt-2">You do not have permission to view Inventory.</p>
           
-
-    
-      
-
-    
       <ConfirmModal
         isOpen={deleteConfirm.isOpen}
         onClose={() => setDeleteConfirm({isOpen: false, id: null})}
@@ -401,25 +418,49 @@ export default function InventoryPage() {
 }
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-6">
-      {/* Overview Cards */}
+    <div className="max-w-[1600px] mx-auto space-y-6 pb-10">
+      {/* 3-Card Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-card border border-gray-800 rounded-xl p-5">
-          <div className="text-gray-400 text-sm font-medium mb-1">Total Parts</div>
-          <div className="text-2xl font-bold text-white">{items.length}</div>
-        </div>
-        <div className="bg-card border border-gray-800 rounded-xl p-5">
-          <div className="text-gray-400 text-sm font-medium mb-1">Total Inventory Value</div>
-          <div className="text-2xl font-bold text-blue-400">{formatCurrency(totalInventoryValue)}</div>
-        </div>
-        <div className="bg-card border border-red-900/30 rounded-xl p-5 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10">
-            <AlertCircle className="w-16 h-16 text-red-500" />
+        <div className="bg-card border border-blue-500/20 rounded-2xl p-5 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+          <div className="flex items-center justify-between relative z-10">
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">মোট আইটেম / পার্টস</p>
+              <h2 className="text-2xl font-bold text-white">{items.length}</h2>
+              <p className="text-[11px] text-gray-500 mt-1">দোকানের মোট নিবন্ধিত পার্টস</p>
+            </div>
+            <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center border border-blue-500/20">
+              <Box className="w-6 h-6 text-blue-400" />
+            </div>
           </div>
-          <div className="text-red-400 text-sm font-medium mb-1 flex items-center gap-2">
-            Low Stock Alerts
+        </div>
+
+        <div className="bg-card border border-emerald-500/20 rounded-2xl p-5 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+          <div className="flex items-center justify-between relative z-10">
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">মোট স্টক মূল্য (Stock Value)</p>
+              <h2 className="text-2xl font-bold text-emerald-400">{formatCurrency(totalInventoryValue)}</h2>
+              <p className="text-[11px] text-gray-500 mt-1">ক্রয়মূল্যের ভিত্তিতে বর্তমান ইনভেন্টরি</p>
+            </div>
+            <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20">
+              <Coins className="w-6 h-6 text-emerald-400" />
+            </div>
           </div>
-          <div className="text-2xl font-bold text-white">{lowStockItems.length}</div>
+        </div>
+
+        <div className="bg-card border border-red-500/20 rounded-2xl p-5 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+          <div className="flex items-center justify-between relative z-10">
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">লো স্টক সতর্কতা (Low Stock)</p>
+              <h2 className="text-2xl font-bold text-red-400">{lowStockItems.length}</h2>
+              <p className="text-[11px] text-gray-500 mt-1">রি-স্টক প্রয়োজন এমন পার্টস</p>
+            </div>
+            <div className="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center border border-red-500/20">
+              <AlertCircle className="w-6 h-6 text-red-400" />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -429,9 +470,9 @@ export default function InventoryPage() {
           <Search className="w-5 h-5 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2" />
           <Input 
             type="text" 
-            placeholder="Search parts by name..." 
+            placeholder="পার্টসের নাম দিয়ে খুঁজুন..." 
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-11 h-11 rounded-xl bg-popover"
           />
         </div>
@@ -439,101 +480,207 @@ export default function InventoryPage() {
           {categories.map(cat => (
             <Button
               key={cat}
-              onClick={() => setCategoryFilter(cat)}
+              onClick={() => handleCategoryChange(cat)}
               className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all border ${
                 categoryFilter === cat 
                   ? 'bg-blue-500/10 text-blue-400 border-indigo-500/30' 
                   : 'bg-popover text-gray-400 border-gray-800 hover:text-white'
               }`}
             >
-              {cat}
+              {cat === 'Low Stock' ? `⚠️ লো স্টক (${lowStockItems.length})` : cat}
             </Button>
           ))}
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-card border border-gray-800 rounded-2xl overflow-hidden">
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-          </div>
-        ) : filteredItems.length === 0 ? (
-          <div className="flex flex-col justify-center items-center h-64 text-gray-500">
-            <Box className="w-12 h-12 mb-3 opacity-20" />
-            <p>No parts found</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-240px)] relative">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-popover sticky top-0 z-10 shadow-sm">
-                <tr className="text-gray-400 uppercase tracking-wider text-xs border-b border-gray-800">
-                  <th className="px-6 py-4 font-medium min-w-[200px]">Part Name</th>
-                  <th className="px-6 py-4 font-medium min-w-[120px]">Category</th>
-                  <th className="px-6 py-4 font-medium min-w-[100px]">Stock</th>
-                  <th className="px-6 py-4 font-medium min-w-[120px]">Cost Price</th>
-                  <th className="px-6 py-4 font-medium min-w-[120px]">Selling Price</th>
-                  <th className="px-6 py-4 font-medium text-right min-w-[100px]">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800/50">
-                {filteredItems.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-800/20 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-gray-200">{item.name}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-gray-800 text-gray-300">
-                        {item.category}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className={`font-bold ${item.stock <= (item.minStockLevel || 5) ? 'text-red-400' : 'text-emerald-400'}`}>
-                        {item.stock} {item.unit || 'Pcs'}
-                      </div>
-                      {item.stock <= (item.minStockLevel || 5) && (
-                        <div className="text-[10px] text-red-500/70">Low Stock</div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-gray-400">
-                      {formatCurrency(item.purchasePrice)}
-                    </td>
-                    <td className="px-6 py-4 text-gray-200 font-medium">
-                      {formatCurrency(item.sellingPrice)}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                                                  <Button variant="ghost" size="icon" onClick={() => handleOpenSell(item)} className="h-8 w-8 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 hover:text-blue-400 rounded-lg transition-colors"
+      {/* Main Content */}
+      {loading ? (
+        <div className="bg-card border border-gray-800 rounded-2xl flex justify-center items-center h-64">
+          <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+        </div>
+      ) : filteredItems.length === 0 ? (
+        <div className="bg-card border border-gray-800 rounded-2xl flex flex-col justify-center items-center h-64 text-gray-500">
+          <Box className="w-12 h-12 mb-3 opacity-20" />
+          <p>কোন পার্টস পাওয়া যায়নি</p>
+        </div>
+      ) : (
+        <>
+          {/* Desktop Table View */}
+          <div className="hidden md:block bg-card border border-gray-800 rounded-2xl overflow-hidden shadow-xl">
+            <div className="overflow-x-auto relative">
+              <table className="w-full text-left text-sm whitespace-nowrap">
+                <thead className="bg-popover sticky top-0 z-10 shadow-sm">
+                  <tr className="text-gray-400 uppercase tracking-wider text-xs border-b border-gray-800">
+                    <th className="px-6 py-4 font-medium min-w-[200px]">Part Name</th>
+                    <th className="px-6 py-4 font-medium min-w-[120px]">Category</th>
+                    <th className="px-6 py-4 font-medium min-w-[100px]">Stock</th>
+                    <th className="px-6 py-4 font-medium min-w-[120px]">Cost Price</th>
+                    <th className="px-6 py-4 font-medium min-w-[120px]">Selling Price</th>
+                    <th className="px-6 py-4 font-medium text-right min-w-[100px]">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-800/50">
+                  {paginatedItems.map((item) => (
+                    <tr key={item.id} className="hover:bg-gray-800/20 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-gray-200">{item.name}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-gray-800 text-gray-300">
+                          {item.category}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className={`font-bold ${item.stock <= (item.minStockLevel || 5) ? 'text-red-400' : 'text-emerald-400'}`}>
+                          {item.stock} {item.unit || 'Pcs'}
+                        </div>
+                        {item.stock <= (item.minStockLevel || 5) && (
+                          <div className="text-[10px] text-red-500/70">Low Stock</div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-gray-400">
+                        {formatCurrency(item.purchasePrice)}
+                      </td>
+                      <td className="px-6 py-4 text-gray-200 font-medium">
+                        {formatCurrency(item.sellingPrice)}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => handleOpenSell(item)} 
+                            className="h-8 w-8 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 hover:text-blue-400 rounded-lg transition-colors"
                             title="Direct Sell"
                           >
                             <ShoppingCart className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleOpenRestock(item)} className="h-8 w-8 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 hover:text-emerald-400 rounded-lg transition-colors"
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => handleOpenRestock(item)} 
+                            className="h-8 w-8 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 hover:text-emerald-400 rounded-lg transition-colors"
                             title="Restock Item"
                           >
                             <PlusCircle className="w-4 h-4" />
                           </Button>
-                          {hasFullAccess && (<>
-<Button variant="ghost" size="icon" onClick={() => handleOpenModal(item)} className="h-8 w-8 bg-gray-800/50 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg transition-colors"
-                          title="Edit Part"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteRequest(item.id)} className="h-8 w-8 bg-red-500/10 hover:bg-red-500/20 text-red-500 hover:text-red-400 rounded-lg transition-colors"
-                          title="Delete Part"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-</>)}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                          {hasFullAccess && (
+                            <>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => handleOpenModal(item)} 
+                                className="h-8 w-8 bg-gray-800/50 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg transition-colors"
+                                title="Edit Part"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => handleDeleteRequest(item.id)} 
+                                className="h-8 w-8 bg-red-500/10 hover:bg-red-500/20 text-red-500 hover:text-red-400 rounded-lg transition-colors"
+                                title="Delete Part"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        )}
-      </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {paginatedItems.map((item) => {
+              const isLow = item.stock <= (item.minStockLevel || 5);
+              return (
+                <MobileDataCard key={item.id}>
+                  <MobileDataCard.Header
+                    title={item.name}
+                    subtitle={item.category}
+                    badge={
+                      isLow ? (
+                        <span className="text-[11px] bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-full font-medium">
+                          লো স্টক ({item.stock} {item.unit || 'Pcs'})
+                        </span>
+                      ) : (
+                        <span className="text-[11px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-medium">
+                          স্টকে আছে ({item.stock} {item.unit || 'Pcs'})
+                        </span>
+                      )
+                    }
+                  />
+                  <MobileDataCard.Details>
+                    <div className="flex items-center justify-between text-xs text-gray-400">
+                      <span>মিনিমাম স্টক লেভেল:</span>
+                      <span className="text-gray-300 font-medium">{item.minStockLevel || 5} {item.unit || 'Pcs'}</span>
+                    </div>
+                  </MobileDataCard.Details>
+                  <MobileDataCard.FinancialStrip
+                    items={[
+                      { label: 'ক্রয়মূল্য', value: formatCurrency(item.purchasePrice) },
+                      { label: 'বিক্রয়মূল্য', value: formatCurrency(item.sellingPrice) },
+                      { label: 'স্টক মূল্য', value: formatCurrency(item.stock * item.purchasePrice), highlight: isLow ? 'danger' : 'success' },
+                    ]}
+                  />
+                  <MobileDataCard.Actions>
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleOpenSell(item)} 
+                      className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-xs h-8"
+                    >
+                      <ShoppingCart className="w-3.5 h-3.5 mr-1" /> ডাইরেক্ট সেল
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => handleOpenRestock(item)} 
+                      className="flex-1 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 text-xs h-8"
+                    >
+                      <PlusCircle className="w-3.5 h-3.5 mr-1" /> রিস্টক
+                    </Button>
+                    {hasFullAccess && (
+                      <>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => handleOpenModal(item)} 
+                          className="h-8 w-8 p-0 text-gray-400 hover:text-white"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => handleDeleteRequest(item.id)} 
+                          className="h-8 w-8 p-0 text-gray-400 hover:text-red-400"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </>
+                    )}
+                  </MobileDataCard.Actions>
+                </MobileDataCard>
+              );
+            })}
+          </div>
+
+          {/* Pagination */}
+          <PaginationControl
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredItems.length}
+            itemsPerPage={itemsPerPage}
+          />
+        </>
+      )}
 
       {/* Add/Edit Modal */}
       <Dialog open={isModalOpen} onOpenChange={(v) => !v && closeInvModal()}>

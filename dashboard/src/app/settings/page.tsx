@@ -299,24 +299,36 @@ export default function SettingsPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-6">
 
-      <div className="flex overflow-x-auto whitespace-nowrap space-x-2 border-b border-gray-800 pb-px [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex bg-[#131622] p-1.5 rounded-2xl border border-gray-800/80 gap-1.5 overflow-x-auto scrollbar-none mb-6">
         <button
           onClick={() => setActiveTab('shop')}
-          className={`flex items-center gap-2 px-5 py-3 rounded-t-xl font-medium text-sm transition-all ${activeTab === 'shop' ? 'bg-card text-white border-t border-x border-gray-800 shadow-lg' : 'text-gray-500 hover:text-gray-300 hover:bg-card/50'}`}
+          className={`flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all shrink-0 select-none ${
+            activeTab === 'shop'
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 font-bold'
+              : 'text-gray-400 hover:text-white hover:bg-secondary/40'
+          }`}
         >
           <Store className="w-4 h-4" />
           Shop Profile
         </button>
         <button
           onClick={() => setActiveTab('staff')}
-          className={`flex items-center gap-2 px-5 py-3 rounded-t-xl font-medium text-sm transition-all ${activeTab === 'staff' ? 'bg-card text-white border-t border-x border-gray-800 shadow-lg' : 'text-gray-500 hover:text-gray-300 hover:bg-card/50'}`}
+          className={`flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all shrink-0 select-none ${
+            activeTab === 'staff'
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 font-bold'
+              : 'text-gray-400 hover:text-white hover:bg-secondary/40'
+          }`}
         >
           <Shield className="w-4 h-4" />
           Staff Management
         </button>
         <button
           onClick={() => setActiveTab('data')}
-          className={`flex items-center gap-2 px-5 py-3 rounded-t-xl font-medium text-sm transition-all ${activeTab === 'data' ? 'bg-card text-white border-t border-x border-gray-800 shadow-lg' : 'text-gray-500 hover:text-gray-300 hover:bg-card/50'}`}
+          className={`flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all shrink-0 select-none ${
+            activeTab === 'data'
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 font-bold'
+              : 'text-gray-400 hover:text-white hover:bg-secondary/40'
+          }`}
         >
           <Database className="w-4 h-4" />
           Data Backup
@@ -424,75 +436,135 @@ export default function SettingsPage() {
               <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead>
-                  <tr className="text-gray-500 uppercase tracking-wider border-b border-gray-800">
-                    <th className="pb-3 font-medium">Staff Member</th>
-                    <th className="pb-3 font-medium">Role</th>
-                    <th className="pb-3 font-medium">Status</th>
-                    <th className="pb-3 font-medium text-right">Access Control</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-800/50">
-                  {staffList.map((staff) => (
-                    <tr key={staff.email} className={`transition-colors ${!staff.isActive ? 'opacity-50' : ''}`}>
-                      <td className="py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs">
-                            {staff.avatar ? <img src={staff.avatar} className="w-8 h-8 rounded-full" /> : staff.name.charAt(0)}
-                          </div>
-                          <div>
-                            <div className="text-gray-200 font-medium">{staff.name}</div>
-                            <div className="text-xs text-gray-500">{staff.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4">
-                        <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${
-                          staff.role === 'Owner' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 
-                          staff.role === 'Manager' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 
-                          'bg-orange-500/10 text-orange-400 border-orange-500/20'
-                        }`}>
-                          {staff.role}
-                        </span>
-                      </td>
-                      <td className="py-4">
-                        {staff.isActive ? (
-                          <span className="text-green-400 text-xs flex items-center gap-1"><CheckCircle className="w-3 h-3"/> Active</span>
-                        ) : (
-                          <span className="text-red-400 text-xs flex items-center gap-1"><UserX className="w-3 h-3"/> Blocked</span>
-                        )}
-                      </td>
-                      <td className="py-4 text-right">
-                        {staff.email !== currentUser?.email && (currentUser?.role === 'Owner' || staff.role !== 'Owner') && (
-                          <div className="flex items-center justify-end gap-2">
-                            <button 
-                              onClick={() => toggleAccess(staff.email, staff.isActive)}
-                              className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors ${
-                                staff.isActive 
-                                  ? 'bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20' 
-                                  : 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20'
-                              }`}
-                            >
-                              {staff.isActive ? 'Block' : 'Restore'}
-                            </button>
-                            
-                            <button 
-                              onClick={() => handleDeleteStaff(staff.email)}
-                              className="bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 p-1.5 rounded-lg transition-colors"
-                              title="Delete Permanently"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        )}
-                      </td>
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left text-sm whitespace-nowrap">
+                  <thead>
+                    <tr className="text-gray-500 uppercase tracking-wider border-b border-gray-800">
+                      <th className="pb-3 font-medium">Staff Member</th>
+                      <th className="pb-3 font-medium">Role</th>
+                      <th className="pb-3 font-medium">Status</th>
+                      <th className="pb-3 font-medium text-right">Access Control</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800/50">
+                    {staffList.map((staff) => (
+                      <tr key={staff.email} className={`transition-colors ${!staff.isActive ? 'opacity-50' : ''}`}>
+                        <td className="py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs">
+                              {staff.avatar ? <img src={staff.avatar} className="w-8 h-8 rounded-full" /> : staff.name.charAt(0)}
+                            </div>
+                            <div>
+                              <div className="text-gray-200 font-medium">{staff.name}</div>
+                              <div className="text-xs text-gray-500">{staff.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4">
+                          <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                            staff.role === 'Owner' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 
+                            staff.role === 'Manager' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 
+                            'bg-orange-500/10 text-orange-400 border-orange-500/20'
+                          }`}>
+                            {staff.role}
+                          </span>
+                        </td>
+                        <td className="py-4">
+                          {staff.isActive ? (
+                            <span className="text-green-400 text-xs flex items-center gap-1"><CheckCircle className="w-3 h-3"/> Active</span>
+                          ) : (
+                            <span className="text-red-400 text-xs flex items-center gap-1"><UserX className="w-3 h-3"/> Blocked</span>
+                          )}
+                        </td>
+                        <td className="py-4 text-right">
+                          {staff.email !== currentUser?.email && (currentUser?.role === 'Owner' || staff.role !== 'Owner') && (
+                            <div className="flex items-center justify-end gap-2">
+                              <button 
+                                onClick={() => toggleAccess(staff.email, staff.isActive)}
+                                className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors ${
+                                  staff.isActive 
+                                    ? 'bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20' 
+                                    : 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20'
+                                }`}
+                              >
+                                {staff.isActive ? 'Block' : 'Restore'}
+                              </button>
+                              
+                              <button 
+                                onClick={() => handleDeleteStaff(staff.email)}
+                                className="bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 p-1.5 rounded-lg transition-colors"
+                                title="Delete Permanently"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-3">
+                {staffList.map((staff) => (
+                  <div key={staff.email} className={`bg-[#1b1f30]/60 border border-gray-800 rounded-xl p-4 space-y-3 ${!staff.isActive ? 'opacity-50' : ''}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs">
+                          {staff.avatar ? <img src={staff.avatar} className="w-9 h-9 rounded-full" /> : staff.name.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-white text-sm">{staff.name}</p>
+                          <p className="text-xs text-gray-500">{staff.email}</p>
+                        </div>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                        staff.role === 'Owner' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 
+                        staff.role === 'Manager' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 
+                        'bg-orange-500/10 text-orange-400 border-orange-500/20'
+                      }`}>
+                        {staff.role}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-800/60">
+                      <div>
+                        {staff.isActive ? (
+                          <span className="text-green-400 text-xs flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5"/> Active</span>
+                        ) : (
+                          <span className="text-red-400 text-xs flex items-center gap-1"><UserX className="w-3.5 h-3.5"/> Blocked</span>
+                        )}
+                      </div>
+                      {staff.email !== currentUser?.email && (currentUser?.role === 'Owner' || staff.role !== 'Owner') && (
+                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={() => toggleAccess(staff.email, staff.isActive)}
+                            className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
+                              staff.isActive 
+                                ? 'bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20' 
+                                : 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20'
+                            }`}
+                          >
+                            {staff.isActive ? 'Block' : 'Restore'}
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteStaff(staff.email)}
+                            className="bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 p-1.5 rounded-lg transition-colors"
+                            title="Delete Permanently"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </motion.div>
         </div>
@@ -693,6 +765,26 @@ export default function SettingsPage() {
                 />
               </div>
             </div>
+
+            {currentUser?.role === 'Owner' && (
+              <div className="bg-red-500/5 p-6 rounded-xl border border-red-500/20 space-y-4 md:col-span-2 mt-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-red-500/10 text-red-400 rounded-lg"><AlertTriangle className="w-5 h-5" /></div>
+                  <div>
+                    <h3 className="font-semibold text-red-400">Danger Zone: Wipe Database</h3>
+                    <p className="text-xs text-gray-400">সমস্ত কাস্টমার, স্টক, ট্রানজেকশন ও লোন ডেটা স্থায়ীভাবে মুছে ফেলুন। এই কাজটি পুনরায় ফিরিয়ে আনা সম্ভব নয়।</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={handleClearData}
+                  disabled={backupLoading}
+                  className="w-full sm:w-auto py-2.5 px-6 bg-red-600/20 text-red-400 hover:bg-red-600/30 border border-red-500/30 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Wipe All Data (রিসেট ডেটাবেজ)
+                </button>
+              </div>
+            )}
 
           </div>
         </motion.div>

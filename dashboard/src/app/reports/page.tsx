@@ -7,6 +7,8 @@ import { expenseService, Expense } from '@/lib/services/expense';
 import { customerService, Customer } from '@/lib/services/customer';
 import { inventoryService, InventoryItem } from '@/lib/services/inventory';
 import { formatCurrency } from '@/lib/currency';
+import { PaginationControl } from '@/components/ui/PaginationControl';
+import { MobileDataCard } from '@/components/ui/MobileDataCard';
 
 type TimeFilter = 'today' | 'week' | 'month' | 'all';
 
@@ -19,6 +21,8 @@ export default function ReportsPage() {
   
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('month');
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchData();
@@ -94,20 +98,33 @@ export default function ReportsPage() {
     t.type.toLowerCase().includes(search.toLowerCase())
   );
 
+  const totalPages = Math.ceil(searchTransactions.length / itemsPerPage) || 1;
+  const paginatedTransactions = searchTransactions.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+            <FileText className="w-6 h-6 text-blue-500" />
+            Financial Reports
+          </h1>
+          <p className="text-gray-400 text-sm mt-1">দোকানের আয়, ব্যয়, মুনাফা ও লেনদেনের বিস্তারিত খতিয়ান</p>
+        </div>
         
         <div className="flex bg-gray-800/50 p-1 rounded-lg border border-gray-700">
           {(['today', 'week', 'month', 'all'] as TimeFilter[]).map((f) => (
             <button
               key={f}
-              onClick={() => setTimeFilter(f)}
+              onClick={() => { setTimeFilter(f); setCurrentPage(1); }}
               className={`px-4 py-1.5 rounded-md text-sm font-medium capitalize transition-all ${
                 timeFilter === f ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-gray-200'
               }`}
             >
-              {f}
+              {f === 'today' ? 'আজ' : f === 'week' ? '৭ দিন' : f === 'month' ? '১ মাস' : 'সব সময়'}
             </button>
           ))}
         </div>
@@ -197,64 +214,130 @@ export default function ReportsPage() {
           </div>
 
           {/* Transaction Ledger */}
-          <div className="bg-card border border-gray-800 rounded-2xl overflow-hidden mt-8">
-            <div className="p-4 border-b border-gray-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <h2 className="text-lg font-semibold text-gray-200 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-blue-400" /> Transaction Ledger
-              </h2>
-              <div className="relative w-full sm:w-64">
+          <div className="bg-card border border-gray-800 rounded-2xl overflow-hidden mt-8 shadow-xl">
+            <div className="p-4 border-b border-gray-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-900/40">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-200 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-blue-400" /> Transaction Ledger
+                </h2>
+                <p className="text-xs text-gray-400 mt-0.5">মোট {searchTransactions.length} টি লেনদেন পাওয়া গেছে</p>
+              </div>
+              <div className="relative w-full sm:w-72">
                 <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input 
                   type="text"
-                  placeholder="Search transactions..."
+                  placeholder="খুঁজুন (গ্রাহক, টাইপ)..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
                   className="w-full bg-background border border-gray-800 text-sm text-gray-200 rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-blue-500/50"
                 />
               </div>
             </div>
-            <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-240px)] relative">
-              <table className="w-full whitespace-nowrap">
-                <thead className="bg-background/50">
-                  <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-800/50">
-                    <th className="px-6 py-4">Date</th>
-                    <th className="px-6 py-4">Customer/Details</th>
-                    <th className="px-6 py-4">Type</th>
-                    <th className="px-6 py-4">Amount</th>
-                    <th className="px-6 py-4">Receiver</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-800/50">
-                  {searchTransactions.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="text-center py-8 text-gray-500">No transactions found in this period.</td>
-                    </tr>
-                  ) : searchTransactions.map((t) => (
-                    <tr key={t.id} className="hover:bg-gray-800/20 transition-colors">
-                      <td className="px-6 py-4 text-sm text-gray-400">
-                        {t.createdAt && typeof t.createdAt === 'object' && 'seconds' in t.createdAt 
-                          ? new Date((t.createdAt as any).seconds * 1000).toLocaleString() 
-                          : 'Just now'}
-                      </td>
-                      <td className="px-6 py-4 text-sm font-medium text-gray-200">{t.customerName}</td>
-                      <td className="px-6 py-4">
-                        <span className={`text-xs font-medium px-2 py-1 rounded ${
-                          ['Refund', 'Inventory Purchase', 'Supplier Payment', 'Mechanic Payment'].includes(t.type) 
-                          ? 'bg-orange-500/10 text-orange-400' 
-                          : 'bg-emerald-500/10 text-emerald-400'
-                        }`}>
-                          {t.type}
-                        </span>
-                      </td>
-                      <td className={`px-6 py-4 text-sm font-bold ${['Refund', 'Inventory Purchase', 'Supplier Payment', 'Mechanic Payment'].includes(t.type) ? 'text-orange-400' : 'text-emerald-400'}`}>
-                        {['Refund', 'Inventory Purchase', 'Supplier Payment', 'Mechanic Payment'].includes(t.type) ? '-' : '+'}{formatCurrency(t.amount)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-400">{t.receivedBy}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+
+            {searchTransactions.length === 0 ? (
+              <div className="p-12 text-center text-gray-500">
+                এই সময়কালে কোন লেনদেন পাওয়া যায়নি।
+              </div>
+            ) : (
+              <>
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto relative">
+                  <table className="w-full whitespace-nowrap text-sm">
+                    <thead className="bg-background/50">
+                      <tr className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-800/50">
+                        <th className="px-6 py-4">তারিখ ও সময়</th>
+                        <th className="px-6 py-4">গ্রাহক / বিবরণ</th>
+                        <th className="px-6 py-4">ক্যাটাগরি</th>
+                        <th className="px-6 py-4">টাকার পরিমাণ</th>
+                        <th className="px-6 py-4">রিসিভার</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-800/50">
+                      {paginatedTransactions.map((t) => {
+                        const isExpense = ['Refund', 'Inventory Purchase', 'Supplier Payment', 'Mechanic Payment'].includes(t.type);
+                        return (
+                          <tr key={t.id} className="hover:bg-gray-800/20 transition-colors">
+                            <td className="px-6 py-4 text-sm text-gray-400">
+                              {t.createdAt && typeof t.createdAt === 'object' && 'seconds' in t.createdAt 
+                                ? new Date((t.createdAt as any).seconds * 1000).toLocaleString() 
+                                : 'Just now'}
+                            </td>
+                            <td className="px-6 py-4 text-sm font-medium text-gray-200">{t.customerName || 'N/A'}</td>
+                            <td className="px-6 py-4">
+                              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                                isExpense 
+                                ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' 
+                                : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              }`}>
+                                {t.type}
+                              </span>
+                            </td>
+                            <td className={`px-6 py-4 text-sm font-bold ${isExpense ? 'text-orange-400' : 'text-emerald-400'}`}>
+                              {isExpense ? '-' : '+'}{formatCurrency(t.amount)}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-400">{t.receivedBy || 'Staff'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-3 p-4">
+                  {paginatedTransactions.map((t) => {
+                    const isExpense = ['Refund', 'Inventory Purchase', 'Supplier Payment', 'Mechanic Payment'].includes(t.type);
+                    const dateStr = t.createdAt && typeof t.createdAt === 'object' && 'seconds' in t.createdAt 
+                      ? new Date((t.createdAt as any).seconds * 1000).toLocaleString() 
+                      : 'Just now';
+
+                    return (
+                      <MobileDataCard key={t.id}>
+                        <MobileDataCard.Header
+                          title={t.customerName || 'N/A'}
+                          subtitle={dateStr}
+                          badge={
+                            <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
+                              isExpense 
+                                ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' 
+                                : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                            }`}>
+                              {t.type}
+                            </span>
+                          }
+                        />
+                        <MobileDataCard.Details>
+                          <div className="flex items-center justify-between text-xs text-gray-400">
+                            <span>গ্রহণকারী স্টাফ:</span>
+                            <span className="font-medium text-gray-200">{t.receivedBy || 'Staff'}</span>
+                          </div>
+                        </MobileDataCard.Details>
+                        <MobileDataCard.FinancialStrip
+                          items={[
+                            { 
+                              label: isExpense ? 'খরচ / আউটফ্লো' : 'জমা / ইনফ্লো', 
+                              value: `${isExpense ? '-' : '+'}${formatCurrency(t.amount)}`,
+                              highlight: isExpense ? 'danger' : 'success'
+                            }
+                          ]}
+                        />
+                      </MobileDataCard>
+                    );
+                  })}
+                </div>
+
+                {/* Pagination */}
+                <div className="p-4 border-t border-gray-800">
+                  <PaginationControl
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    totalItems={searchTransactions.length}
+                    itemsPerPage={itemsPerPage}
+                  />
+                </div>
+              </>
+            )}
           </div>
         </>
       )}
