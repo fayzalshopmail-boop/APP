@@ -10,28 +10,38 @@ export interface FilterChip {
   inactiveColorClass?: string;
 }
 
-interface FilterChipBarProps {
-  chips: FilterChip[];
-  activeChip: string;
-  onSelectChip: (id: string) => void;
+export interface FilterChipBarProps {
+  chips?: FilterChip[];
+  filters?: FilterChip[];
+  activeChip?: string;
+  activeFilter?: string;
+  onSelectChip?: (id: string) => void;
+  onFilterChange?: (id: string) => void;
   className?: string;
 }
 
 export function FilterChipBar({
   chips,
+  filters,
   activeChip,
+  activeFilter,
   onSelectChip,
+  onFilterChange,
   className = '',
 }: FilterChipBarProps) {
+  const items = chips || filters || [];
+  const currentActive = activeChip || activeFilter || '';
+  const handleSelect = onSelectChip || onFilterChange || (() => {});
+
   return (
     <div className={`flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none pb-1 sm:pb-0 w-full ${className}`}>
-      {chips.map((chip) => {
-        const isActive = activeChip === chip.id;
+      {items.map((chip) => {
+        const isActive = currentActive === chip.id;
         return (
           <button
             key={chip.id}
             type="button"
-            onClick={() => onSelectChip(chip.id)}
+            onClick={() => handleSelect(chip.id)}
             className={`px-3 py-1.5 sm:px-3.5 sm:py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 flex items-center gap-1.5 select-none ${
               isActive
                 ? chip.activeColorClass || 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 font-semibold'

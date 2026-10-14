@@ -78,39 +78,53 @@ interface MetricItem {
   label: string;
   value: React.ReactNode;
   colorClass?: string;
+  highlight?: 'danger' | 'warning' | 'success' | 'info' | string;
 }
 
 interface MobileDataCardFinancialStripProps {
-  metrics: MetricItem[];
-  columns?: 2 | 3 | 4;
+  metrics?: MetricItem[];
+  items?: MetricItem[];
+  columns?: 1 | 2 | 3 | 4;
   className?: string;
 }
 
 export function MobileDataCardFinancialStrip({
   metrics,
-  columns = 3,
+  items,
+  columns,
   className = '',
 }: MobileDataCardFinancialStripProps) {
+  const list = metrics || items || [];
+  const defaultCols = list.length === 2 ? 2 : list.length === 4 ? 4 : list.length === 1 ? 1 : 3;
   const colClass =
-    columns === 2
+    (columns || defaultCols) === 2
       ? 'grid-cols-2'
-      : columns === 4
+      : (columns || defaultCols) === 4
       ? 'grid-cols-4'
+      : (columns || defaultCols) === 1
+      ? 'grid-cols-1'
       : 'grid-cols-3';
+
+  const getColorClass = (item: MetricItem) => {
+    if (item.colorClass) return item.colorClass;
+    if (item.highlight === 'danger') return 'text-red-400';
+    if (item.highlight === 'warning') return 'text-orange-400';
+    if (item.highlight === 'success') return 'text-emerald-400';
+    if (item.highlight === 'info') return 'text-blue-400';
+    return 'text-white';
+  };
 
   return (
     <div
       className={`bg-background/80 border border-gray-800/80 rounded-xl p-2.5 grid ${colClass} text-center gap-2 divide-x divide-gray-800/60 ${className}`}
     >
-      {metrics.map((metric, idx) => (
-        <div key={idx} className={idx > 0 ? 'pl-2' : ''}>
+      {list.map((metric, idx) => (
+        <div key={idx} className={idx > 0 && (columns || defaultCols) > 1 ? 'pl-2' : ''}>
           <div className="text-[10px] text-gray-400 font-medium tracking-tight mb-0.5">
             {metric.label}
           </div>
           <div
-            className={`text-xs sm:text-sm font-bold truncate ${
-              metric.colorClass || 'text-white'
-            }`}
+            className={`text-xs sm:text-sm font-bold truncate ${getColorClass(metric)}`}
           >
             {metric.value}
           </div>
@@ -155,3 +169,8 @@ export function MobileDataCardActions({
     </div>
   );
 }
+
+MobileDataCard.Header = MobileDataCardHeader;
+MobileDataCard.Details = MobileDataCardDetails;
+MobileDataCard.FinancialStrip = MobileDataCardFinancialStrip;
+MobileDataCard.Actions = MobileDataCardActions;
