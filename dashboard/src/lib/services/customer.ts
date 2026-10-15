@@ -28,6 +28,8 @@ export interface RepairRecord {
   warrantyMonths?: string | number;
   partsUsed?: PartUsed[];
   totalCost?: number;
+  servicedBy?: string;
+  servicedByName?: string;
   createdAt?: string | Date | any;
   isBillPending?: boolean;
 }
@@ -62,6 +64,8 @@ export interface Customer {
   warrantyMonths?: string | number;
   partsUsed?: PartUsed[];
   totalCost?: number;
+  servicedBy?: string;
+  servicedByName?: string;
   createdAt?: string | Date | any;
   updatedAt?: string | Date | any;
   completedAt?: string | Date | any;

@@ -342,8 +342,16 @@ export default function CustomersPage() {
 
   const performStatusUpdate = async (id: string, newStatus: CustomerStatus, c: Customer) => {
     try {
-      await customerService.update(id, { status: newStatus });
-      setCustomers(customers.map(c => c.id === id ? { ...c, status: newStatus } : c));
+      const now = new Date();
+      const statusUpdates: Partial<Customer> = { 
+        status: newStatus,
+        servicedBy: user?.email || c.servicedBy || 'Unknown',
+        servicedByName: user?.name || c.servicedByName || user?.email || 'Staff',
+        ...(newStatus === 'Delivered' ? { deliveredAt: now } : {}),
+        ...(newStatus === 'Ready for Delivery' ? { completedAt: now } : {})
+      };
+      await customerService.update(id, statusUpdates);
+      setCustomers(customers.map(item => item.id === id ? { ...item, ...statusUpdates } : item));
       
       // Send SMS if Ready, Delivered, or Returned
       if (newStatus === 'Ready for Delivery' || newStatus === 'Delivered' || newStatus === 'Returned (Unrepaired)') {

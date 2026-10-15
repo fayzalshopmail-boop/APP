@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, Shield, UserPlus, Lock, CheckCircle, Trash2, Mail, Loader2, UserX, Store, Building, Phone, Image as ImageIcon, Save, MapPin, Settings, Download, Upload, Database, FileText } from 'lucide-react';
+import { AlertTriangle, Shield, UserPlus, Lock, CheckCircle, Trash2, Mail, Loader2, UserX, Store, Building, Phone, Image as ImageIcon, Save, MapPin, Settings, Download, Upload, Database, FileText, ArrowUpRight, Clock, CreditCard, Award } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { AppUser, UserRole, userService } from '@/lib/services/user';
 import { ShopSettings, shopSettingsService, defaultShopSettings } from '@/lib/services/shopSettings';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { backupService } from '@/lib/services/backup';
+import { StaffManagementSection } from '@/components/settings/StaffManagementSection';
 import toast from 'react-hot-toast';
 
 export default function SettingsPage() {
@@ -81,6 +82,13 @@ export default function SettingsPage() {
 
   useEffect(() => {
     loadData();
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab') as any;
+      if (['shop', 'staff', 'data'].includes(tab)) {
+        setActiveTab(tab);
+      }
+    }
   }, []);
 
   const handleExportData = async () => {
@@ -336,238 +344,25 @@ export default function SettingsPage() {
       </div>
 
       {activeTab === 'staff' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-        
-        {/* ADD STAFF FORM */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-card border border-gray-800 rounded-2xl p-6 h-fit"
-        >
-          <div className="flex items-center gap-2 mb-6">
-            <UserPlus className="w-5 h-5 text-green-400" />
-            <h2 className="text-lg font-bold text-gray-200">Add New Staff</h2>
-          </div>
-
-          <form onSubmit={handleAddStaff} className="space-y-4">
-            <div>
-              <label className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1.5 block">Staff Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                <input 
-                  type="email"
-                  required
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  className="w-full bg-[#1b1f30] border border-gray-800 text-gray-100 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-blue-500/50 transition-all" 
-                  placeholder="staff@gmail.com"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1.5 block">Full Name</label>
-              <input 
-                type="text"
-                required
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                className="w-full bg-[#1b1f30] border border-gray-800 text-gray-100 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500/50 transition-all" 
-                placeholder="e.g. Rahim Uddin"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1.5 block">Login Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                <input 
-                  type="password"
-                  required
-                  minLength={6}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full bg-[#1b1f30] border border-gray-800 text-gray-100 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-blue-500/50 transition-all" 
-                  placeholder="Minimum 6 characters"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1.5 block">Role / Position</label>
-              <CustomSelect 
-                value={newRole}
-                onChange={(val) => setNewRole(val as UserRole)}
-                options={['Technician', 'Manager', 'Owner']}
-                placeholder="Select Role"
-              />
-            </div>
-
-            {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
-            {success && <p className="text-xs text-green-400 mt-2 flex items-center gap-1"><CheckCircle className="w-3 h-3"/> {success}</p>}
-
-            <button 
-              type="submit" 
-              disabled={adding}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-70"
-            >
-              {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-              Authorize Staff
-            </button>
-          </form>
-        </motion.div>
-
-        {/* STAFF LIST */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="lg:col-span-2 bg-card border border-gray-800 rounded-2xl p-6"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-gray-200">Authorized Personnel</h2>
-            <span className="bg-gray-800 text-gray-300 px-3 py-1 rounded-full text-xs font-medium">
-              {staffList.length} Accounts
-            </span>
-          </div>
-
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-            </div>
-          ) : (
-            <>
-              {/* Desktop Table View */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-left text-sm whitespace-nowrap">
-                  <thead>
-                    <tr className="text-gray-500 uppercase tracking-wider border-b border-gray-800">
-                      <th className="pb-3 font-medium">Staff Member</th>
-                      <th className="pb-3 font-medium">Role</th>
-                      <th className="pb-3 font-medium">Status</th>
-                      <th className="pb-3 font-medium text-right">Access Control</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-800/50">
-                    {staffList.map((staff) => (
-                      <tr key={staff.email} className={`transition-colors ${!staff.isActive ? 'opacity-50' : ''}`}>
-                        <td className="py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs">
-                              {staff.avatar ? <img src={staff.avatar} className="w-8 h-8 rounded-full" /> : staff.name.charAt(0)}
-                            </div>
-                            <div>
-                              <div className="text-gray-200 font-medium">{staff.name}</div>
-                              <div className="text-xs text-gray-500">{staff.email}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-4">
-                          <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${
-                            staff.role === 'Owner' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 
-                            staff.role === 'Manager' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 
-                            'bg-orange-500/10 text-orange-400 border-orange-500/20'
-                          }`}>
-                            {staff.role}
-                          </span>
-                        </td>
-                        <td className="py-4">
-                          {staff.isActive ? (
-                            <span className="text-green-400 text-xs flex items-center gap-1"><CheckCircle className="w-3 h-3"/> Active</span>
-                          ) : (
-                            <span className="text-red-400 text-xs flex items-center gap-1"><UserX className="w-3 h-3"/> Blocked</span>
-                          )}
-                        </td>
-                        <td className="py-4 text-right">
-                          {staff.email !== currentUser?.email && (currentUser?.role === 'Owner' || staff.role !== 'Owner') && (
-                            <div className="flex items-center justify-end gap-2">
-                              <button 
-                                onClick={() => toggleAccess(staff.email, staff.isActive)}
-                                className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors ${
-                                  staff.isActive 
-                                    ? 'bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20' 
-                                    : 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20'
-                                }`}
-                              >
-                                {staff.isActive ? 'Block' : 'Restore'}
-                              </button>
-                              
-                              <button 
-                                onClick={() => handleDeleteStaff(staff.email)}
-                                className="bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 p-1.5 rounded-lg transition-colors"
-                                title="Delete Permanently"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Mobile Card View */}
-              <div className="md:hidden space-y-3">
-                {staffList.map((staff) => (
-                  <div key={staff.email} className={`bg-[#1b1f30]/60 border border-gray-800 rounded-xl p-4 space-y-3 ${!staff.isActive ? 'opacity-50' : ''}`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs">
-                          {staff.avatar ? <img src={staff.avatar} className="w-9 h-9 rounded-full" /> : staff.name.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-white text-sm">{staff.name}</p>
-                          <p className="text-xs text-gray-500">{staff.email}</p>
-                        </div>
-                      </div>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
-                        staff.role === 'Owner' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 
-                        staff.role === 'Manager' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 
-                        'bg-orange-500/10 text-orange-400 border-orange-500/20'
-                      }`}>
-                        {staff.role}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2 border-t border-gray-800/60">
-                      <div>
-                        {staff.isActive ? (
-                          <span className="text-green-400 text-xs flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5"/> Active</span>
-                        ) : (
-                          <span className="text-red-400 text-xs flex items-center gap-1"><UserX className="w-3.5 h-3.5"/> Blocked</span>
-                        )}
-                      </div>
-                      {staff.email !== currentUser?.email && (currentUser?.role === 'Owner' || staff.role !== 'Owner') && (
-                        <div className="flex items-center gap-2">
-                          <button 
-                            onClick={() => toggleAccess(staff.email, staff.isActive)}
-                            className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
-                              staff.isActive 
-                                ? 'bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20' 
-                                : 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20'
-                            }`}
-                          >
-                            {staff.isActive ? 'Block' : 'Restore'}
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteStaff(staff.email)}
-                            className="bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 p-1.5 rounded-lg transition-colors"
-                            title="Delete Permanently"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </motion.div>
-        </div>
+        <StaffManagementSection
+          staffList={staffList}
+          onRefreshStaff={loadData}
+          onDeleteStaff={handleDeleteStaff}
+          onToggleAccess={toggleAccess}
+          onAddStaff={handleAddStaff}
+          newEmail={newEmail}
+          setNewEmail={setNewEmail}
+          newName={newName}
+          setNewName={setNewName}
+          newPassword={newPassword}
+          setNewPassword={setNewPassword}
+          newRole={newRole}
+          setNewRole={setNewRole}
+          adding={adding}
+          error={error}
+          success={success}
+          loadingStaff={loading}
+        />
       )}
 
       {activeTab === 'shop' && (

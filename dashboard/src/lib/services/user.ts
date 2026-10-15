@@ -10,6 +10,9 @@ export interface AppUser {
   role: UserRole;
   avatar?: string;
   isActive: boolean;
+  phone?: string;
+  baseSalary?: number;
+  joiningDate?: string;
   createdAt: unknown;
 }
 

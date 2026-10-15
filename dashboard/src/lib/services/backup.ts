@@ -19,7 +19,9 @@ export const backupService = {
       expenses,
       suppliers,
       mechanics,
-      loans
+      loans,
+      attendance,
+      payroll
     ] = await Promise.all([
       customerService.getAll(),
       inventoryService.getAll(),
@@ -27,7 +29,9 @@ export const backupService = {
       expenseService.getAll(),
       supplierService.getAll(),
       mechanicService.getAll(),
-      loanService.getAll()
+      loanService.getAll(),
+      getDocs(collection(db, 'attendance')).then(s => s.docs.map(d => ({ id: d.id, ...d.data() }))).catch(() => []),
+      getDocs(collection(db, 'payroll')).then(s => s.docs.map(d => ({ id: d.id, ...d.data() }))).catch(() => [])
     ]);
 
     const data = {
@@ -38,6 +42,8 @@ export const backupService = {
       suppliers,
       mechanics,
       loans,
+      attendance,
+      payroll,
       exportDate: new Date().toISOString()
     };
 
@@ -124,6 +130,8 @@ export const backupService = {
       { name: 'suppliers', items: data.suppliers },
       { name: 'mechanics', items: data.mechanics },
       { name: 'loans', items: data.loans },
+      { name: 'attendance', items: data.attendance },
+      { name: 'payroll', items: data.payroll },
     ];
 
     let currentBatch = writeBatch(db);
@@ -160,7 +168,7 @@ export const backupService = {
     
     const collectionsToClear = [
       'customers', 'inventory', 'transactions', 'expenses', 
-      'suppliers', 'mechanics', 'loans'
+      'suppliers', 'mechanics', 'loans', 'attendance', 'payroll'
     ];
 
     for (const colName of collectionsToClear) {
