@@ -18,9 +18,8 @@ export const requestNotificationPermission = async (userEmail: string) => {
 
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
-      // Register service worker explicitly with query params if needed, 
-      // but Next.js public/ folder or API route handles it.
-      const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      // Register unified service worker with offline caching & FCM
+      const registration = await navigator.serviceWorker.register('/sw.js');
       
       const token = await getToken(messaging, { 
         vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,

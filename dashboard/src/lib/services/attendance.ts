@@ -14,6 +14,9 @@ export interface AttendanceRecord {
   status: AttendanceStatus;
   workingHours?: string;// e.g. '8h 30m'
   note?: string;
+  verifiedBy?: 'GPS + Wi-Fi' | 'GPS' | 'Wi-Fi' | 'Manual / Owner' | 'Unrestricted';
+  distanceMeters?: number;
+  clientIp?: string;
   createdAt?: any;
   updatedAt?: any;
 }
@@ -58,7 +61,15 @@ export const attendanceService = {
   /**
    * Check in staff member for today
    */
-  async checkIn(staff: { email: string; name: string; role: string }, note: string = ''): Promise<AttendanceRecord> {
+  async checkIn(
+    staff: { email: string; name: string; role: string },
+    note: string = '',
+    verification?: {
+      verifiedBy?: 'GPS + Wi-Fi' | 'GPS' | 'Wi-Fi' | 'Manual / Owner' | 'Unrestricted';
+      distanceMeters?: number;
+      clientIp?: string;
+    }
+  ): Promise<AttendanceRecord> {
     if (!db) throw new Error('Database not initialized');
     const today = getLocalDateStr();
     const timeNow = getLocalTimeStr();
@@ -84,6 +95,9 @@ export const attendanceService = {
       checkInTime: timeNow,
       status,
       note,
+      verifiedBy: verification?.verifiedBy || 'Unrestricted',
+      ...(verification?.distanceMeters !== undefined ? { distanceMeters: verification.distanceMeters } : {}),
+      ...(verification?.clientIp ? { clientIp: verification.clientIp } : {}),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
@@ -192,6 +206,7 @@ export const attendanceService = {
 
     await setDoc(docRef, {
       ...record,
+      verifiedBy: record.verifiedBy || 'Manual / Owner',
       workingHours: workingHours || '',
       updatedAt: serverTimestamp(),
       createdAt: serverTimestamp()

@@ -7,9 +7,11 @@ import {
   CheckCircle2, AlertCircle, Calendar, Wallet, Coins, 
   Plus, Search, Trash2, Edit3, LogIn, LogOut, Wrench, 
   Tv, Check, X, ChevronRight, UserX, Loader2, Shield,
-  UserPlus, Mail, Lock, CheckCircle
+  UserPlus, Mail, Lock, CheckCircle, ShieldCheck, MapPin, Wifi
 } from 'lucide-react';
 import { attendanceService, AttendanceRecord, AttendanceStatus, getLocalDateStr } from '@/lib/services/attendance';
+import { attendanceSecurityService, AttendanceSecuritySettings } from '@/lib/services/attendanceSecurity';
+import { AttendanceSecurityModal } from './AttendanceSecurityModal';
 import { payrollService, PayrollRecord, PayrollType, StaffSalaryConfig, getCurrentMonthStr } from '@/lib/services/payroll';
 import { staffPerformanceService, PerformanceSummary } from '@/lib/services/staffPerformance';
 import { userService, AppUser, UserRole } from '@/lib/services/user';
@@ -77,6 +79,18 @@ export function StaffManagementSection({
   const [checkingIn, setCheckingIn] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
   const [isManualAttendanceOpen, setIsManualAttendanceOpen] = useState(false);
+  const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
+  const [securitySettings, setSecuritySettings] = useState<AttendanceSecuritySettings | null>(null);
+
+  const loadSecuritySettings = useCallback(async () => {
+    try {
+      const data = await attendanceSecurityService.getSettings();
+      setSecuritySettings(data);
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
   const [manualAttendanceData, setManualAttendanceData] = useState({
     userId: '',
     date: getLocalDateStr(),
@@ -178,6 +192,7 @@ export function StaffManagementSection({
 
   // Effect on sub-tab switch
   useEffect(() => {
+    loadSecuritySettings();
     if (subTab === 'attendance') {
       loadAttendance(selectedDate);
     } else if (subTab === 'payroll') {
@@ -185,7 +200,7 @@ export function StaffManagementSection({
     } else if (subTab === 'performance') {
       loadPerformance(performanceFilter);
     }
-  }, [subTab, selectedDate, selectedMonth, performanceFilter, loadAttendance, loadPayroll, loadPerformance]);
+  }, [subTab, selectedDate, selectedMonth, performanceFilter, loadAttendance, loadPayroll, loadPerformance, loadSecuritySettings]);
 
   // Attendance Actions
   const myTodayAttendance = attendanceRecords.find(r => r.userId === currentUser?.email);
@@ -197,11 +212,33 @@ export function StaffManagementSection({
     }
     try {
       setCheckingIn(true);
-      const rec = await attendanceService.checkIn({
-        email: currentUser.email,
-        name: currentUser.name,
-        role: currentUser.role || 'Staff'
-      });
+
+      // Verify GPS & Wi-Fi Security
+      toast.loading('হাজিরা অবস্থান ও Wi-Fi যাচাই করা হচ্ছে...', { id: 'security-check' });
+      const verification = await attendanceSecurityService.verifyAttendanceAccess(currentUser.role);
+      
+      if (!verification.allowed) {
+        toast.error(verification.error || 'আপনি দোকানের বাইরে আছেন। চেক-ইন করা সম্ভব নয়।', { 
+          id: 'security-check',
+          duration: 6000 
+        });
+        return;
+      }
+      toast.dismiss('security-check');
+
+      const rec = await attendanceService.checkIn(
+        {
+          email: currentUser.email,
+          name: currentUser.name,
+          role: currentUser.role || 'Staff'
+        },
+        '',
+        {
+          verifiedBy: verification.verifiedBy,
+          distanceMeters: verification.distanceMeters,
+          clientIp: verification.clientIp
+        }
+      );
       toast.success(`সফলভাবে উপস্থিতি নিশ্চিত করা হয়েছে (${rec.checkInTime})`);
       loadAttendance(selectedDate);
     } catch (e: any) {
@@ -216,6 +253,20 @@ export function StaffManagementSection({
     if (!currentUser?.email) return;
     try {
       setCheckingOut(true);
+
+      // Verify GPS & Wi-Fi Security for Checkout
+      toast.loading('প্রস্থান অবস্থান ও Wi-Fi যাচাই করা হচ্ছে...', { id: 'security-check' });
+      const verification = await attendanceSecurityService.verifyAttendanceAccess(currentUser.role);
+      
+      if (!verification.allowed) {
+        toast.error(verification.error || 'দোকানে উপস্থিত থেকে চেক-আউট সম্পন্ন করুন।', { 
+          id: 'security-check',
+          duration: 6000 
+        });
+        return;
+      }
+      toast.dismiss('security-check');
+
       await attendanceService.checkOut(currentUser.email);
       toast.success('সফলভাবে প্রস্থান (Check Out) সম্পন্ন হয়েছে');
       loadAttendance(selectedDate);
@@ -485,8 +536,15 @@ export function StaffManagementSection({
                 </div>
               </div>
 
-              {/* Action Button */}
-              <div className="flex items-center gap-3 w-full md:w-auto">
+              {/* Action Button & Security Status */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+                {securitySettings?.enabled && (
+                  <div className="flex items-center justify-center gap-1.5 text-[11px] text-blue-300 bg-[#121524] border border-blue-500/20 px-3 py-2 rounded-xl font-medium shrink-0 shadow-inner">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>লক সক্রিয়: {securitySettings.mode === 'strict' ? 'GPS + Wi-Fi' : 'GPS / Wi-Fi'}</span>
+                  </div>
+                )}
+
                 {!myTodayAttendance ? (
                   <Button
                     onClick={handleMyCheckIn}
@@ -560,23 +618,39 @@ export function StaffManagementSection({
             </div>
 
             {isManagerOrOwner && (
-              <Button
-                onClick={() => {
-                  setManualAttendanceData({
-                    userId: staffList[0]?.email || '',
-                    date: selectedDate,
-                    checkInTime: '09:30 AM',
-                    checkOutTime: '07:30 PM',
-                    status: 'Present',
-                    note: ''
-                  });
-                  setIsManualAttendanceOpen(true);
-                }}
-                className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold h-9 px-4"
-              >
-                <Plus className="w-3.5 h-3.5 mr-1.5" />
-                উপস্থিতি এন্ট্রি যোগ করুন
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  onClick={() => setIsSecurityModalOpen(true)}
+                  variant="outline"
+                  className="border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-semibold text-xs h-9 px-3.5 rounded-xl shadow-sm flex items-center gap-2"
+                >
+                  <Shield className="w-3.5 h-3.5 text-blue-400" />
+                  <span>হাজিরা সিকিউরিটি (GPS & Wi-Fi)</span>
+                  {securitySettings?.enabled ? (
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="সিকিউরিটি সক্রিয়" />
+                  ) : (
+                    <span className="w-2 h-2 rounded-full bg-gray-600" title="সিকিউরিটি নিষ্ক্রিয়" />
+                  )}
+                </Button>
+
+                <Button
+                  onClick={() => {
+                    setManualAttendanceData({
+                      userId: staffList[0]?.email || '',
+                      date: selectedDate,
+                      checkInTime: '09:30 AM',
+                      checkOutTime: '07:30 PM',
+                      status: 'Present',
+                      note: ''
+                    });
+                    setIsManualAttendanceOpen(true);
+                  }}
+                  className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold h-9 px-4 rounded-xl shadow-md shadow-blue-950/40"
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1.5" />
+                  উপস্থিতি এন্ট্রি যোগ করুন
+                </Button>
+              </div>
             )}
           </div>
 
@@ -610,6 +684,7 @@ export function StaffManagementSection({
                       <th className="px-5 py-3.5">প্রবেশ (Check-In)</th>
                       <th className="px-5 py-3.5">প্রস্থান (Check-Out)</th>
                       <th className="px-5 py-3.5">মোট কর্মঘণ্টা</th>
+                      <th className="px-5 py-3.5">ভেরিফিকেশন</th>
                       <th className="px-5 py-3.5">স্ট্যাটাস</th>
                       {isManagerOrOwner && <th className="px-5 py-3.5 text-right">অ্যাকশন</th>}
                     </tr>
@@ -641,6 +716,40 @@ export function StaffManagementSection({
                         </td>
                         <td className="px-5 py-4 text-gray-300 font-medium text-xs">
                           {rec.workingHours || '-'}
+                        </td>
+                        <td className="px-5 py-4">
+                          {rec.verifiedBy === 'GPS + Wi-Fi' ? (
+                            <span 
+                              className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                              title={`GPS দূরত্ব: ${rec.distanceMeters ?? 0}m, IP: ${rec.clientIp || 'Verified'}`}
+                            >
+                              <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                              GPS + Wi-Fi {rec.distanceMeters !== undefined ? `(${rec.distanceMeters}m)` : ''}
+                            </span>
+                          ) : rec.verifiedBy === 'GPS' ? (
+                            <span 
+                              className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                              title={`GPS দূরত্ব: ${rec.distanceMeters ?? 0}m`}
+                            >
+                              <MapPin className="w-3 h-3 text-blue-400" />
+                              GPS {rec.distanceMeters !== undefined ? `(${rec.distanceMeters}m)` : ''}
+                            </span>
+                          ) : rec.verifiedBy === 'Wi-Fi' ? (
+                            <span 
+                              className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
+                              title={`IP: ${rec.clientIp || 'Verified'}`}
+                            >
+                              <Wifi className="w-3 h-3 text-indigo-400" />
+                              Wi-Fi
+                            </span>
+                          ) : rec.verifiedBy === 'Manual / Owner' ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                              <Shield className="w-3 h-3 text-purple-400" />
+                              ম্যানুয়াল
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-gray-500">স্ট্যান্ডার্ড</span>
+                          )}
                         </td>
                         <td className="px-5 py-4">
                           <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
@@ -1591,6 +1700,13 @@ export function StaffManagementSection({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* 5. Attendance Security Modal (GPS & Wi-Fi Lock) */}
+      <AttendanceSecurityModal
+        isOpen={isSecurityModalOpen}
+        onClose={() => setIsSecurityModalOpen(false)}
+        onSaved={loadSecuritySettings}
+      />
 
       {/* Delete Record Confirmation Modal */}
       <ConfirmModal

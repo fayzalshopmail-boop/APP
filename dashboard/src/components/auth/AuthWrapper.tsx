@@ -30,6 +30,17 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
     setMounted(true);
     shopSettingsService.getSettings().then(setShop).catch(console.error);
     
+    // Register PWA Service Worker for offline operation & background caching
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then((reg) => {
+          console.log('[PWA] Service Worker active with scope:', reg.scope);
+        })
+        .catch((err) => {
+          console.error('[PWA] Service Worker registration error:', err);
+        });
+    }
+
     // Subscribe to dropdown changes from Firebase
     const unsubscribe = dropdownConfigService.subscribe((settings) => {
       useAppStore.setState({

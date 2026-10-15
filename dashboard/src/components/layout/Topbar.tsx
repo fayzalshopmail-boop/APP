@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Lock, Menu, CheckCircle2, AlertTriangle, Info, BellRing, X, UserPlus, PackagePlus, PlusCircle, Wrench, Truck, Wallet, ShoppingCart, Receipt, Coins } from 'lucide-react';
+import { Bell, Lock, Menu, CheckCircle2, AlertTriangle, Info, BellRing, X, UserPlus, PackagePlus, PlusCircle, Wrench, Truck, Wallet, ShoppingCart, Receipt, Coins, WifiOff } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
@@ -61,6 +61,21 @@ export function Topbar() {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const unreadCount = notifications.filter(n => !n.read).length;
+  const [isOnline, setIsOnline] = useState(true);
+
+  useEffect(() => {
+    setIsOnline(typeof navigator !== 'undefined' ? navigator.onLine : true);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const currentAddButton = headerAddButtons[pathname];
 
@@ -379,6 +394,17 @@ export function Topbar() {
           </div>
         )}
         
+        {/* Offline Status Badge */}
+        {!isOnline && (
+          <div 
+            className="flex items-center gap-1.5 bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-semibold shrink-0"
+            title="আপনি অফলাইনে আছেন। সমস্ত এন্ট্রি ফোনে সেভ হচ্ছে এবং ইন্টারনেট পেলে স্বয়ংক্রিয়ভাবে ক্লাউডে সিঙ্ক হবে।"
+          >
+            <WifiOff className="w-3.5 h-3.5 text-amber-400" />
+            <span className="text-[11px] sm:text-xs">অফলাইন</span>
+          </div>
+        )}
+
         <div className="relative" ref={notifRef}>
           <button 
             onClick={() => setIsNotifOpen(!isNotifOpen)}
