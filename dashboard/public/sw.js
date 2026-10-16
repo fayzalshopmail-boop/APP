@@ -1,5 +1,5 @@
 // Service Worker for VSC POS - 100% Offline-First PWA
-const CACHE_NAME = 'vsc-pos-cache-v4';
+const CACHE_NAME = 'vsc-pos-cache-v5';
 
 // Pre-cache core application shell routes and assets
 const PRECACHE_ASSETS = [
@@ -112,7 +112,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 4. Next.js Code chunks (/_next/) and HTML Navigation -> Network First, fallback to Cache
+  // 4. Next.js Code chunks (/_next/), Pages, and RSC payloads -> Network First, fallback to Cache
   // Ensures new features and UI updates are loaded immediately, with 100% offline fallback
   event.respondWith(
     fetch(request)
@@ -126,6 +126,13 @@ self.addEventListener('fetch', (event) => {
       .catch(async () => {
         const cached = await caches.match(request);
         if (cached) return cached;
+
+        // Strip query parameters (?_rsc=...) and try matching base path
+        if (url.search) {
+          const basePath = url.origin + url.pathname;
+          const cachedBase = await caches.match(basePath);
+          if (cachedBase) return cachedBase;
+        }
 
         // For navigation requests, fallback to exact path or root '/'
         if (request.mode === 'navigate') {
@@ -142,26 +149,6 @@ self.addEventListener('fetch', (event) => {
         }
 
         return new Response('Offline', { status: 503 });
-      })
-  );
-});
-
-  // 5. Next.js Data requests & RSC payloads (?_rsc=...)
-  event.respondWith(
-    fetch(request)
-      .then((res) => {
-        if (res && res.status === 200) {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-        }
-        return res;
-      })
-      .catch(async () => {
-        const cached = await caches.match(request);
-        if (cached) return cached;
-        // Strip query parameters and try matching base path
-        const basePath = url.origin + url.pathname;
-        return caches.match(basePath);
       })
   );
 });
