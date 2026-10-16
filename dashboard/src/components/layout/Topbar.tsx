@@ -36,6 +36,7 @@ const routeTitles: Record<string, string> = {
   '/reports': 'Reports',
   '/settings': 'Shop Settings',
   '/sms': 'SMS Settings',
+  '/staff': 'My Attendance',
 };
 
 const routeSubtitles: Record<string, string> = {
@@ -50,7 +51,8 @@ const routeSubtitles: Record<string, string> = {
   '/expenses': 'Track and manage shop expenses.',
   '/reports': 'View business analytics and insights.',
   '/settings': 'Configure your shop settings.',
-  '/sms': 'SMS packages and delivery history.'
+  '/sms': 'SMS packages and delivery history.',
+  '/staff': 'Track your daily check-in, working hours, and attendance records.'
 };
 
 export function Topbar() {

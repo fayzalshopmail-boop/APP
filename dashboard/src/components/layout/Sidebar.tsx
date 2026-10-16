@@ -7,7 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { 
   Home, Users, Box, Clock, CreditCard, Star, 
   Wrench, Truck, Receipt, BarChart2, Settings, MessageSquare, LogOut, Lock,
-  WifiOff, RefreshCw
+  WifiOff, RefreshCw, CalendarCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/useAppStore';
@@ -27,6 +27,12 @@ const navItemsAll = [
   { name: 'Reports', href: '/reports', icon: BarChart2 },
   { name: 'Shop Settings', href: '/settings', icon: Settings },
   { name: 'SMS Settings', href: '/sms', icon: MessageSquare },
+];
+
+const technicianNavItems = [
+  { name: 'My Attendance', href: '/staff', icon: CalendarCheck },
+  { name: 'Customer Details', href: '/customers', icon: Users },
+  { name: 'Inventory', href: '/inventory', icon: Box },
 ];
 
 export function Sidebar() {
@@ -138,7 +144,7 @@ export function Sidebar() {
 
       {/* Nav Links */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 scrollbar-hide">
-        {navItemsAll.filter(item => user?.role === 'Technician' ? ['Customer Details', 'Inventory'].includes(item.name) : true).map((item) => {
+        {(user?.role === 'Technician' ? technicianNavItems : navItemsAll).map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
           const shouldReplace = pathname !== '/';

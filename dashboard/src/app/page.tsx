@@ -19,7 +19,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user?.role === 'Technician') {
-      router.replace('/customers');
+      router.replace('/staff');
     }
   }, [user, router]);
 

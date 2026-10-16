@@ -97,7 +97,7 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
   }
 
   // Role based access control
-  const technicianAllowedRoutes = ['/customers', '/inventory'];
+  const technicianAllowedRoutes = ['/customers', '/inventory', '/staff'];
   const basePath = '/' + pathname.split('/')[1];
   const isTechnicianBlocked = user.role === 'Technician' && pathname !== '/' && !technicianAllowedRoutes.includes(basePath);
 
