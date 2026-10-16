@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Lock, Menu, CheckCircle2, AlertTriangle, Info, BellRing, X, UserPlus, PackagePlus, PlusCircle, Wrench, Truck, Wallet, ShoppingCart, Receipt, Coins, WifiOff } from 'lucide-react';
+import { Bell, Lock, Menu, CheckCircle2, AlertTriangle, Info, BellRing, X, UserPlus, PackagePlus, PlusCircle, Wrench, Truck, Wallet, ShoppingCart, Receipt, Coins, WifiOff, Clock, LogIn } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
@@ -13,9 +13,11 @@ import { shopTransactionService } from '@/lib/services/shopTransaction';
 import { Customer } from '@/lib/services/customer';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 
 const headerAddButtons: Record<string, { label: string; icon: any; event?: string }> = {
-  '/customers': { label: 'Add Customer', icon: UserPlus, event: 'app:add-customer' },
+  '/customers': { label: '+ নতুন অর্ডার', icon: PlusCircle, event: 'app:add-customer' },
+  '/staff': { label: '+ নতুন অর্ডার', icon: PlusCircle, event: 'app:open-add-customer' },
   '/inventory': { label: 'Add Part', icon: PackagePlus, event: 'app:add-inventory' },
   '/loans': { label: 'Add Record', icon: PlusCircle, event: 'app:add-loan' },
   '/mechanics': { label: 'Add Mechanic', icon: Wrench, event: 'app:add-mechanic' },
@@ -25,7 +27,8 @@ const headerAddButtons: Record<string, { label: string; icon: any; event?: strin
 
 const routeTitles: Record<string, string> = {
   '/': 'Dashboard',
-  '/customers': 'Customer Details',
+  '/customers': 'Customer Orders',
+  '/staff': 'Staff Attendance & Portal',
   '/inventory': 'Inventory',
   '/due': 'Due',
   '/loans': 'My Loans',
@@ -40,7 +43,8 @@ const routeTitles: Record<string, string> = {
 
 const routeSubtitles: Record<string, string> = {
   '/': 'Welcome back to your dashboard.',
-  '/customers': 'Manage your TV repair customers and their records.',
+  '/customers': 'কাস্টমার, মেরামত অর্ডার এবং স্ট্যাটাস পরিচালনা করুন।',
+  '/staff': 'হাজিরা চেক-ইন, চেক-আউট এবং কাজের ড্যাশবোর্ড।',
   '/inventory': 'Manage parts, stock levels, and pricing.',
   '/due': 'Manage and collect outstanding balances from customers.',
   '/loans': 'Manage money you\'ve borrowed or lent to others.',
@@ -302,28 +306,34 @@ export function Topbar() {
     try {
       await shopTransactionService.createCustomer(data, user.name || user.email || 'Unknown');
       handleCloseCustomerModal();
+      toast.success('নতুন কাস্টমার ও মেরামত অর্ডার সফলভাবে সংরক্ষণ করা হয়েছে!');
       
-      // Send Welcome SMS
-      const { smsConfigService } = await import('@/lib/services/smsConfig');
-      const { sendSMS } = await import('@/lib/sms');
-      
-      const smsSettings = await smsConfigService.getSettings();
-      if (smsSettings.enabled && smsSettings.apiKey && smsSettings.senderId && data.phone) {
-        const msg = smsSettings.welcomeTemplate
-          .replace(/{name}/g, data.name || '')
-          .replace(/{phone}/g, data.phone || '')
-          .replace(/{brand}/g, data.deviceBrand || '')
-          .replace(/{type}/g, data.deviceType || '')
-          .replace(/{problem}/g, data.deviceProblem || '')
-          .replace(/{total}/g, (data as any).isBillPending ? 'চেক করে জানানো হবে' : `${data.totalBill || 0}`)
-          .replace(/{advance}/g, `${data.advance || 0}`)
-          .replace(/{due}/g, (data as any).isBillPending ? 'পেন্ডিং' : `${data.due || 0}`);
-          
-        await sendSMS(data.phone, msg, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
+      // Send Welcome SMS safely
+      try {
+        const { smsConfigService } = await import('@/lib/services/smsConfig');
+        const { sendSMS } = await import('@/lib/sms');
+        
+        const smsSettings = await smsConfigService.getSettings();
+        if (smsSettings?.enabled && smsSettings.apiKey && smsSettings.senderId && data.phone) {
+          const msg = smsSettings.welcomeTemplate
+            .replace(/{name}/g, data.name || '')
+            .replace(/{phone}/g, data.phone || '')
+            .replace(/{brand}/g, data.deviceBrand || '')
+            .replace(/{type}/g, data.deviceType || '')
+            .replace(/{problem}/g, data.deviceProblem || '')
+            .replace(/{total}/g, (data as any).isBillPending ? 'চেক করে জানানো হবে' : `${data.totalBill || 0}`)
+            .replace(/{advance}/g, `${data.advance || 0}`)
+            .replace(/{due}/g, (data as any).isBillPending ? 'পেন্ডিং' : `${data.due || 0}`);
+            
+          sendSMS(data.phone, msg, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
+        }
+      } catch (smsErr) {
+        console.warn('Welcome SMS skipped in topbar:', smsErr);
       }
       
-    } catch (e) {
+    } catch (e: any) {
       console.error("Failed to add customer globally", e);
+      toast.error(e.message || "কাস্টমার যোগ করতে সমস্যা হয়েছে");
     }
   };
 
@@ -363,12 +373,12 @@ export function Topbar() {
             {/* DYNAMIC PAGE ADD ACTION BUTTON */}
             <button
               onClick={handleHeaderAdd}
-              className="flex items-center gap-1.5 sm:gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-2.5 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2 rounded-lg text-sm font-medium transition-all shadow-lg shadow-blue-500/20 mr-1 sm:mr-0"
+              className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white px-2.5 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-md shadow-blue-500/20 mr-1 sm:mr-0 shrink-0"
               title={currentAddButton.label}
               aria-label={currentAddButton.label}
             >
-              <currentAddButton.icon className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="hidden sm:inline">{currentAddButton.label}</span>
+              <currentAddButton.icon className="w-4 h-4 md:w-4 md:h-4 shrink-0" />
+              <span>{currentAddButton.label}</span>
             </button>
           </div>
         )}
@@ -393,6 +403,16 @@ export function Topbar() {
             </Select>
           </div>
         )}
+
+        {/* Quick Staff Attendance Link */}
+        <Link
+          href="/staff"
+          className="flex items-center gap-1.5 bg-secondary hover:bg-gray-800 text-gray-300 border border-gray-800 hover:border-blue-500/40 px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all"
+          title="স্টাফ পোর্টাল ও হাজিরা চেক-ইন/আউট"
+        >
+          <Clock className="w-3.5 h-3.5 text-blue-400" />
+          <span className="hidden xs:inline">হাজিরা</span>
+        </Link>
         
         {/* Offline Status Badge */}
         {!isOnline && (
