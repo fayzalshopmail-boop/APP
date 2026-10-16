@@ -597,20 +597,22 @@ export function StaffManagementSection({
           </div>
 
           {/* Date Selector & Manual Entry Bar */}
-          <div className="bg-secondary/40 border border-gray-800 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex items-center gap-3">
-              <Calendar className="w-5 h-5 text-blue-400" />
-              <label className="text-xs font-semibold text-gray-300">তারিখ নির্বাচন:</label>
+          <div className="bg-secondary/40 border border-gray-800 rounded-2xl p-3.5 sm:p-4 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 sm:gap-4">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-blue-400 shrink-0" />
+                <label className="text-xs font-semibold text-gray-300">তারিখ:</label>
+              </div>
               <input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="bg-[#10131f] border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500"
+                className="bg-[#10131f] border border-gray-700 rounded-xl px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500 h-9"
               />
               {selectedDate !== getLocalDateStr() && (
                 <button
                   onClick={() => setSelectedDate(getLocalDateStr())}
-                  className="text-xs text-blue-400 hover:underline"
+                  className="text-xs text-blue-400 hover:underline font-medium"
                 >
                   আজকে ফিরে যান
                 </button>
@@ -618,13 +620,13 @@ export function StaffManagementSection({
             </div>
 
             {isManagerOrOwner && (
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 <Button
                   onClick={() => setIsSecurityModalOpen(true)}
                   variant="outline"
-                  className="border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-semibold text-xs h-9 px-3.5 rounded-xl shadow-sm flex items-center gap-2"
+                  className="border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-semibold text-xs h-9 sm:h-10 px-3.5 rounded-xl shadow-sm flex items-center justify-center gap-2"
                 >
-                  <Shield className="w-3.5 h-3.5 text-blue-400" />
+                  <Shield className="w-4 h-4 text-blue-400" />
                   <span>হাজিরা সিকিউরিটি (GPS & Wi-Fi)</span>
                   {securitySettings?.enabled ? (
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="সিকিউরিটি সক্রিয়" />
@@ -645,7 +647,7 @@ export function StaffManagementSection({
                     });
                     setIsManualAttendanceOpen(true);
                   }}
-                  className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold h-9 px-4 rounded-xl shadow-md shadow-blue-950/40"
+                  className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold h-9 sm:h-10 px-4 rounded-xl shadow-md shadow-blue-950/40 flex items-center justify-center"
                 >
                   <Plus className="w-3.5 h-3.5 mr-1.5" />
                   উপস্থিতি এন্ট্রি যোগ করুন
