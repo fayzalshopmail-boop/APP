@@ -8,26 +8,14 @@ service cloud.firestore {
 
     function isActiveUser() {
       return isAuthenticated() 
-        && (
-          (exists(/databases/$(database)/documents/users/$(request.auth.token.email)) 
-           && get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.isActive == true)
-          ||
-          (exists(/databases/$(database)/documents/users/$(request.auth.token.email.lower())) 
-           && get(/databases/$(database)/documents/users/$(request.auth.token.email.lower())).data.isActive == true)
-        );
+        && exists(/databases/$(database)/documents/users/$(request.auth.token.email)) 
+        && get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.isActive == true;
     }
 
     function isManagerOrOwner() {
       return isActiveUser() 
-        && (
-          (exists(/databases/$(database)/documents/users/$(request.auth.token.email)) 
-           && (get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'Owner' 
-               || get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'Manager'))
-          ||
-          (exists(/databases/$(database)/documents/users/$(request.auth.token.email.lower())) 
-           && (get(/databases/$(database)/documents/users/$(request.auth.token.email.lower())).data.role == 'Owner' 
-               || get(/databases/$(database)/documents/users/$(request.auth.token.email.lower())).data.role == 'Manager'))
-        );
+        && (get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'Owner' 
+            || get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'Manager');
     }
 
     match /users/{userId} {

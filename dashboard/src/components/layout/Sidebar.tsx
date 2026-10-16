@@ -7,7 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { 
   Home, Users, Box, Clock, CreditCard, Star, 
   Wrench, Truck, Receipt, BarChart2, Settings, MessageSquare, LogOut, Lock,
-  WifiOff, RefreshCw, ShoppingCart, PlusCircle
+  WifiOff, RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/useAppStore';
@@ -15,19 +15,18 @@ import { auth } from '@/lib/firebase';
 import { offlineSyncService } from '@/lib/services/offlineSync';
 
 const navItemsAll = [
-  { name: 'Dashboard', label: 'Dashboard', href: '/', icon: Home },
-  { name: 'Customer Orders', label: 'Customer Orders', href: '/customers', icon: ShoppingCart },
-  { name: 'Staff Attendance', label: 'Staff Attendance', href: '/staff', icon: Clock },
-  { name: 'Inventory', label: 'Inventory', href: '/inventory', icon: Box },
-  { name: 'Due', label: 'Due', href: '/due', icon: Clock },
-  { name: 'My Loans', label: 'My Loans', href: '/loans', icon: CreditCard },
-  { name: 'Loyalty', label: 'Loyalty', href: '/loyalty', icon: Star },
-  { name: 'Mechanics (B2B)', label: 'Mechanics (B2B)', href: '/mechanics', icon: Wrench },
-  { name: 'Suppliers', label: 'Suppliers', href: '/suppliers', icon: Truck },
-  { name: 'Expenses', label: 'Expenses', href: '/expenses', icon: Receipt },
-  { name: 'Reports', label: 'Reports', href: '/reports', icon: BarChart2 },
-  { name: 'Shop Settings', label: 'Shop Settings', href: '/settings', icon: Settings },
-  { name: 'SMS Settings', label: 'SMS Settings', href: '/sms', icon: MessageSquare },
+  { name: 'Dashboard', href: '/', icon: Home },
+  { name: 'Customer Details', href: '/customers', icon: Users },
+  { name: 'Inventory', href: '/inventory', icon: Box },
+  { name: 'Due', href: '/due', icon: Clock },
+  { name: 'My Loans', href: '/loans', icon: CreditCard },
+  { name: 'Loyalty', href: '/loyalty', icon: Star },
+  { name: 'Mechanics (B2B)', href: '/mechanics', icon: Wrench },
+  { name: 'Suppliers', href: '/suppliers', icon: Truck },
+  { name: 'Expenses', href: '/expenses', icon: Receipt },
+  { name: 'Reports', href: '/reports', icon: BarChart2 },
+  { name: 'Shop Settings', href: '/settings', icon: Settings },
+  { name: 'SMS Settings', href: '/sms', icon: MessageSquare },
 ];
 
 export function Sidebar() {
@@ -138,23 +137,8 @@ export function Sidebar() {
       </div>
 
       {/* Nav Links */}
-      <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-1 scrollbar-hide">
-        {/* Quick Add Order Button */}
-        <div className="pb-2">
-          <button
-            onClick={() => {
-              setSidebarOpen(false);
-              window.dispatchEvent(new CustomEvent('app:open-add-customer'));
-            }}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white font-semibold py-2.5 px-3 rounded-xl text-xs sm:text-sm shadow-md shadow-blue-500/25 transition-all"
-            title="নতুন কাস্টমার বা মেরামত অর্ডার তৈরি করুন"
-          >
-            <PlusCircle className="w-4 h-4 shrink-0" />
-            <span className="truncate">+ নতুন অর্ডার (Order)</span>
-          </button>
-        </div>
-
-        {navItemsAll.filter(item => user?.role === 'Technician' ? ['Customer Orders', 'Staff Attendance', 'Inventory'].includes(item.name) : true).map((item) => {
+      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 scrollbar-hide">
+        {navItemsAll.filter(item => user?.role === 'Technician' ? ['Customer Details', 'Inventory'].includes(item.name) : true).map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
           const shouldReplace = pathname !== '/';
@@ -180,14 +164,14 @@ export function Sidebar() {
                 }
               }}
               className={cn(
-                "flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                "flex items-center gap-3 px-3 py-3.5 md:py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                 isActive 
                   ? "bg-blue-500/10 text-blue-400 border-l-2 border-blue-500" 
                   : "text-gray-400 hover:bg-gray-800/50 hover:text-gray-200"
               )}
             >
-              <Icon className={cn("w-5 h-5 shrink-0", isActive ? "text-blue-400" : "text-gray-400")} />
-              <span className="truncate">{item.label || item.name}</span>
+              <Icon className={cn("w-5 h-5", isActive ? "text-blue-400" : "text-gray-400")} />
+              {item.name}
             </Link>
           );
         })}

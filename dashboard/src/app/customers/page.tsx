@@ -274,26 +274,20 @@ export default function CustomersPage() {
           setPartsModalCustomer({ id: newId, name: data.name, pendingStatus: 'Delivered' });
         }
 
-        toast.success('নতুন কাস্টমার ও মেরামত অর্ডার সফলভাবে সংরক্ষণ করা হয়েছে!');
-
-        // Send Welcome SMS (Safely isolated so SMS failure never blocks customer creation)
-        try {
-          const smsSettings = await smsConfigService.getSettings();
-          if (smsSettings?.enabled && smsSettings.apiKey && smsSettings.senderId && data.phone) {
-            const msg = smsSettings.welcomeTemplate
-              .replace(/{name}/g, data.name || '')
-              .replace(/{phone}/g, data.phone || '')
-              .replace(/{brand}/g, data.deviceBrand || '')
-              .replace(/{type}/g, data.deviceType || '')
-              .replace(/{problem}/g, data.deviceProblem || '')
-              .replace(/{total}/g, data.isBillPending ? 'চেক করে জানানো হবে' : `${data.totalBill || 0}`)
-              .replace(/{advance}/g, `${data.advance || 0}`)
-              .replace(/{due}/g, data.isBillPending ? 'পেন্ডিং' : `${data.due || 0}`);
-              
-            sendSMS(data.phone, msg, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
-          }
-        } catch (smsErr) {
-          console.warn('Welcome SMS could not be sent:', smsErr);
+        // Send Welcome SMS
+        const smsSettings = await smsConfigService.getSettings();
+        if (smsSettings.enabled && smsSettings.apiKey && smsSettings.senderId) {
+          const msg = smsSettings.welcomeTemplate
+            .replace(/{name}/g, data.name || '')
+            .replace(/{phone}/g, data.phone || '')
+            .replace(/{brand}/g, data.deviceBrand || '')
+            .replace(/{type}/g, data.deviceType || '')
+            .replace(/{problem}/g, data.deviceProblem || '')
+            .replace(/{total}/g, data.isBillPending ? 'চেক করে জানানো হবে' : `${data.totalBill || 0}`)
+            .replace(/{advance}/g, `${data.advance || 0}`)
+            .replace(/{due}/g, data.isBillPending ? 'পেন্ডিং' : `${data.due || 0}`);
+            
+          sendSMS(data.phone, msg, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
         }
       }
     } catch (error) { console.error("Firebase error", error); toast.error("Error: " + ((error as any).message || String(error))); }
@@ -774,19 +768,10 @@ export default function CustomersPage() {
             </Select>
           </div>
 
-          <div className="flex flex-row items-center gap-2">
-            <Button 
-              onClick={openAddModal}
-              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white font-semibold px-3.5 sm:px-4 h-10 rounded-xl text-xs sm:text-sm shadow-md shadow-blue-500/25 transition-all shrink-0"
-              title="নতুন কাস্টমার ও মেরামত অর্ডার যোগ করুন"
-            >
-              <Plus className="w-4 h-4" />
-              <span>+ নতুন অর্ডার / কাস্টমার</span>
-            </Button>
-
+          <div className="hidden sm:flex flex-row items-center gap-2">
             <Button 
               onClick={handleExportCSV}
-              className="hidden sm:flex items-center gap-2 bg-secondary hover:bg-gray-800 text-gray-300 border border-gray-800 px-3.5 h-10 rounded-xl text-xs sm:text-sm font-medium transition-all"
+              className="items-center gap-2 bg-secondary hover:bg-gray-800 text-gray-300 border border-gray-800 px-3.5 h-10 rounded-xl text-xs sm:text-sm font-medium transition-all"
             >
               <Download className="w-4 h-4" />
               Export CSV
@@ -1336,18 +1321,6 @@ export default function CustomersPage() {
         onSave={handleSaveSetBill}
         smsSettings={smsSettings}
       />
-
-      {/* Mobile Floating Action Button (FAB) for Instant Order Creation */}
-      <div className="fixed bottom-6 right-5 z-40 sm:hidden">
-        <button
-          onClick={openAddModal}
-          className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold px-4 py-3 rounded-full shadow-2xl shadow-blue-500/50 border border-blue-400/30 active:scale-95 transition-all"
-          title="নতুন অর্ডার তৈরি করুন"
-        >
-          <Plus className="w-5 h-5" />
-          <span className="text-xs font-semibold">+ নতুন অর্ডার</span>
-        </button>
-      </div>
 
       <CustomerModal 
         isOpen={isModalOpen}
