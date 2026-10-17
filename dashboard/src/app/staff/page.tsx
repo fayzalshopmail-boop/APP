@@ -34,6 +34,7 @@ import {
   AttendanceSecuritySettings
 } from '@/lib/services/attendanceSecurity';
 import { Button } from '@/components/ui/button';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import toast from 'react-hot-toast';
 
 export default function StaffAttendancePage() {
@@ -68,6 +69,8 @@ export default function StaffAttendancePage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showCheckOutConfirm, setShowCheckOutConfirm] = useState(false);
   const [noteInput, setNoteInput] = useState('');
   const [showNoteInput, setShowNoteInput] = useState(false);
 
@@ -313,12 +316,13 @@ export default function StaffAttendancePage() {
     }
   };
 
-  // Check Out Handler
-  const handleCheckOut = async () => {
-    if (!user?.email) return;
+  // Check Out Handlers
+  const handleCheckOut = () => {
+    setShowCheckOutConfirm(true);
+  };
 
-    const confirmed = window.confirm('আপনি কি আজকের মতো কাজ শেষ করে প্রস্থান (Check Out) করতে চান?');
-    if (!confirmed) return;
+  const handleConfirmCheckOut = async () => {
+    if (!user?.email) return;
 
     try {
       setActionLoading(true);
@@ -329,6 +333,7 @@ export default function StaffAttendancePage() {
       await loadAttendanceData();
       setNoteInput('');
       setShowNoteInput(false);
+      setShowCheckOutConfirm(false);
     } catch (err: any) {
       console.error('Check out failed:', err);
       toast.error(err.message || 'চেক-আউটে সমস্যা হয়েছে।');
@@ -337,11 +342,12 @@ export default function StaffAttendancePage() {
     }
   };
 
-  // Logout Handler
-  const handleLogout = async () => {
-    const confirmed = window.confirm('আপনি কি নিশ্চিত যে অ্যাকাউন্ট থেকে লগআউট করতে চান?');
-    if (!confirmed) return;
+  // Logout Handlers
+  const handleLogout = () => {
+    setShowLogoutConfirm(true);
+  };
 
+  const handleConfirmLogout = async () => {
     try {
       setLoggingOut(true);
       if (auth) {
@@ -352,6 +358,7 @@ export default function StaffAttendancePage() {
     } finally {
       setUser(null);
       setUnlocked(false);
+      setShowLogoutConfirm(false);
       router.push('/');
     }
   };
@@ -727,6 +734,30 @@ export default function StaffAttendancePage() {
           <span>{loggingOut ? 'লগআউট হচ্ছে...' : 'অ্যাকাউন্ট থেকে লগআউট (Log Out)'}</span>
         </Button>
       </div>
+
+      {/* App's Custom Logout Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={handleConfirmLogout}
+        title="লগআউট নিশ্চিত করুন"
+        message="আপনি কি নিশ্চিত যে আপনার অ্যাকাউন্ট থেকে লগআউট করতে চান?"
+        confirmText="লগআউট করুন"
+        cancelText="বাতিল"
+        variant="warning"
+      />
+
+      {/* App's Custom Check-Out Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showCheckOutConfirm}
+        onClose={() => setShowCheckOutConfirm(false)}
+        onConfirm={handleConfirmCheckOut}
+        title="ছুটি (Check Out) নিশ্চিত করুন"
+        message="আপনি কি আজকের মতো কাজ শেষ করে প্রস্থান (Check Out) করতে চান?"
+        confirmText="হ্যাঁ, প্রস্থান করব"
+        cancelText="না, কাজ বাকি আছে"
+        variant="warning"
+      />
 
     </div>
   );
