@@ -1,4 +1,4 @@
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, limit } from 'firebase/firestore';
+import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, limit, where } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export type CustomerStatus = 'Received' | 'In Progress' | 'Waiting for Parts' | 'Ready for Delivery' | 'Delivered' | 'Returned (Unrepaired)';
@@ -137,6 +137,46 @@ export const customerService = {
       } as Customer));
     } catch (error) {
       console.error("Error fetching customers: ", error);
+      throw error;
+    }
+  },
+
+  // Get only customers with outstanding due (targeted indexed query)
+  getWithDue: async (): Promise<Customer[]> => {
+    try {
+      if (!db) return [];
+      const q = query(
+        collection(db, COLLECTION_NAME),
+        where('due', '>', 0)
+      );
+      const querySnapshot = await getDocs(q);
+      const list = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Customer));
+      return list.sort((a, b) => (b.due || 0) - (a.due || 0));
+    } catch (error) {
+      console.error("Error fetching due customers: ", error);
+      throw error;
+    }
+  },
+
+  // Get only customers with loyalty points (targeted indexed query)
+  getWithPoints: async (): Promise<Customer[]> => {
+    try {
+      if (!db) return [];
+      const q = query(
+        collection(db, COLLECTION_NAME),
+        where('points', '>', 0)
+      );
+      const querySnapshot = await getDocs(q);
+      const list = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Customer));
+      return list.sort((a, b) => (b.points || 0) - (a.points || 0));
+    } catch (error) {
+      console.error("Error fetching loyalty customers: ", error);
       throw error;
     }
   },

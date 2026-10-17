@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Star, Users, Phone, ArrowRight, Tv } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
@@ -10,6 +10,7 @@ import Link from 'next/link';
 export function RecentCustomers() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const lastFetchTimeRef = useRef<number>(0);
 
   const loadData = async () => {
     try {
@@ -20,20 +21,30 @@ export function RecentCustomers() {
       console.error("Error loading recent customers", error);
     } finally {
       setLoading(false);
+      lastFetchTimeRef.current = Date.now();
     }
   };
 
   useEffect(() => {
     loadData();
 
-    window.addEventListener('focus', loadData);
-    window.addEventListener('online', loadData);
-    window.addEventListener('app:refresh-dashboard', loadData);
+    const handleFocus = () => {
+      if (Date.now() - lastFetchTimeRef.current > 180000) {
+        loadData();
+      }
+    };
+    const handleForceRefresh = () => {
+      loadData();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('online', handleForceRefresh);
+    window.addEventListener('app:refresh-dashboard', handleForceRefresh);
 
     return () => {
-      window.removeEventListener('focus', loadData);
-      window.removeEventListener('online', loadData);
-      window.removeEventListener('app:refresh-dashboard', loadData);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('online', handleForceRefresh);
+      window.removeEventListener('app:refresh-dashboard', handleForceRefresh);
     };
   }, []);
 

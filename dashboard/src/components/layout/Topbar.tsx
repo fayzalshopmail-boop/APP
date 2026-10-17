@@ -8,11 +8,16 @@ import { notificationService, AppNotification } from '@/lib/services/notificatio
 import { systemTasksService } from '@/lib/services/systemTasks';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CustomerModal } from '@/components/ui/CustomerModal';
+import dynamic from 'next/dynamic';
 import { shopTransactionService } from '@/lib/services/shopTransaction';
 import { Customer } from '@/lib/services/customer';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
+
+const CustomerModal = dynamic(
+  () => import('@/components/ui/CustomerModal').then((m) => m.CustomerModal),
+  { ssr: false }
+);
 
 const headerAddButtons: Record<string, { label: string; icon: any; event?: string }> = {
   '/customers': { label: 'Add Customer', icon: UserPlus, event: 'app:add-customer' },
@@ -491,12 +496,14 @@ export function Topbar() {
         </div>
       </div>
 
-      <CustomerModal 
-        isOpen={isCustomerModalOpen}
-        onClose={handleCloseCustomerModal}
-        onSave={handleSaveNewCustomer}
-        existingAddresses={[]}
-      />
+      {isCustomerModalOpen && (
+        <CustomerModal 
+          isOpen={isCustomerModalOpen}
+          onClose={handleCloseCustomerModal}
+          onSave={handleSaveNewCustomer}
+          existingAddresses={[]}
+        />
+      )}
     </header>
   );
 }

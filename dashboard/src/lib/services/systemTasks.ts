@@ -55,8 +55,11 @@ export const systemTasksService = {
         });
       }
 
-      // Run Approaching Delivery Dates Check
-      const qDeliveries = query(collection(db, 'customers'));
+      // Run Approaching Delivery Dates Check (only fetch active, non-delivered repairs)
+      const qDeliveries = query(
+        collection(db, 'customers'),
+        where('status', 'in', ['Received', 'In Progress', 'Waiting for Parts', 'Ready for Delivery'])
+      );
       const delSnap = await getDocs(qDeliveries);
       
       const tomorrowMs = nowMs + (24 * 60 * 60 * 1000); // Now + 24 hours

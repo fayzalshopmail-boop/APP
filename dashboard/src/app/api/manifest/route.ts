@@ -5,7 +5,21 @@ import { defaultShopSettings, ShopSettings } from '@/lib/services/shopSettings';
 
 export const dynamic = 'force-dynamic';
 
+let cachedManifest: any = null;
+let lastManifestFetch = 0;
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds in-memory cache
+
 export async function GET() {
+  const now = Date.now();
+  if (cachedManifest && (now - lastManifestFetch < CACHE_TTL_MS)) {
+    return NextResponse.json(cachedManifest, {
+      headers: {
+        'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+        'Content-Type': 'application/manifest+json'
+      }
+    });
+  }
+
   let shopSettings: ShopSettings = defaultShopSettings;
 
   try {
@@ -51,9 +65,12 @@ export async function GET() {
     ]
   };
 
+  cachedManifest = manifest;
+  lastManifestFetch = now;
+
   return NextResponse.json(manifest, {
     headers: {
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
       'Content-Type': 'application/manifest+json'
     }
   });

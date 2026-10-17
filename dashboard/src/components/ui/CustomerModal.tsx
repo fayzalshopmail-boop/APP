@@ -16,8 +16,13 @@ import { Customer, normalizePhone } from '@/lib/services/customer';
 import { User, Phone, MapPin, Loader2, Tv, Wrench, Tag, FileText, Settings2, Camera, CheckCircle } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { ManageOptionsModal } from './ManageOptionsModal';
-import { BarcodeScannerModal } from './BarcodeScannerModal';
+import dynamic from 'next/dynamic';
 import { CustomSelect } from './CustomSelect';
+
+const BarcodeScannerModal = dynamic(
+  () => import('./BarcodeScannerModal').then((m) => m.BarcodeScannerModal),
+  { ssr: false }
+);
 
 interface CustomerModalProps {
  isOpen: boolean;

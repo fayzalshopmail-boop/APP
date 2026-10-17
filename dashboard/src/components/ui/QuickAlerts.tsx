@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { AlertCircle, Coins, CheckCircle, Truck } from 'lucide-react';
 import { collection, query, where, getCountFromServer, getDocs, limit } from 'firebase/firestore';
@@ -9,6 +9,7 @@ import { formatCurrency } from '@/lib/currency';
 import Link from 'next/link';
 
 export function QuickAlerts() {
+  const lastFetchTimeRef = useRef<number>(0);
   const [alerts, setAlerts] = useState<any[]>([
     {
       id: 1,
@@ -186,6 +187,7 @@ export function QuickAlerts() {
 
         if (isMounted) {
           setAlerts(alertList);
+          lastFetchTimeRef.current = Date.now();
         }
       } catch (error) {
         console.error("Error loading alerts data", error);
@@ -194,19 +196,25 @@ export function QuickAlerts() {
 
     fetchAlerts();
 
-    // Auto-refresh when tab gains focus or on app refresh
-    const handleRefresh = () => {
+    // Auto-refresh when tab gains focus (with 3-minute cooldown) or on app refresh
+    const handleFocus = () => {
+      if (Date.now() - lastFetchTimeRef.current > 180000) {
+        fetchAlerts();
+      }
+    };
+    const handleForceRefresh = () => {
       fetchAlerts();
     };
-    window.addEventListener('focus', handleRefresh);
-    window.addEventListener('online', handleRefresh);
-    window.addEventListener('app:refresh-dashboard', handleRefresh);
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('online', handleForceRefresh);
+    window.addEventListener('app:refresh-dashboard', handleForceRefresh);
 
     return () => {
       isMounted = false;
-      window.removeEventListener('focus', handleRefresh);
-      window.removeEventListener('online', handleRefresh);
-      window.removeEventListener('app:refresh-dashboard', handleRefresh);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('online', handleForceRefresh);
+      window.removeEventListener('app:refresh-dashboard', handleForceRefresh);
     };
   }, []);
 

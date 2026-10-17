@@ -33,8 +33,7 @@ export default function DuePage() {
   const fetchDues = async () => {
     try {
       setLoading(true);
-      const data = await customerService.getAll();
-      const dueCustomers = data.filter(c => c.due > 0);
+      const dueCustomers = await customerService.getWithDue();
       setCustomers(dueCustomers);
     } catch (error) {
       console.error("Failed to fetch dues", error);

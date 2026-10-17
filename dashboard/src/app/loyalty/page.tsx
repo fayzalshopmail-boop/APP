@@ -33,17 +33,11 @@ export default function LoyaltyPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [confData, custData] = await Promise.all([
+      const [confData, topCustomers] = await Promise.all([
         loyaltyConfigService.getSettings(),
-        customerService.getAll()
+        customerService.getWithPoints()
       ]);
       setConfig(confData);
-      
-      // Only keep customers with points and sort by points descending
-      const topCustomers = custData
-        .filter(c => (c.points || 0) > 0)
-        .sort((a, b) => (b.points || 0) - (a.points || 0));
-        
       setCustomers(topCustomers);
     } catch (error) {
       console.error(error);

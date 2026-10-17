@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
 import { formatCurrency } from '@/lib/currency';
@@ -32,6 +32,7 @@ export function RevenueChart({ timeFilter: propTimeFilter }: RevenueChartProps) 
   const [loading, setLoading] = useState(true);
   const [subtitle, setSubtitle] = useState('');
   const [totalRevenue, setTotalRevenue] = useState(0);
+  const lastFetchTimeRef = useRef<number>(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -238,6 +239,7 @@ export function RevenueChart({ timeFilter: propTimeFilter }: RevenueChartProps) 
           setChartData(generatedBuckets);
           setSubtitle(filterSubtitle);
           setTotalRevenue(sumRevenue);
+          lastFetchTimeRef.current = Date.now();
         }
       } catch (err) {
         console.error('Failed to load revenue chart data:', err);
@@ -250,19 +252,25 @@ export function RevenueChart({ timeFilter: propTimeFilter }: RevenueChartProps) 
 
     fetchRevenueData();
 
-    // Auto-refresh when tab gains focus, on app refresh, or when reconnected online
-    const handleRefresh = () => {
+    // Auto-refresh when tab gains focus (with 3-minute cooldown), on app refresh, or when reconnected online
+    const handleFocus = () => {
+      if (Date.now() - lastFetchTimeRef.current > 180000) {
+        fetchRevenueData();
+      }
+    };
+    const handleForceRefresh = () => {
       fetchRevenueData();
     };
-    window.addEventListener('focus', handleRefresh);
-    window.addEventListener('online', handleRefresh);
-    window.addEventListener('app:refresh-dashboard', handleRefresh);
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('online', handleForceRefresh);
+    window.addEventListener('app:refresh-dashboard', handleForceRefresh);
 
     return () => {
       isMounted = false;
-      window.removeEventListener('focus', handleRefresh);
-      window.removeEventListener('online', handleRefresh);
-      window.removeEventListener('app:refresh-dashboard', handleRefresh);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('online', handleForceRefresh);
+      window.removeEventListener('app:refresh-dashboard', handleForceRefresh);
     };
   }, [activeFilter]);
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { LayoutDashboard, Users, Coins, Tv, Wrench, Loader2, UserPlus, ShoppingCart, Receipt, TrendingUp, TrendingDown, ArrowUpRight } from 'lucide-react';
 import { StatCard } from '@/components/ui/StatCard';
 import { QuickAlerts } from '@/components/ui/QuickAlerts';
@@ -36,6 +36,7 @@ export default function Dashboard() {
     netProfit: 0,
     totalPendingDues: 0
   });
+  const lastFetchTimeRef = useRef<number>(0);
 
   if (user?.role === 'Technician') return null;
 
@@ -204,22 +205,29 @@ export default function Dashboard() {
         console.error("Failed to load dashboard aggregations", err);
       } finally {
         setIsLoading(false);
+        lastFetchTimeRef.current = Date.now();
       }
     };
 
     loadAggregatedData();
 
-    // Auto-refresh when tab gains focus, on app refresh, or when reconnected online
-    const handleRefresh = () => {
+    // Auto-refresh when tab gains focus (with 3-minute cooldown), on app refresh, or when reconnected online
+    const handleFocus = () => {
+      if (Date.now() - lastFetchTimeRef.current > 180000) {
+        loadAggregatedData();
+      }
+    };
+    const handleForceRefresh = () => {
       loadAggregatedData();
     };
-    window.addEventListener('focus', handleRefresh);
-    window.addEventListener('online', handleRefresh);
-    window.addEventListener('app:refresh-dashboard', handleRefresh);
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('online', handleForceRefresh);
+    window.addEventListener('app:refresh-dashboard', handleForceRefresh);
     return () => {
-      window.removeEventListener('focus', handleRefresh);
-      window.removeEventListener('online', handleRefresh);
-      window.removeEventListener('app:refresh-dashboard', handleRefresh);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('online', handleForceRefresh);
+      window.removeEventListener('app:refresh-dashboard', handleForceRefresh);
     };
   }, [timeFilter]);
 
