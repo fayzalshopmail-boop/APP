@@ -84,20 +84,9 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile Overlay Backdrop */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/60 z-40 md:hidden" 
-          onClick={toggleSidebar}
-        />
-      )}
-
-      {/* Sidebar Content */}
+      {/* Sidebar Content (Desktop Only) */}
       <aside 
-        className={cn(
-          "w-64 h-screen bg-popover border-r border-gray-800 flex flex-col fixed left-0 top-0 z-50 transition-transform duration-300",
-          !isSidebarOpen ? "-translate-x-full md:translate-x-0" : "translate-x-0"
-        )}
+        className="hidden md:flex w-64 h-screen bg-popover border-r border-gray-800 flex-col fixed left-0 top-0 z-50"
       >
       {/* Logo */}
       <div className="p-6 flex items-center justify-between">

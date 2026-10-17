@@ -332,15 +332,14 @@ export function Topbar() {
   return (
     <header className="h-16 md:h-20 px-4 md:px-8 flex items-center justify-between bg-background sticky top-0 z-40 border-b border-gray-800 md:border-none">
       <div className="flex items-center gap-3 sm:gap-4">
-        {user?.role !== 'Technician' ? (
-          <button 
-            onClick={toggleSidebar}
-            className="md:hidden w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-gray-400 hover:text-white"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
+        {shop?.logoUrl ? (
+          <img 
+            src={shop.logoUrl} 
+            alt="Logo" 
+            className="md:hidden h-9 w-9 object-contain rounded-xl shrink-0" 
+          />
         ) : (
-          <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-bold text-sm shrink-0">
+          <div className="md:hidden w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-bold text-sm shrink-0">
             {shop?.shopName ? shop.shopName.charAt(0).toUpperCase() : 'V'}
           </div>
         )}

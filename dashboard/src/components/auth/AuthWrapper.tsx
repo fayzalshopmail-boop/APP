@@ -6,6 +6,7 @@ import { AuthScreen } from './AuthScreen';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Topbar } from '@/components/layout/Topbar';
 import { TechnicianBottomNav } from '@/components/layout/TechnicianBottomNav';
+import { OwnerBottomNav } from '@/components/layout/OwnerBottomNav';
 import { shopSettingsService } from '@/lib/services/shopSettings';
 import { dropdownConfigService } from '@/lib/services/dropdownConfig';
 import { usePathname } from 'next/navigation';
@@ -126,13 +127,13 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
       {!isTechnician && <Sidebar />}
       <div className={`flex-1 flex flex-col h-[100dvh] overflow-hidden transition-all duration-300 ${!isTechnician ? 'md:ml-64' : 'w-full'}`}>
         <Topbar />
-        <main className={`flex-1 overflow-y-auto min-h-0 p-4 md:p-6 ${isTechnician ? 'pb-16 md:pb-18' : ''}`}>
+        <main className={`flex-1 overflow-y-auto min-h-0 p-4 md:p-6 ${isTechnician ? 'pb-16 md:pb-18' : 'pb-20 md:pb-6'}`}>
           <div className="max-w-[1600px] mx-auto w-full">
             {children}
           </div>
         </main>
       </div>
-      {isTechnician && <TechnicianBottomNav />}
+      {isTechnician ? <TechnicianBottomNav /> : <OwnerBottomNav />}
     </>
   );
 }
