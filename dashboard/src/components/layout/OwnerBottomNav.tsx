@@ -352,6 +352,22 @@ export function OwnerBottomNav() {
                 </div>
               </div>
 
+              {/* User Profile Summary */}
+              <div className="p-3 bg-[#181c2e] rounded-2xl border border-gray-800/80 flex items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2.5 overflow-hidden">
+                  <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center justify-center font-bold text-xs shrink-0">
+                    {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                  <div className="overflow-hidden">
+                    <div className="font-bold text-white text-xs truncate">{user?.name} ({user?.role})</div>
+                    <div className="text-[10px] text-gray-400 truncate">{user?.email}</div>
+                  </div>
+                </div>
+                <div className="text-[10px] text-emerald-400 font-semibold shrink-0 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg">
+                  {shop?.shopName || 'Shop'}
+                </div>
+              </div>
+
               {/* Section 4: Security & Actions */}
               <div className="pt-2 border-t border-gray-800/80 flex items-center gap-3">
                 {user?.role === 'Owner' && (

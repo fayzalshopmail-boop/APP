@@ -170,6 +170,11 @@ export function Sidebar() {
         <div className="flex-1 overflow-hidden pr-8">
           <div className="text-xs text-gray-400 font-medium">{user?.role}</div>
           <div className="text-sm text-gray-200 font-semibold truncate">{user?.name}</div>
+          {user?.email && (
+            <div className="text-[10px] text-gray-400 truncate" title={user.email}>
+              {user.email}
+            </div>
+          )}
         </div>
         
         <div className="absolute right-2 flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100">
