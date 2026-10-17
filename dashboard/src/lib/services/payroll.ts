@@ -15,6 +15,7 @@ export interface PayrollRecord {
   date: string;         // 'YYYY-MM-DD'
   note?: string;
   paidBy: string;       // Owner or Manager who gave the money
+  expenseId?: string;   // Linked expense record ID in 'expenses' collection
   createdAt?: any;
 }
 
@@ -46,16 +47,12 @@ export const payrollService = {
   ): Promise<string> {
     if (!db) throw new Error('Database not initialized');
 
-    const docRef = await addDoc(collection(db, COLLECTION_NAME), {
-      ...record,
-      amount: Number(record.amount) || 0,
-      createdAt: serverTimestamp()
-    });
+    let linkedExpenseId: string | undefined = undefined;
 
     // Automatically sync as an Expense under 'Staff Salary' to maintain shop ledger accuracy
     if (syncToExpenses && (record.type === 'Salary Payment' || record.type === 'Advance Salary' || record.type === 'Bonus')) {
       try {
-        await expenseService.add({
+        linkedExpenseId = await expenseService.add({
           title: `${record.type === 'Advance Salary' ? 'অগ্রিম বেতন' : record.type === 'Bonus' ? 'বোনাস' : 'মাসিক বেতন'}: ${record.staffName} (${record.month}${record.note ? ` - ${record.note}` : ''})`,
           amount: Number(record.amount) || 0,
           category: 'Staff Salary',
@@ -65,6 +62,18 @@ export const payrollService = {
         console.error('Failed to sync payroll entry to expenses:', e);
       }
     }
+
+    const docData: any = {
+      ...record,
+      amount: Number(record.amount) || 0,
+      createdAt: serverTimestamp()
+    };
+
+    if (linkedExpenseId) {
+      docData.expenseId = linkedExpenseId;
+    }
+
+    const docRef = await addDoc(collection(db, COLLECTION_NAME), docData);
 
     return docRef.id;
   },
@@ -96,24 +105,62 @@ export const payrollService = {
   },
 
   /**
-   * Delete a payroll record
+   * Delete a payroll record and clean up any linked expense in shop expenses
    */
   async deleteRecord(id: string): Promise<void> {
     if (!db) throw new Error('Database not initialized');
-    await deleteDoc(doc(db, COLLECTION_NAME, id));
+    try {
+      const docRef = doc(db, COLLECTION_NAME, id);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data?.expenseId) {
+          try {
+            await expenseService.delete(data.expenseId);
+          } catch (expErr) {
+            console.error('Failed to delete linked expense record:', expErr);
+          }
+        }
+      }
+      await deleteDoc(docRef);
+    } catch (e) {
+      console.error('Error deleting payroll record:', e);
+      throw e;
+    }
   },
 
   /**
    * Save / Update a staff member's base salary and info
    */
+  /**
+   * Save / Update a staff member's base salary and info
+   */
   async saveSalaryConfig(config: StaffSalaryConfig): Promise<void> {
     if (!db) throw new Error('Database not initialized');
-    const docRef = doc(db, CONFIG_COLLECTION, config.email);
+    const normalizedEmail = (config.email || '').toLowerCase().trim();
+    const docRef = doc(db, CONFIG_COLLECTION, normalizedEmail);
     await setDoc(docRef, {
       ...config,
+      email: normalizedEmail,
       baseSalary: Number(config.baseSalary) || 0,
       updatedAt: serverTimestamp()
     }, { merge: true });
+  },
+
+  /**
+   * Delete salary configuration for a staff member
+   */
+  async deleteSalaryConfig(email: string): Promise<void> {
+    if (!db) return;
+    try {
+      const normalized = (email || '').toLowerCase().trim();
+      await deleteDoc(doc(db, CONFIG_COLLECTION, normalized));
+      if (email && email !== normalized) {
+        await deleteDoc(doc(db, CONFIG_COLLECTION, email));
+      }
+    } catch (e) {
+      console.error('Error deleting salary config:', e);
+    }
   },
 
   /**

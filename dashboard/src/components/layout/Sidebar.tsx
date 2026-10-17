@@ -147,27 +147,13 @@ export function Sidebar() {
         {(user?.role === 'Technician' ? technicianNavItems : navItemsAll).map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
-          const shouldReplace = pathname !== '/';
           
           return (
             <Link
               key={item.name}
               href={item.href}
-              replace={shouldReplace}
-              onClick={(e) => {
-                if (window.innerWidth < 768) {
-                  e.preventDefault();
-                  setSidebarOpen(false);
-                  setTimeout(() => {
-                    if (shouldReplace) {
-                      router.replace(item.href);
-                    } else {
-                      router.push(item.href);
-                    }
-                  }, 350);
-                } else {
-                  setSidebarOpen(false);
-                }
+              onClick={() => {
+                setSidebarOpen(false);
               }}
               className={cn(
                 "flex items-center gap-3 px-3 py-3.5 md:py-2.5 rounded-lg text-sm font-medium transition-all duration-200",

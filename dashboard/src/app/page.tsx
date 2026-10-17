@@ -9,6 +9,7 @@ import { RecentCustomers } from '@/components/ui/RecentCustomers';
 import { customerService, Customer, normalizePhone } from '@/lib/services/customer';
 import { transactionService, Transaction } from '@/lib/services/transaction';
 import { formatCurrency } from '@/lib/currency';
+import { getLocalDateString } from '@/lib/utils';
 import { useAppStore } from '@/store/useAppStore';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -19,7 +20,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user?.role === 'Technician') {
-      router.replace('/staff');
+      router.replace('/customers');
     }
   }, [user, router]);
 
@@ -52,7 +53,8 @@ export default function Dashboard() {
         if (timeFilter === 'Today') startDate = startOfToday;
         else if (timeFilter === 'This Week') {
           const d = new Date(startOfToday);
-          d.setDate(d.getDate() - d.getDay());
+          const diffToSat = (d.getDay() + 1) % 7;
+          d.setDate(d.getDate() - diffToSat);
           startDate = d;
         }
         else if (timeFilter === 'This Month') startDate = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -67,7 +69,7 @@ export default function Dashboard() {
 
         let qExpenses = collection(db, 'expenses') as any;
         if (startDate) {
-          const startDateStr = startDate.toISOString().split('T')[0];
+          const startDateStr = getLocalDateString(startDate);
           qExpenses = query(qExpenses, where('date', '>=', startDateStr));
         }
 

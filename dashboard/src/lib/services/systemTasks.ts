@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { notificationService } from './notification';
+import { getLocalDateString } from '../utils';
 
 let isRunning = false;
 
@@ -15,7 +16,7 @@ export const systemTasksService = {
       const data = snap.exists() ? snap.data() : { lastOverdueCheck: 0 };
       
       const now = new Date();
-      const todayStr = now.toISOString().split('T')[0]; // "2026-10-06"
+      const todayStr = getLocalDateString(now);
       
       // If already checked today, skip
       if (data.lastOverdueCheck === todayStr) return;
@@ -33,9 +34,10 @@ export const systemTasksService = {
       duesSnap.forEach(doc => {
         const c = doc.data();
         if (c.dueDate) {
-          const dueMs = new Date(c.dueDate).getTime();
-          // If due date has passed
-          if (nowMs > dueMs) {
+          const dueObj = new Date(c.dueDate);
+          dueObj.setHours(23, 59, 59, 999);
+          // If due date has completely passed
+          if (nowMs > dueObj.getTime()) {
             overdueCustomers.push({name: c.name, due: c.due});
           }
         }

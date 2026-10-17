@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Customer } from '@/lib/services/customer';
-import { formatCurrency } from '@/lib/currency';
+import { formatEnglishCurrency } from '@/lib/currency';
 import { useAppStore } from '@/store/useAppStore';
 import { Printer, X, Tv, Phone, MapPin } from 'lucide-react';
 import { useRef } from 'react';
@@ -130,7 +130,7 @@ export function InvoiceModal({ isOpen, onClose, customer }: InvoiceModalProps) {
                     <span className="text-xs text-gray-500">Total charge for repair of {customer.deviceBrand || ''} {customer.deviceType || 'Device'}</span>
                   </td>
                   <td className="px-6 py-4 text-right font-medium text-gray-800">
-                    {formatCurrency(customer.totalBill)}
+                    {formatEnglishCurrency(customer.totalBill)}
                   </td>
                 </tr>
                 {Boolean(customer.discount && customer.discount > 0) && (
@@ -139,7 +139,7 @@ export function InvoiceModal({ isOpen, onClose, customer }: InvoiceModalProps) {
                       <span className="font-medium text-emerald-700">Special Discount</span>
                     </td>
                     <td className="px-6 py-4 text-right font-medium text-emerald-700">
-                      - {formatCurrency(customer.discount || 0)}
+                      - {formatEnglishCurrency(customer.discount || 0)}
                     </td>
                   </tr>
                 )}
@@ -148,7 +148,7 @@ export function InvoiceModal({ isOpen, onClose, customer }: InvoiceModalProps) {
                     <span className="font-medium text-gray-800">Advance Paid</span>
                   </td>
                   <td className="px-6 py-4 text-right text-gray-600">
-                    - {formatCurrency(customer.advance || 0)}
+                    - {formatEnglishCurrency(customer.advance || 0)}
                   </td>
                 </tr>
               </tbody>
@@ -156,7 +156,7 @@ export function InvoiceModal({ isOpen, onClose, customer }: InvoiceModalProps) {
                 <tr>
                   <td className="px-6 py-4 font-bold text-gray-800 text-right uppercase tracking-wider text-xs">Total Due</td>
                   <td className="px-6 py-4 text-right font-black text-red-600 text-lg">
-                    {formatCurrency(customer.due)}
+                    {formatEnglishCurrency(customer.due)}
                   </td>
                 </tr>
               </tfoot>

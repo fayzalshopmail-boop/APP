@@ -340,38 +340,45 @@ export default function CustomersPage() {
     await performStatusUpdate(id, newStatus, c);
   };
 
-  const performStatusUpdate = async (id: string, newStatus: CustomerStatus, c: Customer) => {
+  const performStatusUpdate = async (id: string, newStatus: CustomerStatus, customerPayload?: Customer) => {
     try {
+      const baseCustomer = customerPayload || customers.find(x => x.id === id);
+      if (!baseCustomer) return;
+
       const now = new Date();
       const statusUpdates: Partial<Customer> = { 
         status: newStatus,
-        servicedBy: user?.email || c.servicedBy || 'Unknown',
-        servicedByName: user?.name || c.servicedByName || user?.email || 'Staff',
+        servicedBy: user?.email || baseCustomer.servicedBy || 'Unknown',
+        servicedByName: user?.name || baseCustomer.servicedByName || user?.email || 'Staff',
         ...(newStatus === 'Delivered' ? { deliveredAt: now } : {}),
         ...(newStatus === 'Ready for Delivery' ? { completedAt: now } : {})
       };
       await customerService.update(id, statusUpdates);
-      setCustomers(customers.map(item => item.id === id ? { ...item, ...statusUpdates } : item));
+      const mergedCustomer: Customer = { ...baseCustomer, ...statusUpdates };
+      setCustomers(prev => prev.map(item => item.id === id ? { ...item, ...mergedCustomer } : item));
+      
+      if (profileSidebarCustomer?.id === id) {
+        setProfileSidebarCustomer(mergedCustomer);
+      }
       
       // Send SMS if Ready, Delivered, or Returned
       if (newStatus === 'Ready for Delivery' || newStatus === 'Delivered' || newStatus === 'Returned (Unrepaired)') {
-        const c = customers.find(x => x.id === id);
-        if (c && c.phone) {
+        if (mergedCustomer.phone) {
           const smsSettings = await smsConfigService.getSettings();
           if (smsSettings.enabled && smsSettings.apiKey && smsSettings.senderId) {
             const template = newStatus === 'Ready for Delivery' ? smsSettings.readyTemplate : newStatus === 'Delivered' ? smsSettings.deliveredTemplate : smsSettings.returnedTemplate;
             if (template) {
               const msg = template
-                .replace(/{name}/g, c.name || '')
-                .replace(/{phone}/g, c.phone || '')
-                .replace(/{brand}/g, c.deviceBrand || '')
-                .replace(/{type}/g, c.deviceType || '')
-                .replace(/{problem}/g, c.deviceProblem || '')
-                .replace(/{total}/g, `${c.totalBill || 0}`)
-                .replace(/{advance}/g, `${c.advance || 0}`)
-                .replace(/{due}/g, `${c.due || 0}`);
+                .replace(/{name}/g, mergedCustomer.name || '')
+                .replace(/{phone}/g, mergedCustomer.phone || '')
+                .replace(/{brand}/g, mergedCustomer.deviceBrand || '')
+                .replace(/{type}/g, mergedCustomer.deviceType || '')
+                .replace(/{problem}/g, mergedCustomer.deviceProblem || '')
+                .replace(/{total}/g, `${mergedCustomer.totalBill || 0}`)
+                .replace(/{advance}/g, `${mergedCustomer.advance || 0}`)
+                .replace(/{due}/g, `${mergedCustomer.due || 0}`);
                 
-              sendSMS(c.phone, msg, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
+              sendSMS(mergedCustomer.phone, msg, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
             }
           }
         }
@@ -430,6 +437,7 @@ export default function CustomersPage() {
         advance: newAdvance,
         due: newDue,
         discount,
+        isBillPending: finalBill <= 0,
         ...loyaltyUpdates,
         ...(dueDate && { dueDate })
       };
@@ -504,9 +512,12 @@ export default function CustomersPage() {
 
   const executeDelete = async (id: string) => {
     try {
-      await customerService.delete(id);
+      await shopTransactionService.deleteCustomerSafely(id);
       setCustomers(customers.filter(c => c.id !== id));
-      toast.success("কাস্টমার সফলভাবে মুছে ফেলা হয়েছে");
+      if (profileSidebarCustomer?.id === id) {
+        setProfileSidebarCustomer(null);
+      }
+      toast.success("কাস্টমার সফলভাবে মুছে ফেলা হয়েছে (প্রযোজ্য পার্টস রিস্টক করা হয়েছে)");
     } catch (error) { 
       console.error("Firebase error", error); 
       toast.error("কাস্টমার মুছতে সমস্যা হয়েছে। ইন্টারনেট সংযোগ চেক করুন।"); 

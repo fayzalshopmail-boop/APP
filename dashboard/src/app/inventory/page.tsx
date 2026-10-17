@@ -17,6 +17,7 @@ import { CustomSelect } from "@/components/ui/CustomSelect";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { MobileDataCard } from '@/components/ui/MobileDataCard';
+import { DirectSaleReceiptModal, DirectSaleReceiptData } from "@/components/ui/DirectSaleReceiptModal";
 import toast from "react-hot-toast";
 
 const formatNumber = (num: number) => num.toLocaleString('en-IN');
@@ -32,10 +33,11 @@ export default function InventoryPage() {
   const itemsPerPage = 10;
   
   const [invSettings, setInvSettings] = useState<InventorySettings>({ categories: [], productNames: {} });
-    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
   const [isSellModalOpen, setIsSellModalOpen] = useState(false);
+  const [receiptData, setReceiptData] = useState<DirectSaleReceiptData | null>(null);
 
   // Handle URL search parameter or notification click immediately without reload
   useEffect(() => {
@@ -278,7 +280,15 @@ export default function InventoryPage() {
 
       // 3. Update UI
       setItems(items.map(item => item.id === sellItem.id ? { ...item, stock: newStock } : item));
+      const completedReceipt: DirectSaleReceiptData = {
+        itemName: sellItem.name,
+        quantity: sellData.quantity,
+        price: sellData.price,
+        total: sellData.quantity * sellData.price,
+        customerName: sellData.customerName || 'Walk-in Customer',
+      };
       closeSellModal();
+      setReceiptData(completedReceipt);
       toast.success('Direct sell successful!');
     } catch (error: any) {
       console.error("Error direct selling", error);
@@ -1116,6 +1126,12 @@ export default function InventoryPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <DirectSaleReceiptModal
+        isOpen={!!receiptData}
+        onClose={() => setReceiptData(null)}
+        receiptData={receiptData}
+      />
     </div>
   );
 }

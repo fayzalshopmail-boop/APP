@@ -6,3 +6,11 @@ export const formatCurrency = (amount: number) => {
     maximumFractionDigits: 2,
   }).format(amount);
 };
+
+export const formatEnglishCurrency = (amount: number): string => {
+  const formatted = new Intl.NumberFormat('en-IN', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(amount);
+  return `৳ ${formatted}`;
+};

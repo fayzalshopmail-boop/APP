@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { getLocalDateString } from '@/lib/utils';
 import toast from "react-hot-toast";
 
 type FilterType = 'all' | 'pending' | 'paid' | 'given' | 'taken';
@@ -47,7 +48,7 @@ export default function LoansPage() {
     status: 'Pending' as 'Pending' | 'Paid',
     notes: '',
     nextPaymentDate: '',
-    date: new Date().toISOString().split('T')[0]
+    date: getLocalDateString()
   });
 
   // Popstate Modal Management
@@ -124,7 +125,7 @@ export default function LoansPage() {
         status: loan.status || 'Pending',
         notes: loan.notes || '',
         nextPaymentDate: loan.nextPaymentDate || '',
-        date: loan.date || new Date().toISOString().split('T')[0]
+        date: loan.date || getLocalDateString()
       });
     } else {
       setEditingLoan(null);
@@ -137,7 +138,7 @@ export default function LoansPage() {
         status: 'Pending',
         notes: '',
         nextPaymentDate: '',
-        date: new Date().toISOString().split('T')[0]
+        date: getLocalDateString()
       });
     }
     setIsModalOpen(true);

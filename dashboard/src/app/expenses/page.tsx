@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { motion } from 'framer-motion';
-import { Wallet, Plus, Trash2, Calendar, Coffee, Plug, Car, UserCircle, ShoppingBag, Search, Filter } from 'lucide-react';
+import { Wallet, Plus, Trash2, Calendar, Coffee, Plug, Car, UserCircle, ShoppingBag, Search, Filter, Edit2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,6 +13,7 @@ import { expenseService, Expense } from '@/lib/services/expense';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { FilterChipBar } from '@/components/ui/FilterChipBar';
 import { MobileDataCard } from '@/components/ui/MobileDataCard';
+import { getLocalDateString } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
 const EXPENSE_CATEGORIES = [
@@ -33,11 +34,12 @@ export default function ExpensesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     category: 'Tea & Snacks',
     amount: '',
-    date: new Date().toISOString().split('T')[0]
+    date: getLocalDateString()
   });
 
   useEffect(() => {
@@ -46,11 +48,28 @@ export default function ExpensesPage() {
 
   useEffect(() => {
     const handleOpenAdd = () => {
-      setIsModalOpen(true);
+      handleOpenAddModal();
     };
     window.addEventListener('app:add-expense', handleOpenAdd);
     return () => window.removeEventListener('app:add-expense', handleOpenAdd);
   }, []);
+
+  const handleOpenAddModal = () => {
+    setEditingExpenseId(null);
+    setFormData({ title: '', category: 'Tea & Snacks', amount: '', date: getLocalDateString() });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (expense: Expense) => {
+    setEditingExpenseId(expense.id);
+    setFormData({
+      title: expense.title,
+      category: expense.category,
+      amount: expense.amount.toString(),
+      date: expense.date
+    });
+    setIsModalOpen(true);
+  };
 
   const fetchExpenses = async () => {
     try {
@@ -67,20 +86,35 @@ export default function ExpensesPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const newExpense = {
-        title: formData.title,
-        category: formData.category,
-        amount: Number(formData.amount),
-        date: formData.date
-      };
-      const id = await expenseService.add(newExpense);
-      setExpenses([{ id, ...newExpense }, ...expenses]);
-      setIsModalOpen(false);
-      setFormData({ title: '', category: 'Tea & Snacks', amount: '', date: new Date().toISOString().split('T')[0] });
-      toast.success('খরচ সফলভাবে যোগ করা হয়েছে');
+      if (editingExpenseId) {
+        const updateData = {
+          title: formData.title,
+          category: formData.category,
+          amount: Number(formData.amount),
+          date: formData.date
+        };
+        await expenseService.update(editingExpenseId, updateData);
+        setExpenses(expenses.map(e => e.id === editingExpenseId ? { ...e, ...updateData } : e));
+        setIsModalOpen(false);
+        setEditingExpenseId(null);
+        setFormData({ title: '', category: 'Tea & Snacks', amount: '', date: getLocalDateString() });
+        toast.success('খরচ সফলভাবে আপডেট করা হয়েছে');
+      } else {
+        const newExpense = {
+          title: formData.title,
+          category: formData.category,
+          amount: Number(formData.amount),
+          date: formData.date
+        };
+        const id = await expenseService.add(newExpense);
+        setExpenses([{ id, ...newExpense }, ...expenses]);
+        setIsModalOpen(false);
+        setFormData({ title: '', category: 'Tea & Snacks', amount: '', date: getLocalDateString() });
+        toast.success('খরচ সফলভাবে যোগ করা হয়েছে');
+      }
     } catch (err) {
-      console.error("Failed to add expense", err);
-      toast.error('খরচ যোগ করতে সমস্যা হয়েছে');
+      console.error("Failed to save expense", err);
+      toast.error('খরচ সংরক্ষণ করতে সমস্যা হয়েছে');
     }
   };
 
@@ -103,8 +137,8 @@ export default function ExpensesPage() {
   };
 
   // Calculations
-  const todayStr = new Date().toISOString().split('T')[0];
-  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const todayStr = getLocalDateString();
+  const currentMonth = todayStr.slice(0, 7); // YYYY-MM
 
   const thisMonthExpenses = expenses
     .filter(e => e.date.startsWith(currentMonth))
@@ -179,7 +213,7 @@ export default function ExpensesPage() {
           <p className="text-sm text-gray-400 mt-1">দৈনন্দিন খরচ ও নিয়মিত ব্যয় ট্র্যাকিং</p>
         </div>
         <Button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleOpenAddModal}
           className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 shrink-0"
         >
           <Plus className="w-4 h-4" />
@@ -317,14 +351,26 @@ export default function ExpensesPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <Button 
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteRequest(expense.id)}
-                            className="text-red-500 hover:text-red-400 hover:bg-red-500/10"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button 
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleOpenEditModal(expense)}
+                              className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                              title="এডিট করুন"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteRequest(expense.id)}
+                              className="text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                              title="মুছে ফেলুন"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </td>
                       </motion.tr>
                     );
@@ -360,10 +406,18 @@ export default function ExpensesPage() {
                     <Button 
                       size="sm" 
                       variant="outline"
+                      onClick={() => handleOpenEditModal(expense)} 
+                      className="flex-1 border-blue-500/20 text-blue-400 hover:bg-blue-500/10 text-xs h-8"
+                    >
+                      <Edit2 className="w-3.5 h-3.5 mr-1" /> এডিট
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
                       onClick={() => handleDeleteRequest(expense.id)} 
                       className="flex-1 border-red-500/20 text-red-400 hover:bg-red-500/10 text-xs h-8"
                     >
-                      <Trash2 className="w-3.5 h-3.5 mr-1" /> মুছে ফেলুন (Delete)
+                      <Trash2 className="w-3.5 h-3.5 mr-1" /> মুছে ফেলুন
                     </Button>
                   </MobileDataCard.Actions>
                 </MobileDataCard>
@@ -382,11 +436,13 @@ export default function ExpensesPage() {
         </>
       )}
 
-      {/* Add Expense Dialog */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      {/* Add / Edit Expense Dialog */}
+      <Dialog open={isModalOpen} onOpenChange={(open) => { setIsModalOpen(open); if (!open) setEditingExpenseId(null); }}>
         <DialogContent className="sm:max-w-md bg-popover border-border">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-white">Add Expense</DialogTitle>
+            <DialogTitle className="text-xl font-semibold text-white">
+              {editingExpenseId ? 'খরচ এডিট করুন (Edit Expense)' : 'নতুন খরচ যোগ করুন (Add Expense)'}
+            </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSave} className="space-y-4 mt-4">
             <div>
@@ -442,11 +498,11 @@ export default function ExpensesPage() {
             </div>
 
             <div className="pt-4 flex justify-end gap-3">
-              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => { setIsModalOpen(false); setEditingExpenseId(null); }}>
                 Cancel
               </Button>
               <Button type="submit" className="bg-primary hover:bg-primary/90 text-white">
-                Save Expense
+                {editingExpenseId ? 'আপডেট করুন (Update)' : 'খরচ সংরক্ষণ (Save Expense)'}
               </Button>
             </div>
           </form>

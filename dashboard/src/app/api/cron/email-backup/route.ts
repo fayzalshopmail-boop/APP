@@ -6,12 +6,13 @@ export async function POST(req: NextRequest) {
     const authHeader = req.headers.get('authorization');
     const expectedSecret = process.env.CRON_SECRET || 'backup_secret_shop_2026_antigravity';
     
-    // Validate authorization if secret is configured
-    if (expectedSecret && authHeader) {
-      const token = authHeader.replace(/^Bearer\s+/i, '');
-      if (token !== expectedSecret) {
-        return NextResponse.json({ error: 'Unauthorized backup request' }, { status: 401 });
-      }
+    // Validate authorization (mandatory)
+    if (!authHeader) {
+      return NextResponse.json({ error: 'Missing authorization header' }, { status: 401 });
+    }
+    const token = authHeader.replace(/^Bearer\s+/i, '');
+    if (token !== expectedSecret) {
+      return NextResponse.json({ error: 'Unauthorized backup request' }, { status: 401 });
     }
 
     const body = await req.json().catch(() => ({}));

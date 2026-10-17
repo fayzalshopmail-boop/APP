@@ -21,7 +21,8 @@ export const backupService = {
       mechanics,
       loans,
       attendance,
-      payroll
+      payroll,
+      settingsDocs
     ] = await Promise.all([
       customerService.getAll(),
       inventoryService.getAll(),
@@ -31,7 +32,8 @@ export const backupService = {
       mechanicService.getAll(),
       loanService.getAll(),
       getDocs(collection(db, 'attendance')).then(s => s.docs.map(d => ({ id: d.id, ...d.data() }))).catch(() => []),
-      getDocs(collection(db, 'payroll')).then(s => s.docs.map(d => ({ id: d.id, ...d.data() }))).catch(() => [])
+      getDocs(collection(db, 'payroll')).then(s => s.docs.map(d => ({ id: d.id, ...d.data() }))).catch(() => []),
+      getDocs(collection(db, 'settings')).then(s => s.docs.map(d => ({ id: d.id, ...d.data() }))).catch(() => [])
     ]);
 
     const data = {
@@ -44,6 +46,7 @@ export const backupService = {
       loans,
       attendance,
       payroll,
+      settings: settingsDocs,
       exportDate: new Date().toISOString()
     };
 
@@ -60,7 +63,10 @@ export const backupService = {
       expenses,
       suppliers,
       mechanics,
-      loans
+      loans,
+      attendance,
+      payroll,
+      settingsDocs
     ] = await Promise.all([
       customerService.getAll(),
       inventoryService.getAll(),
@@ -68,7 +74,10 @@ export const backupService = {
       expenseService.getAll(),
       supplierService.getAll(),
       mechanicService.getAll(),
-      loanService.getAll()
+      loanService.getAll(),
+      getDocs(collection(db, 'attendance')).then(s => s.docs.map(d => ({ id: d.id, ...d.data() }))).catch(() => []),
+      getDocs(collection(db, 'payroll')).then(s => s.docs.map(d => ({ id: d.id, ...d.data() }))).catch(() => []),
+      getDocs(collection(db, 'settings')).then(s => s.docs.map(d => ({ id: d.id, ...d.data() }))).catch(() => [])
     ]);
 
     const data = {
@@ -79,6 +88,9 @@ export const backupService = {
       suppliers,
       mechanics,
       loans,
+      attendance,
+      payroll,
+      settings: settingsDocs,
       exportDate: new Date().toISOString()
     };
 
@@ -132,6 +144,7 @@ export const backupService = {
       { name: 'loans', items: data.loans },
       { name: 'attendance', items: data.attendance },
       { name: 'payroll', items: data.payroll },
+      { name: 'settings', items: data.settings },
     ];
 
     let currentBatch = writeBatch(db);

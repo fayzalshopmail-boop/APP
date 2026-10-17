@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, UserCheck, Clock, CreditCard, Award, 
@@ -69,8 +69,59 @@ export function StaffManagementSection({
   const isManagerOrOwner = currentUser?.role === 'Owner' || currentUser?.role === 'Manager';
 
   // Sub Tab Navigation
-  const [internalSubTab, setInternalSubTab] = useState<'attendance' | 'payroll' | 'performance' | 'accounts'>('attendance');
-  const subTab = activeSubTab || internalSubTab;
+  const [internalSubTab, setInternalSubTab] = useState<'attendance' | 'payroll' | 'performance' | 'accounts'>(activeSubTab || 'attendance');
+
+  useEffect(() => {
+    if (activeSubTab) {
+      setInternalSubTab(activeSubTab);
+    }
+  }, [activeSubTab]);
+
+  const subTab = internalSubTab;
+
+  // Unified Design System Helpers
+  const getRoleBadgeClass = (role: string) => {
+    switch (role) {
+      case 'Owner':
+        return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+      case 'Manager':
+        return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+      case 'Technician':
+        return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
+      default:
+        return 'bg-gray-800 text-gray-300 border-gray-700';
+    }
+  };
+
+  const getAttendanceStatusBadge = (status: AttendanceStatus) => {
+    switch (status) {
+      case 'Present':
+        return { label: 'উপস্থিত', className: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' };
+      case 'Late':
+        return { label: 'দেরিতে', className: 'bg-amber-500/10 text-amber-400 border-amber-500/20' };
+      case 'Half Day':
+        return { label: 'হাফ ডে', className: 'bg-blue-500/10 text-blue-400 border-blue-500/20' };
+      case 'Leave':
+        return { label: 'ছুটিতে', className: 'bg-purple-500/10 text-purple-400 border-purple-500/20' };
+      case 'Absent':
+      default:
+        return { label: 'অনুপস্থিত', className: 'bg-rose-500/10 text-rose-400 border-rose-500/20' };
+    }
+  };
+
+  const getPayrollTypeBadge = (type: PayrollType) => {
+    switch (type) {
+      case 'Salary Payment':
+        return { label: 'মাসিক বেতন', className: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' };
+      case 'Advance Salary':
+        return { label: 'অগ্রিম বেতন', className: 'bg-amber-500/10 text-amber-400 border-amber-500/20' };
+      case 'Bonus':
+        return { label: 'বোনাস', className: 'bg-purple-500/10 text-purple-400 border-purple-500/20' };
+      case 'Deduction':
+      default:
+        return { label: 'কর্তন', className: 'bg-rose-500/10 text-rose-400 border-rose-500/20' };
+    }
+  };
 
   // 1. ATTENDANCE STATE
   const [selectedDate, setSelectedDate] = useState<string>(getLocalDateStr());
@@ -122,6 +173,21 @@ export function StaffManagementSection({
     phone: '',
     notes: ''
   });
+
+  // Form submission loading states (prevent double-submit)
+  const [submittingAttendance, setSubmittingAttendance] = useState(false);
+  const [submittingPayment, setSubmittingPayment] = useState(false);
+  const [submittingSalaryConfig, setSubmittingSalaryConfig] = useState(false);
+
+  // Formatted staff dropdown options (Active staff on top, Inactive clearly marked)
+  const staffSelectOptions = useMemo(() => {
+    return [...staffList]
+      .sort((a, b) => (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0))
+      .map(s => ({
+        label: `${s.name} (${s.role})${!s.isActive ? ' — [নিষ্ক্রিয়/Blocked]' : ''}`,
+        value: s.email
+      }));
+  }, [staffList]);
 
   // 3. PERFORMANCE STATE
   const [performanceFilter, setPerformanceFilter] = useState<'today' | 'week' | 'month' | 'all'>('today');
@@ -190,17 +256,31 @@ export function StaffManagementSection({
     }
   }, []);
 
-  // Effect on sub-tab switch
+  // Initial load for security settings
   useEffect(() => {
     loadSecuritySettings();
+  }, [loadSecuritySettings]);
+
+  // Load Attendance when on attendance sub-tab or date changes
+  useEffect(() => {
     if (subTab === 'attendance') {
       loadAttendance(selectedDate);
-    } else if (subTab === 'payroll') {
+    }
+  }, [subTab, selectedDate, loadAttendance]);
+
+  // Load Payroll when on payroll sub-tab or month changes
+  useEffect(() => {
+    if (subTab === 'payroll') {
       loadPayroll(selectedMonth);
-    } else if (subTab === 'performance') {
+    }
+  }, [subTab, selectedMonth, loadPayroll]);
+
+  // Load Performance when on performance sub-tab or filter changes
+  useEffect(() => {
+    if (subTab === 'performance') {
       loadPerformance(performanceFilter);
     }
-  }, [subTab, selectedDate, selectedMonth, performanceFilter, loadAttendance, loadPayroll, loadPerformance, loadSecuritySettings]);
+  }, [subTab, performanceFilter, loadPerformance]);
 
   // Attendance Actions
   const myTodayAttendance = attendanceRecords.find(r => r.userId === currentUser?.email);
@@ -280,21 +360,34 @@ export function StaffManagementSection({
 
   const handleSaveManualAttendance = async (e: React.FormEvent) => {
     e.preventDefault();
-    const targetStaff = staffList.find(s => s.email === manualAttendanceData.userId);
-    if (!targetStaff) {
+    if (submittingAttendance) return;
+
+    if (!manualAttendanceData.userId) {
       toast.error('অনুগ্রহ করে কর্মী নির্বাচন করুন');
       return;
     }
+    if (!manualAttendanceData.date) {
+      toast.error('তারিখ নির্বাচন করুন');
+      return;
+    }
+
+    const targetStaff = staffList.find(s => s.email.toLowerCase() === manualAttendanceData.userId.toLowerCase());
+    if (!targetStaff) {
+      toast.error('নির্বাচিত কর্মী খুঁজে পাওয়া যায়নি');
+      return;
+    }
+
     try {
+      setSubmittingAttendance(true);
       await attendanceService.saveManualAttendance({
         userId: targetStaff.email,
         userName: targetStaff.name,
         userRole: targetStaff.role,
         date: manualAttendanceData.date,
-        checkInTime: manualAttendanceData.checkInTime,
-        checkOutTime: manualAttendanceData.checkOutTime,
+        checkInTime: manualAttendanceData.checkInTime || '',
+        checkOutTime: manualAttendanceData.checkOutTime || '',
         status: manualAttendanceData.status,
-        note: manualAttendanceData.note
+        note: manualAttendanceData.note?.trim() || ''
       });
       toast.success('উপস্থিতি রেকর্ড সফলভাবে সংরক্ষিত হয়েছে');
       setIsManualAttendanceOpen(false);
@@ -302,29 +395,49 @@ export function StaffManagementSection({
     } catch (e: any) {
       console.error(e);
       toast.error(e.message || 'রেকর্ড সংরক্ষণ ব্যর্থ হয়েছে');
+    } finally {
+      setSubmittingAttendance(false);
     }
   };
 
   // Payroll Actions
   const handleSavePayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!paymentFormData.staffEmail || !paymentFormData.amount || Number(paymentFormData.amount) <= 0) {
-      toast.error('সঠিক কর্মী ও টাকার পরিমাণ প্রদান করুন');
+    if (submittingPayment) return;
+
+    if (!paymentFormData.staffEmail) {
+      toast.error('অনুগ্রহ করে কর্মী নির্বাচন করুন');
       return;
     }
-    const targetStaff = staffList.find(s => s.email === paymentFormData.staffEmail);
-    if (!targetStaff) return;
+
+    const amt = Number(paymentFormData.amount);
+    if (!paymentFormData.amount || isNaN(amt) || amt <= 0) {
+      toast.error('টাকার পরিমাণ অবশ্যই ০ এর বেশি হতে হবে');
+      return;
+    }
+
+    if (!paymentFormData.date) {
+      toast.error('তারিখ নির্বাচন করুন');
+      return;
+    }
+
+    const targetStaff = staffList.find(s => s.email.toLowerCase() === paymentFormData.staffEmail.toLowerCase());
+    if (!targetStaff) {
+      toast.error('নির্বাচিত কর্মী খুঁজে পাওয়া যায়নি');
+      return;
+    }
 
     try {
+      setSubmittingPayment(true);
       await payrollService.addPayment({
         staffEmail: targetStaff.email,
         staffName: targetStaff.name,
         month: selectedMonth,
         type: paymentFormData.type,
-        amount: Number(paymentFormData.amount),
+        amount: amt,
         paymentMethod: paymentFormData.paymentMethod,
         date: paymentFormData.date,
-        note: paymentFormData.note,
+        note: paymentFormData.note?.trim() || '',
         paidBy: currentUser?.name || currentUser?.email || 'Admin'
       }, paymentFormData.syncToExpenses);
 
@@ -343,21 +456,33 @@ export function StaffManagementSection({
     } catch (e: any) {
       console.error(e);
       toast.error(e.message || 'পেমেন্ট সংরক্ষণ করা যায়নি');
+    } finally {
+      setSubmittingPayment(false);
     }
   };
 
   const handleSaveSalaryConfig = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingSalaryConfig) return;
+
     if (!salaryConfigFormData.email) {
       toast.error('কর্মী নির্বাচন করুন');
       return;
     }
+
+    const baseSal = Number(salaryConfigFormData.baseSalary);
+    if (salaryConfigFormData.baseSalary !== '' && (isNaN(baseSal) || baseSal < 0)) {
+      toast.error('মূল বেতন ০ বা তার বেশি হতে হবে');
+      return;
+    }
+
     try {
+      setSubmittingSalaryConfig(true);
       await payrollService.saveSalaryConfig({
         email: salaryConfigFormData.email,
-        baseSalary: Number(salaryConfigFormData.baseSalary) || 0,
-        phone: salaryConfigFormData.phone,
-        notes: salaryConfigFormData.notes
+        baseSalary: isNaN(baseSal) ? 0 : baseSal,
+        phone: salaryConfigFormData.phone?.trim() || '',
+        notes: salaryConfigFormData.notes?.trim() || ''
       });
       toast.success('মূল বেতন সফলভাবে আপডেট করা হয়েছে');
       setIsSalaryConfigModalOpen(false);
@@ -365,6 +490,8 @@ export function StaffManagementSection({
     } catch (e: any) {
       console.error(e);
       toast.error(e.message || 'বেতন আপডেট ব্যর্থ হয়েছে');
+    } finally {
+      setSubmittingSalaryConfig(false);
     }
   };
 
@@ -677,115 +804,199 @@ export function StaffManagementSection({
                 <p className="text-xs text-gray-500 mt-1">এই তারিখে কোনো কর্মী এখনও চেক-ইন করেননি।</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-[#121524] text-gray-400 text-xs uppercase tracking-wider border-b border-gray-800">
-                    <tr>
-                      <th className="px-5 py-3.5">কর্মী</th>
-                      <th className="px-5 py-3.5">রোল</th>
-                      <th className="px-5 py-3.5">প্রবেশ (Check-In)</th>
-                      <th className="px-5 py-3.5">প্রস্থান (Check-Out)</th>
-                      <th className="px-5 py-3.5">মোট কর্মঘণ্টা</th>
-                      <th className="px-5 py-3.5">ভেরিফিকেশন</th>
-                      <th className="px-5 py-3.5">স্ট্যাটাস</th>
-                      {isManagerOrOwner && <th className="px-5 py-3.5 text-right">অ্যাকশন</th>}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-800/60 text-gray-200">
-                    {attendanceRecords.map((rec) => (
-                      <tr key={rec.id} className="hover:bg-secondary/40 transition-colors">
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">
-                              {rec.userName.charAt(0)}
+              <>
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-[#121524] text-gray-400 text-xs uppercase tracking-wider border-b border-gray-800">
+                      <tr>
+                        <th className="px-5 py-3.5">কর্মী</th>
+                        <th className="px-5 py-3.5">রোল</th>
+                        <th className="px-5 py-3.5">প্রবেশ (Check-In)</th>
+                        <th className="px-5 py-3.5">প্রস্থান (Check-Out)</th>
+                        <th className="px-5 py-3.5">মোট কর্মঘণ্টা</th>
+                        <th className="px-5 py-3.5">ভেরিফিকেশন</th>
+                        <th className="px-5 py-3.5">স্ট্যাটাস</th>
+                        {isManagerOrOwner && <th className="px-5 py-3.5 text-right">অ্যাকশন</th>}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-800/60 text-gray-200">
+                      {attendanceRecords.map((rec) => (
+                        <tr key={rec.id} className="hover:bg-secondary/40 transition-colors">
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">
+                                {rec.userName.charAt(0)}
+                              </div>
+                              <div>
+                                <p className="font-semibold text-white text-sm">{rec.userName}</p>
+                                <p className="text-xs text-gray-500">{rec.userId}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-semibold text-white text-sm">{rec.userName}</p>
-                              <p className="text-xs text-gray-500">{rec.userId}</p>
-                            </div>
+                          </td>
+                          <td className="px-5 py-4">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border ${getRoleBadgeClass(rec.userRole)}`}>
+                              {rec.userRole}
+                            </span>
+                          </td>
+                          <td className="px-5 py-4 text-emerald-400 font-medium font-mono text-xs">
+                            {rec.checkInTime}
+                          </td>
+                          <td className="px-5 py-4 text-purple-400 font-medium font-mono text-xs">
+                            {rec.checkOutTime || <span className="text-gray-500 italic">এখনও চেক-আউট হয়নি</span>}
+                          </td>
+                          <td className="px-5 py-4 text-gray-300 font-medium text-xs">
+                            {rec.workingHours || '-'}
+                          </td>
+                          <td className="px-5 py-4">
+                            {rec.verifiedBy === 'GPS + Wi-Fi' ? (
+                              <span 
+                                className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                title={`GPS দূরত্ব: ${rec.distanceMeters ?? 0}m, IP: ${rec.clientIp || 'Verified'}`}
+                              >
+                                <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                                GPS + Wi-Fi {rec.distanceMeters !== undefined ? `(${rec.distanceMeters}m)` : ''}
+                              </span>
+                            ) : rec.verifiedBy === 'GPS' ? (
+                              <span 
+                                className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                                title={`GPS দূরত্ব: ${rec.distanceMeters ?? 0}m`}
+                              >
+                                <MapPin className="w-3 h-3 text-blue-400" />
+                                GPS {rec.distanceMeters !== undefined ? `(${rec.distanceMeters}m)` : ''}
+                              </span>
+                            ) : rec.verifiedBy === 'Wi-Fi' ? (
+                              <span 
+                                className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
+                                title={`IP: ${rec.clientIp || 'Verified'}`}
+                              >
+                                <Wifi className="w-3 h-3 text-indigo-400" />
+                                Wi-Fi
+                              </span>
+                            ) : rec.verifiedBy === 'Manual / Owner' ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                                <Shield className="w-3 h-3 text-purple-400" />
+                                ম্যানুয়াল
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-gray-500">স্ট্যান্ডার্ড</span>
+                            )}
+                          </td>
+                          <td className="px-5 py-4">
+                            {(() => {
+                              const badge = getAttendanceStatusBadge(rec.status);
+                              return (
+                                <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${badge.className}`}>
+                                  {badge.label}
+                                </span>
+                              );
+                            })()}
+                          </td>
+                          {isManagerOrOwner && (
+                            <td className="px-5 py-4 text-right">
+                              <button
+                                onClick={() => setConfirmDeleteModal({
+                                  isOpen: true,
+                                  type: 'attendance',
+                                  id: rec.id || null,
+                                  title: 'উপস্থিতি রেকর্ড মুছে ফেলবেন?',
+                                  message: `আপনি কি নিশ্চিতভাবে ${rec.userName}-এর এই রেকর্ডটি মুছে ফেলতে চান?`
+                                })}
+                                className="text-gray-500 hover:text-red-400 p-1.5 rounded-lg transition-colors"
+                                title="Delete Record"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden p-3 space-y-3">
+                  {attendanceRecords.map((rec) => (
+                    <div key={rec.id} className="bg-[#1b1f30]/60 border border-gray-800 rounded-xl p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-9 h-9 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">
+                            {rec.userName.charAt(0)}
                           </div>
-                        </td>
-                        <td className="px-5 py-4">
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider bg-gray-800 text-gray-300 border border-gray-700">
-                            {rec.userRole}
+                          <div>
+                            <div className="text-gray-200 font-semibold text-sm">{rec.userName}</div>
+                            <div className="text-[11px] text-gray-500">{rec.userId}</div>
+                          </div>
+                        </div>
+                        {(() => {
+                          const badge = getAttendanceStatusBadge(rec.status);
+                          return (
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${badge.className}`}>
+                              {badge.label}
+                            </span>
+                          );
+                        })()}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 bg-[#121524] p-3 rounded-xl border border-gray-800/80 text-xs">
+                        <div>
+                          <span className="text-[10px] text-gray-400 block font-medium">প্রবেশ সময়</span>
+                          <span className="font-mono text-emerald-400 font-bold text-xs">{rec.checkInTime}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-gray-400 block font-medium">প্রস্থান সময়</span>
+                          <span className="font-mono text-purple-400 font-bold text-xs">
+                            {rec.checkOutTime || <span className="text-gray-500 italic font-sans font-normal text-[11px]">চলমান</span>}
                           </span>
-                        </td>
-                        <td className="px-5 py-4 text-emerald-400 font-medium font-mono text-xs">
-                          {rec.checkInTime}
-                        </td>
-                        <td className="px-5 py-4 text-purple-400 font-medium font-mono text-xs">
-                          {rec.checkOutTime || <span className="text-gray-500 italic">এখনও চেক-আউট হয়নি</span>}
-                        </td>
-                        <td className="px-5 py-4 text-gray-300 font-medium text-xs">
-                          {rec.workingHours || '-'}
-                        </td>
-                        <td className="px-5 py-4">
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-gray-400 block font-medium">মোট কর্মঘণ্টা</span>
+                          <span className="text-gray-200 font-medium text-xs">{rec.workingHours || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-gray-400 block font-medium">যাচাইকরণ</span>
                           {rec.verifiedBy === 'GPS + Wi-Fi' ? (
-                            <span 
-                              className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                              title={`GPS দূরত্ব: ${rec.distanceMeters ?? 0}m, IP: ${rec.clientIp || 'Verified'}`}
-                            >
-                              <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                              GPS + Wi-Fi {rec.distanceMeters !== undefined ? `(${rec.distanceMeters}m)` : ''}
+                            <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                              <ShieldCheck className="w-3 h-3" /> GPS + Wi-Fi
                             </span>
                           ) : rec.verifiedBy === 'GPS' ? (
-                            <span 
-                              className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20"
-                              title={`GPS দূরত্ব: ${rec.distanceMeters ?? 0}m`}
-                            >
-                              <MapPin className="w-3 h-3 text-blue-400" />
-                              GPS {rec.distanceMeters !== undefined ? `(${rec.distanceMeters}m)` : ''}
+                            <span className="text-[10px] text-blue-400 font-semibold flex items-center gap-1">
+                              <MapPin className="w-3 h-3" /> GPS
                             </span>
                           ) : rec.verifiedBy === 'Wi-Fi' ? (
-                            <span 
-                              className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
-                              title={`IP: ${rec.clientIp || 'Verified'}`}
-                            >
-                              <Wifi className="w-3 h-3 text-indigo-400" />
-                              Wi-Fi
-                            </span>
-                          ) : rec.verifiedBy === 'Manual / Owner' ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                              <Shield className="w-3 h-3 text-purple-400" />
-                              ম্যানুয়াল
+                            <span className="text-[10px] text-indigo-400 font-semibold flex items-center gap-1">
+                              <Wifi className="w-3 h-3" /> Wi-Fi
                             </span>
                           ) : (
-                            <span className="text-[10px] text-gray-500">স্ট্যান্ডার্ড</span>
+                            <span className="text-[10px] text-purple-400 font-semibold flex items-center gap-1">
+                              <Shield className="w-3 h-3" /> ম্যানুয়াল
+                            </span>
                           )}
-                        </td>
-                        <td className="px-5 py-4">
-                          <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
-                            rec.status === 'Present'
-                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                              : rec.status === 'Late'
-                              ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                              : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                          }`}>
-                            {rec.status === 'Present' ? 'উপস্থিত' : rec.status === 'Late' ? 'দেরিতে' : rec.status}
-                          </span>
-                        </td>
-                        {isManagerOrOwner && (
-                          <td className="px-5 py-4 text-right">
-                            <button
-                              onClick={() => setConfirmDeleteModal({
-                                isOpen: true,
-                                type: 'attendance',
-                                id: rec.id || null,
-                                title: 'উপস্থিতি রেকর্ড মুছে ফেলবেন?',
-                                message: `আপনি কি নিশ্চিতভাবে ${rec.userName}-এর এই রেকর্ডটি মুছে ফেলতে চান?`
-                              })}
-                              className="text-gray-500 hover:text-red-400 p-1.5 rounded-lg transition-colors"
-                              title="Delete Record"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        </div>
+                      </div>
+
+                      {isManagerOrOwner && (
+                        <div className="flex justify-end pt-1 border-t border-gray-800/50">
+                          <button
+                            onClick={() => setConfirmDeleteModal({
+                              isOpen: true,
+                              type: 'attendance',
+                              id: rec.id || null,
+                              title: 'উপস্থিতি রেকর্ড মুছে ফেলবেন?',
+                              message: `আপনি কি নিশ্চিতভাবে ${rec.userName}-এর এই রেকর্ডটি মুছে ফেলতে চান?`
+                            })}
+                            className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 transition-colors font-medium"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            রেকর্ড মুছুন
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -798,30 +1009,30 @@ export function StaffManagementSection({
         <div className="space-y-6">
           {/* Month Selector & Controls */}
           <div className="bg-secondary/50 border border-gray-800 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex items-center gap-3">
-              <Calendar className="w-5 h-5 text-blue-400" />
-              <label className="text-xs font-semibold text-gray-300">হিসাবের মাস:</label>
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <Calendar className="w-5 h-5 text-blue-400 shrink-0" />
+              <label className="text-xs font-semibold text-gray-300 shrink-0">হিসাবের মাস:</label>
               <input
                 type="month"
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="bg-[#10131f] border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500"
+                className="bg-[#10131f] border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500 w-full sm:w-auto"
               />
             </div>
 
             {isManagerOrOwner && (
-              <div className="flex items-center gap-2.5">
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full sm:w-auto">
                 <Button
                   variant="outline"
                   onClick={() => setIsSalaryConfigModalOpen(true)}
-                  className="border-gray-700 text-gray-200 hover:bg-gray-800 text-xs font-semibold h-9"
+                  className="border-gray-700 text-gray-200 hover:bg-gray-800 text-xs font-semibold h-9 flex-1 sm:flex-none justify-center"
                 >
                   <Coins className="w-3.5 h-3.5 mr-1.5 text-yellow-400" />
                   মূল বেতন নির্ধারণ
                 </Button>
                 <Button
                   onClick={() => setIsPaymentModalOpen(true)}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold h-9 px-4"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold h-9 px-4 flex-1 sm:flex-none justify-center"
                 >
                   <Plus className="w-3.5 h-3.5 mr-1.5" />
                   বেতন / অগ্রিম প্রদান
@@ -870,79 +1081,146 @@ export function StaffManagementSection({
             ) : staffList.length === 0 ? (
               <div className="text-center py-12 text-gray-500">কোনো স্টাফ অ্যাকাউন্ট পাওয়া যায়নি</div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-[#121524] text-gray-400 text-xs uppercase tracking-wider border-b border-gray-800">
-                    <tr>
-                      <th className="px-5 py-3.5">কর্মী</th>
-                      <th className="px-5 py-3.5">রোল</th>
-                      <th className="px-5 py-3.5">নির্ধারিত মূল বেতন</th>
-                      <th className="px-5 py-3.5">গৃহীত অগ্রিম</th>
-                      <th className="px-5 py-3.5">পরিশোধিত বেতন</th>
-                      <th className="px-5 py-3.5">অবশিষ্ট পাওনা</th>
-                      {isManagerOrOwner && <th className="px-5 py-3.5 text-right">পেমেন্ট দিন</th>}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-800/60 text-gray-200">
-                    {staffList.map((st) => {
-                      const cfg = salaryConfigs[st.email];
-                      const baseSal = cfg?.baseSalary || st.baseSalary || 0;
-                      const summary = payrollService.calculateStaffMonthlySummary(payrollRecords, st.email, selectedMonth, baseSal);
+              <>
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-[#121524] text-gray-400 text-xs uppercase tracking-wider border-b border-gray-800">
+                      <tr>
+                        <th className="px-5 py-3.5">কর্মী</th>
+                        <th className="px-5 py-3.5">রোল</th>
+                        <th className="px-5 py-3.5">নির্ধারিত মূল বেতন</th>
+                        <th className="px-5 py-3.5">গৃহীত অগ্রিম</th>
+                        <th className="px-5 py-3.5">পরিশোধিত বেতন</th>
+                        <th className="px-5 py-3.5">অবশিষ্ট পাওনা</th>
+                        {isManagerOrOwner && <th className="px-5 py-3.5 text-right">পেমেন্ট দিন</th>}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-800/60 text-gray-200">
+                      {staffList.map((st) => {
+                        const cfg = salaryConfigs[st.email];
+                        const baseSal = cfg?.baseSalary || st.baseSalary || 0;
+                        const summary = payrollService.calculateStaffMonthlySummary(payrollRecords, st.email, selectedMonth, baseSal);
 
-                      return (
-                        <tr key={st.email} className="hover:bg-secondary/40 transition-colors">
-                          <td className="px-5 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">
-                                {st.name.charAt(0)}
+                        return (
+                          <tr key={st.email} className="hover:bg-secondary/40 transition-colors">
+                            <td className="px-5 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">
+                                  {st.name.charAt(0)}
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-white text-sm">{st.name}</p>
+                                  <p className="text-xs text-gray-500">{st.email}</p>
+                                </div>
                               </div>
-                              <div>
-                                <p className="font-semibold text-white text-sm">{st.name}</p>
-                                <p className="text-xs text-gray-500">{st.email}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-5 py-4">
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider bg-gray-800 text-gray-300 border border-gray-700">
-                              {st.role}
-                            </span>
-                          </td>
-                          <td className="px-5 py-4 font-bold text-white text-xs">
-                            {formatCurrency(baseSal)}
-                          </td>
-                          <td className="px-5 py-4 font-semibold text-amber-400 text-xs">
-                            {formatCurrency(summary.advancePaid)}
-                          </td>
-                          <td className="px-5 py-4 font-semibold text-emerald-400 text-xs">
-                            {formatCurrency(summary.salaryPaid)}
-                          </td>
-                          <td className="px-5 py-4 font-black text-rose-400 text-xs">
-                            {formatCurrency(summary.balanceDue)}
-                          </td>
-                          {isManagerOrOwner && (
-                            <td className="px-5 py-4 text-right">
-                              <Button
-                                size="sm"
-                                onClick={() => {
-                                  setPaymentFormData(prev => ({
-                                    ...prev,
-                                    staffEmail: st.email,
-                                    amount: summary.balanceDue > 0 ? String(summary.balanceDue) : ''
-                                  }));
-                                  setIsPaymentModalOpen(true);
-                                }}
-                                className="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 text-xs h-7 px-3"
-                              >
-                                প্রদান করুন
-                              </Button>
                             </td>
-                          )}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                            <td className="px-5 py-4">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border ${getRoleBadgeClass(st.role)}`}>
+                                {st.role}
+                              </span>
+                            </td>
+                            <td className="px-5 py-4 font-bold text-white text-xs">
+                              {formatCurrency(baseSal)}
+                            </td>
+                            <td className="px-5 py-4 font-semibold text-amber-400 text-xs">
+                              {formatCurrency(summary.advancePaid)}
+                            </td>
+                            <td className="px-5 py-4 font-semibold text-emerald-400 text-xs">
+                              {formatCurrency(summary.salaryPaid)}
+                            </td>
+                            <td className="px-5 py-4 font-black text-rose-400 text-xs">
+                              {formatCurrency(summary.balanceDue)}
+                            </td>
+                            {isManagerOrOwner && (
+                              <td className="px-5 py-4 text-right">
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    setPaymentFormData(prev => ({
+                                      ...prev,
+                                      staffEmail: st.email,
+                                      amount: summary.balanceDue > 0 ? String(summary.balanceDue) : ''
+                                    }));
+                                    setIsPaymentModalOpen(true);
+                                  }}
+                                  className="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 text-xs h-7 px-3"
+                                >
+                                  প্রদান করুন
+                                </Button>
+                              </td>
+                            )}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden p-3 space-y-3">
+                  {staffList.map((st) => {
+                    const cfg = salaryConfigs[st.email];
+                    const baseSal = cfg?.baseSalary || st.baseSalary || 0;
+                    const summary = payrollService.calculateStaffMonthlySummary(payrollRecords, st.email, selectedMonth, baseSal);
+
+                    return (
+                      <div key={st.email} className="bg-[#1b1f30]/60 border border-gray-800 rounded-xl p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-9 h-9 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">
+                              {st.avatar ? <img src={st.avatar} className="w-9 h-9 rounded-full object-cover" /> : st.name.charAt(0)}
+                            </div>
+                            <div>
+                              <div className="text-gray-200 font-semibold text-sm">{st.name}</div>
+                              <div className="text-[11px] text-gray-500">{st.email}</div>
+                            </div>
+                          </div>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border ${getRoleBadgeClass(st.role)}`}>
+                            {st.role}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 bg-[#121524] p-3 rounded-xl border border-gray-800/80 text-xs">
+                          <div>
+                            <span className="text-[10px] text-gray-400 block font-medium">মূল বেতন</span>
+                            <span className="font-bold text-white text-sm">{formatCurrency(baseSal)}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-amber-400 block font-medium">গৃহীত অগ্রিম</span>
+                            <span className="font-bold text-amber-400 text-sm">{formatCurrency(summary.advancePaid)}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-emerald-400 block font-medium">পরিশোধিত</span>
+                            <span className="font-bold text-emerald-400 text-sm">{formatCurrency(summary.salaryPaid)}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-rose-400 block font-medium">অবশিষ্ট পাওনা</span>
+                            <span className="font-black text-rose-400 text-sm">{formatCurrency(summary.balanceDue)}</span>
+                          </div>
+                        </div>
+
+                        {isManagerOrOwner && (
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setPaymentFormData(prev => ({
+                                ...prev,
+                                staffEmail: st.email,
+                                amount: summary.balanceDue > 0 ? String(summary.balanceDue) : ''
+                              }));
+                              setIsPaymentModalOpen(true);
+                            }}
+                            className="w-full bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 text-xs h-9 font-semibold"
+                          >
+                            পেমেন্ট প্রদান করুন
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </div>
 
@@ -959,64 +1237,121 @@ export function StaffManagementSection({
             {payrollRecords.length === 0 ? (
               <div className="text-center py-12 text-gray-500 text-sm">এই মাসে কোনো পেমেন্ট রেকর্ড পাওয়া যায়নি</div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-[#121524] text-gray-400 text-xs uppercase tracking-wider border-b border-gray-800">
-                    <tr>
-                      <th className="px-5 py-3.5">তারিখ</th>
-                      <th className="px-5 py-3.5">কর্মী</th>
-                      <th className="px-5 py-3.5">পেমেন্টের ধরন</th>
-                      <th className="px-5 py-3.5">টাকার পরিমাণ</th>
-                      <th className="px-5 py-3.5">পদ্ধতি</th>
-                      <th className="px-5 py-3.5">প্রদানকারী</th>
-                      <th className="px-5 py-3.5">মন্তব্য</th>
-                      {isManagerOrOwner && <th className="px-5 py-3.5 text-right">মুছে ফেলুন</th>}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-800/60 text-gray-200">
-                    {payrollRecords.map((r) => (
-                      <tr key={r.id} className="hover:bg-secondary/40 transition-colors">
-                        <td className="px-5 py-4 font-mono text-xs text-gray-400">{r.date}</td>
-                        <td className="px-5 py-4 font-medium text-white text-xs">{r.staffName}</td>
-                        <td className="px-5 py-4">
-                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
-                            r.type === 'Salary Payment' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                            r.type === 'Advance Salary' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-                            r.type === 'Bonus' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                            'bg-red-500/10 text-red-400 border-red-500/20'
-                          }`}>
-                            {r.type === 'Salary Payment' ? 'মাসিক বেতন' :
-                             r.type === 'Advance Salary' ? 'অগ্রিম বেতন' :
-                             r.type === 'Bonus' ? 'বোনাস' : 'কর্তন'}
-                          </span>
-                        </td>
-                        <td className="px-5 py-4 font-bold text-emerald-400 text-xs">
-                          {formatCurrency(r.amount)}
-                        </td>
-                        <td className="px-5 py-4 text-xs text-gray-400">{r.paymentMethod}</td>
-                        <td className="px-5 py-4 text-xs text-gray-400">{r.paidBy}</td>
-                        <td className="px-5 py-4 text-xs text-gray-500 italic">{r.note || '-'}</td>
-                        {isManagerOrOwner && (
-                          <td className="px-5 py-4 text-right">
-                            <button
-                              onClick={() => setConfirmDeleteModal({
-                                isOpen: true,
-                                type: 'payroll',
-                                id: r.id || null,
-                                title: 'পেমেন্ট রেকর্ড মুছে ফেলবেন?',
-                                message: `আপনি কি নিশ্চিতভাবে ${r.staffName}-এর এই পেমেন্ট রেকর্ডটি মুছে ফেলতে চান?`
-                              })}
-                              className="text-gray-500 hover:text-red-400 p-1.5 rounded-lg transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        )}
+              <>
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-[#121524] text-gray-400 text-xs uppercase tracking-wider border-b border-gray-800">
+                      <tr>
+                        <th className="px-5 py-3.5">তারিখ</th>
+                        <th className="px-5 py-3.5">কর্মী</th>
+                        <th className="px-5 py-3.5">পেমেন্টের ধরন</th>
+                        <th className="px-5 py-3.5">টাকার পরিমাণ</th>
+                        <th className="px-5 py-3.5">পদ্ধতি</th>
+                        <th className="px-5 py-3.5">প্রদানকারী</th>
+                        <th className="px-5 py-3.5">মন্তব্য</th>
+                        {isManagerOrOwner && <th className="px-5 py-3.5 text-right">মুছে ফেলুন</th>}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-gray-800/60 text-gray-200">
+                      {payrollRecords.map((r) => (
+                        <tr key={r.id} className="hover:bg-secondary/40 transition-colors">
+                          <td className="px-5 py-4 font-mono text-xs text-gray-400">{r.date}</td>
+                          <td className="px-5 py-4 font-medium text-white text-xs">{r.staffName}</td>
+                          <td className="px-5 py-4">
+                            {(() => {
+                              const badge = getPayrollTypeBadge(r.type);
+                              return (
+                                <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${badge.className}`}>
+                                  {badge.label}
+                                </span>
+                              );
+                            })()}
+                          </td>
+                          <td className="px-5 py-4 font-bold text-emerald-400 text-xs">
+                            {formatCurrency(r.amount)}
+                          </td>
+                          <td className="px-5 py-4 text-xs text-gray-400">{r.paymentMethod}</td>
+                          <td className="px-5 py-4 text-xs text-gray-400">{r.paidBy}</td>
+                          <td className="px-5 py-4 text-xs text-gray-500 italic">{r.note || '-'}</td>
+                          {isManagerOrOwner && (
+                            <td className="px-5 py-4 text-right">
+                              <button
+                                onClick={() => setConfirmDeleteModal({
+                                  isOpen: true,
+                                  type: 'payroll',
+                                  id: r.id || null,
+                                  title: 'পেমেন্ট রেকর্ড মুছে ফেলবেন?',
+                                  message: `আপনি কি নিশ্চিতভাবে ${r.staffName}-এর এই পেমেন্ট রেকর্ডটি মুছে ফেলতে চান?`
+                                })}
+                                className="text-gray-500 hover:text-red-400 p-1.5 rounded-lg transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden p-3 space-y-3">
+                  {payrollRecords.map((r) => (
+                    <div key={r.id} className="bg-[#1b1f30]/60 border border-gray-800 rounded-xl p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="font-mono text-xs text-gray-400 block">{r.date}</span>
+                          <h5 className="font-semibold text-white text-sm mt-0.5">{r.staffName}</h5>
+                        </div>
+                        {(() => {
+                          const badge = getPayrollTypeBadge(r.type);
+                          return (
+                            <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${badge.className}`}>
+                              {badge.label}
+                            </span>
+                          );
+                        })()}
+                      </div>
+
+                      <div className="flex items-center justify-between bg-[#121524] px-3.5 py-2.5 rounded-xl border border-gray-800/80">
+                        <div>
+                          <span className="text-[10px] text-gray-400 block font-medium">পেমেন্ট মেথড</span>
+                          <span className="text-xs text-gray-200 font-medium">{r.paymentMethod}</span>
+                          <span className="text-[11px] text-gray-500 block">প্রদানকারী: {r.paidBy}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] text-gray-400 block font-medium">টাকার পরিমাণ</span>
+                          <span className="font-bold text-emerald-400 text-base">{formatCurrency(r.amount)}</span>
+                        </div>
+                      </div>
+
+                      {r.note && (
+                        <p className="text-xs text-gray-400 italic bg-[#121524]/50 p-2 rounded-lg border border-gray-800/40">নোট: {r.note}</p>
+                      )}
+
+                      {isManagerOrOwner && (
+                        <div className="flex justify-end pt-1 border-t border-gray-800/50">
+                          <button
+                            onClick={() => setConfirmDeleteModal({
+                              isOpen: true,
+                              type: 'payroll',
+                              id: r.id || null,
+                              title: 'পেমেন্ট রেকর্ড মুছে ফেলবেন?',
+                              message: `আপনি কি নিশ্চিতভাবে ${r.staffName}-এর এই পেমেন্ট রেকর্ডটি মুছে ফেলতে চান?`
+                            })}
+                            className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 transition-colors font-medium"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            রেকর্ড মুছুন
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -1288,11 +1623,7 @@ export function StaffManagementSection({
                             </div>
                           </td>
                           <td className="py-4">
-                            <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${
-                              staff.role === 'Owner' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 
-                              staff.role === 'Manager' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 
-                              'bg-orange-500/10 text-orange-400 border-orange-500/20'
-                            }`}>
+                            <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${getRoleBadgeClass(staff.role)}`}>
                               {staff.role}
                             </span>
                           </td>
@@ -1347,11 +1678,7 @@ export function StaffManagementSection({
                             <div className="text-xs text-gray-500">{staff.email}</div>
                           </div>
                         </div>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
-                          staff.role === 'Owner' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 
-                          staff.role === 'Manager' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 
-                          'bg-orange-500/10 text-orange-400 border-orange-500/20'
-                        }`}>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${getRoleBadgeClass(staff.role)}`}>
                           {staff.role}
                         </span>
                       </div>
@@ -1416,7 +1743,7 @@ export function StaffManagementSection({
               <CustomSelect
                 value={manualAttendanceData.userId}
                 onChange={(val) => setManualAttendanceData(prev => ({ ...prev, userId: val }))}
-                options={staffList.map(s => ({ label: `${s.name} (${s.role})`, value: s.email }))}
+                options={staffSelectOptions}
                 placeholder="কর্মী নির্বাচন করুন"
               />
             </div>
@@ -1479,11 +1806,18 @@ export function StaffManagementSection({
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t border-gray-800">
-              <Button type="button" variant="outline" onClick={() => setIsManualAttendanceOpen(false)} className="border-gray-700 text-xs">
+              <Button type="button" variant="outline" disabled={submittingAttendance} onClick={() => setIsManualAttendanceOpen(false)} className="border-gray-700 text-xs">
                 বাতিল
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white text-xs">
-                সংরক্ষণ করুন
+              <Button type="submit" disabled={submittingAttendance} className="bg-blue-600 hover:bg-blue-500 text-white text-xs flex items-center gap-1.5">
+                {submittingAttendance ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    সংরক্ষণ হচ্ছে...
+                  </>
+                ) : (
+                  'সংরক্ষণ করুন'
+                )}
               </Button>
             </div>
           </form>
@@ -1506,7 +1840,7 @@ export function StaffManagementSection({
               <CustomSelect
                 value={paymentFormData.staffEmail}
                 onChange={(val) => setPaymentFormData(prev => ({ ...prev, staffEmail: val }))}
-                options={staffList.map(s => ({ label: `${s.name} (${s.role})`, value: s.email }))}
+                options={staffSelectOptions}
                 placeholder="কর্মী নির্বাচন করুন"
               />
             </div>
@@ -1586,11 +1920,18 @@ export function StaffManagementSection({
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t border-gray-800">
-              <Button type="button" variant="outline" onClick={() => setIsPaymentModalOpen(false)} className="border-gray-700 text-xs">
+              <Button type="button" variant="outline" disabled={submittingPayment} onClick={() => setIsPaymentModalOpen(false)} className="border-gray-700 text-xs">
                 বাতিল
               </Button>
-              <Button type="submit" className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">
-                পেমেন্ট নিশ্চিত করুন
+              <Button type="submit" disabled={submittingPayment} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5">
+                {submittingPayment ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    পেমেন্ট হচ্ছে...
+                  </>
+                ) : (
+                  'পেমেন্ট নিশ্চিত করুন'
+                )}
               </Button>
             </div>
           </form>
@@ -1622,7 +1963,7 @@ export function StaffManagementSection({
                     notes: cfg?.notes || ''
                   });
                 }}
-                options={staffList.map(s => ({ label: `${s.name} (${s.role})`, value: s.email }))}
+                options={staffSelectOptions}
                 placeholder="কর্মী নির্বাচন করুন"
               />
             </div>
@@ -1652,11 +1993,18 @@ export function StaffManagementSection({
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t border-gray-800">
-              <Button type="button" variant="outline" onClick={() => setIsSalaryConfigModalOpen(false)} className="border-gray-700 text-xs">
+              <Button type="button" variant="outline" disabled={submittingSalaryConfig} onClick={() => setIsSalaryConfigModalOpen(false)} className="border-gray-700 text-xs">
                 বাতিল
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold">
-                সংরক্ষণ করুন
+              <Button type="submit" disabled={submittingSalaryConfig} className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5">
+                {submittingSalaryConfig ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    সংরক্ষণ হচ্ছে...
+                  </>
+                ) : (
+                  'সংরক্ষণ করুন'
+                )}
               </Button>
             </div>
           </form>
@@ -1674,7 +2022,11 @@ export function StaffManagementSection({
           </DialogHeader>
 
           {selectedTechnicianJobs?.jobs.length === 0 ? (
-            <p className="text-xs text-gray-500 text-center py-8">কোনো ডিভাইস তালিকা নেই</p>
+            <div className="text-center py-12 flex flex-col items-center justify-center">
+              <Tv className="w-10 h-10 text-gray-600 mb-2 stroke-[1.5]" />
+              <p className="text-sm font-medium text-gray-300">এই সময়সীমার মধ্যে কোনো সার্ভিসিং কাজ পাওয়া যায়নি</p>
+              <p className="text-xs text-gray-500 mt-1">টেকনিশিয়ান কাজ ডেলিভারি বা সম্পন্ন করলে এখানে বিস্তারিত দেখা যাবে।</p>
+            </div>
           ) : (
             <div className="space-y-3">
               {selectedTechnicianJobs?.jobs.map((job) => (

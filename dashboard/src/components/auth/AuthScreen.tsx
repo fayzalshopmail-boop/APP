@@ -106,7 +106,11 @@ export function AuthScreen() {
       
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Login failed');
+      if (err?.code === 'auth/unauthorized-domain' || err?.message?.includes('auth/unauthorized-domain')) {
+        setError('এই লোকাল আইপি (192.168.10.248) Firebase-এ অনুমোদিত নয়। নিচের ইমেইল ও পাসওয়ার্ড দিয়ে সরাসরি লগইন করুন অথবা Firebase Console-এ আইপিটি যোগ করুন।');
+      } else {
+        setError(err.message || 'Login failed');
+      }
     } finally {
       setLoading(false);
     }

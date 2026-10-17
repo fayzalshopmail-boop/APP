@@ -104,10 +104,31 @@ export const userService = {
 
   /**
    * Permanently delete a staff member (Admin only)
+   * Also safely removes associated salaryConfigs to prevent orphaned records
    */
   deleteUser: async (email: string) => {
-    if (!db) return;
-    const docRef = doc(db, COLLECTION_NAME, email);
+    if (!db || !email) return;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Delete user document
+    const docRef = doc(db, COLLECTION_NAME, normalizedEmail);
     await deleteDoc(docRef);
+
+    // If original email differed from lowercase, also clean up the unnormalized doc if present
+    if (email !== normalizedEmail) {
+      try {
+        await deleteDoc(doc(db, COLLECTION_NAME, email));
+      } catch (_) {}
+    }
+
+    // Clean up salary config from salaryConfigs collection
+    try {
+      await deleteDoc(doc(db, 'salaryConfigs', normalizedEmail));
+      if (email !== normalizedEmail) {
+        await deleteDoc(doc(db, 'salaryConfigs', email));
+      }
+    } catch (err) {
+      console.warn('Failed to clean up staff salary config during user deletion:', err);
+    }
   }
 };

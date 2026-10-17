@@ -38,8 +38,11 @@ export default function SettingsPage() {
         confirmText: "Wipe Database",
         requireMatchString: "DELETE"
       };
-      case 'merge': return { title: "Merge Backup?", message: "WARNING: This will merge data from the backup file into your database.", confirmText: "Merge Data" };
-      case 'deleteStaff': return { title: "Delete Staff Member?", message: "Are you sure you want to completely DELETE this staff member?", confirmText: "Delete Staff" };
+      case 'deleteStaff': return { 
+        title: "স্টাফ সদস্য মুছে ফেলতে চান?", 
+        message: "আপনি কি নিশ্চিতভাবে এই স্টাফ অ্যাকাউন্টটি স্থায়ীভাবে মুছে ফেলতে চান? এটি মুছে ফেললে তিনি আর সিস্টেমে লগইন করতে পারবেন না।", 
+        confirmText: "হ্যাঁ, মুছে ফেলুন" 
+      };
       default: return { title: "Confirm", message: "Are you sure?", confirmText: "Confirm" };
     }
   };
@@ -272,8 +275,13 @@ export default function SettingsPage() {
   };
 
   const handleDeleteStaff = (email: string) => {
-    if (currentUser?.email === email) {
+    if (currentUser?.email?.toLowerCase() === email?.toLowerCase()) {
       toast.error("আপনি নিজের অ্যাকাউন্ট মুছতে পারবেন না।");
+      return;
+    }
+    const targetUser = staffList.find(s => s.email.toLowerCase() === email.toLowerCase());
+    if (targetUser?.role === 'Owner' && currentUser?.role !== 'Owner') {
+      toast.error("মালিকের (Owner) অ্যাকাউন্ট শুধুমাত্র অন্য মালিক মুছে ফেলতে পারেন।");
       return;
     }
     setConfirmModal({
@@ -285,13 +293,22 @@ export default function SettingsPage() {
 
   const executeDeleteStaff = async (email: string) => {
     try {
-        await userService.deleteUser(email);
-        setStaffList(prev => prev.filter(s => s.email !== email));
-        toast.success("স্টাফ সফলভাবে মুছে ফেলা হয়েছে");
-      } catch (err) {
-        console.error("Failed to delete user", err);
-        toast.error("স্টাফ মুছতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+      if (currentUser?.email?.toLowerCase() === email?.toLowerCase()) {
+        toast.error("নিজের অ্যাকাউন্ট মোছা সম্ভব নয়।");
+        return;
       }
+      const targetUser = staffList.find(s => s.email.toLowerCase() === email.toLowerCase());
+      if (targetUser?.role === 'Owner' && currentUser?.role !== 'Owner') {
+        toast.error("মালিকের অ্যাকাউন্ট মোছার অনুমতি আপনার নেই।");
+        return;
+      }
+      await userService.deleteUser(email);
+      setStaffList(prev => prev.filter(s => s.email.toLowerCase() !== email.toLowerCase()));
+      toast.success("স্টাফ সফলভাবে মুছে ফেলা হয়েছে");
+    } catch (err) {
+      console.error("Failed to delete user", err);
+      toast.error("স্টাফ মুছতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+    }
   };
 
   if (currentUser?.role !== 'Owner' && currentUser?.role !== 'Manager') {

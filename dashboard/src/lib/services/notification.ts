@@ -52,9 +52,13 @@ export const notificationService = {
 
     // Trigger FCM Push Notification
     try {
+      const secret = process.env.NEXT_PUBLIC_CRON_SECRET || 'backup_secret_shop_2026_antigravity';
       fetch('/api/send-push', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${secret}`
+        },
         body: JSON.stringify({
           title: newNotif.title,
           body: newNotif.message,

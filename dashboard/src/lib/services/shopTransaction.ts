@@ -239,19 +239,20 @@ export const shopTransactionService = {
 
       const totalCost = parts.reduce((acc, p) => acc + (p.cost * p.quantity), 0);
       const newAdvance = (customerData.advance || 0) + paymentReceived;
-      const newDue = Math.max(0, customerData.totalBill - newAdvance - discount);
+      const finalTotalBill = (typeof newTotalBill === 'number' && newTotalBill > -1) ? newTotalBill : (customerData.totalBill || 0);
+      const newDue = Math.max(0, finalTotalBill - newAdvance - discount);
 
       const customerUpdates: Partial<Customer> = {
         partsUsed: parts,
         totalCost,
+        totalBill: finalTotalBill,
         advance: newAdvance,
         due: newDue,
         discount: discount,
-      
+        isBillPending: finalTotalBill <= 0,
+        updatedAt: serverTimestamp()
+      };
 
-};
-
-      
       if (dueDate) {
         customerUpdates.dueDate = dueDate;
       }

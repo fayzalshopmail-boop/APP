@@ -68,8 +68,15 @@ export default function DuePage() {
     }
   };
 
+  const isOverdue = (dueDate?: string) => {
+    if (!dueDate) return false;
+    const d = new Date(dueDate);
+    d.setHours(23, 59, 59, 999);
+    return d.getTime() < Date.now();
+  };
+
   const totalDues = customers.reduce((sum, c) => sum + c.due, 0);
-  const overdueCount = customers.filter(c => c.dueDate && new Date(c.dueDate) < new Date()).length;
+  const overdueCount = customers.filter(c => isOverdue(c.dueDate)).length;
   const highDueCount = customers.filter(c => c.due >= 500).length;
 
   const filteredCustomers = customers
@@ -78,7 +85,7 @@ export default function DuePage() {
         c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
         c.phone.includes(searchTerm);
       if (!matchesSearch) return false;
-      if (filterTab === 'overdue') return c.dueDate && new Date(c.dueDate) < new Date();
+      if (filterTab === 'overdue') return isOverdue(c.dueDate);
       if (filterTab === 'high') return c.due >= 500;
       return true;
     })
@@ -239,11 +246,11 @@ export default function DuePage() {
                       <td className="px-6 py-4">
                         {c.dueDate ? (
                           <div className={`flex items-center gap-1.5 text-xs font-medium ${
-                            new Date(c.dueDate) < new Date() ? 'text-red-400' : 'text-gray-300'
+                            isOverdue(c.dueDate) ? 'text-red-400' : 'text-gray-300'
                           }`}>
                             <Calendar className="w-3.5 h-3.5" />
                             {new Date(c.dueDate).toLocaleDateString()}
-                            {new Date(c.dueDate) < new Date() && (
+                            {isOverdue(c.dueDate) && (
                               <span title="Overdue!"><AlertCircle className="w-3.5 h-3.5 ml-1 text-red-500" /></span>
                             )}
                           </div>
@@ -270,14 +277,14 @@ export default function DuePage() {
           {/* Mobile Card View */}
           <div className="md:hidden space-y-3">
             {paginatedCustomers.map((c) => {
-              const isOverdue = c.dueDate && new Date(c.dueDate) < new Date();
+              const isOverdueItem = isOverdue(c.dueDate);
               return (
                 <MobileDataCard key={c.id}>
                   <MobileDataCard.Header
                     title={c.name}
                     subtitle={c.phone}
                     badge={
-                      isOverdue ? (
+                      isOverdueItem ? (
                         <span className="text-[11px] bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-full font-medium">
                           মেয়াদোত্তীর্ণ
                         </span>
@@ -291,7 +298,7 @@ export default function DuePage() {
                   <MobileDataCard.Details>
                     <div className="flex items-center justify-between text-xs text-gray-400">
                       <span>তাগাদার তারিখ:</span>
-                      <span className={isOverdue ? 'text-red-400 font-bold' : 'text-gray-300'}>
+                      <span className={isOverdueItem ? 'text-red-400 font-bold' : 'text-gray-300'}>
                         {c.dueDate ? new Date(c.dueDate).toLocaleDateString() : 'নির্ধারিত নেই'}
                       </span>
                     </div>

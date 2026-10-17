@@ -37,6 +37,13 @@ export const expenseService = {
     return docRef.id;
   },
 
+  update: async (id: string, data: Partial<Expense>): Promise<void> => {
+    if (!db) throw new Error('Firebase DB is not initialized');
+    const docRef = doc(db, COLLECTION_NAME, id);
+    const { id: _, ...updateData } = data;
+    await updateDoc(docRef, updateData);
+  },
+
   delete: async (id: string): Promise<void> => {
     if (!db) throw new Error('Firebase DB is not initialized');
     const docRef = doc(db, COLLECTION_NAME, id);

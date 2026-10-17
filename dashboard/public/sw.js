@@ -1,5 +1,5 @@
 // Service Worker for VSC POS - 100% Offline-First PWA
-const CACHE_NAME = 'vsc-pos-cache-v5';
+const CACHE_NAME = 'vsc-pos-cache-v6';
 
 // Pre-cache core application shell routes and assets
 const PRECACHE_ASSETS = [
@@ -71,6 +71,17 @@ self.addEventListener('fetch', (event) => {
     url.hostname.includes('identitytoolkit.googleapis.com') ||
     url.hostname.includes('firebaseinstallations.googleapis.com') ||
     url.hostname.includes('fcmregistrations.googleapis.com')
+  ) {
+    return;
+  }
+
+  // 3. Skip Turbopack, HMR dev resources, and WebSockets (Never intercept dev channels)
+  if (
+    url.pathname.includes('turbopack') ||
+    url.pathname.includes('_next/hmr') ||
+    url.pathname.includes('webpack-hmr') ||
+    url.pathname.includes('_next/development') ||
+    request.headers.get('upgrade') === 'websocket'
   ) {
     return;
   }

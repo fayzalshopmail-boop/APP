@@ -5,6 +5,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { AuthScreen } from './AuthScreen';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Topbar } from '@/components/layout/Topbar';
+import { TechnicianBottomNav } from '@/components/layout/TechnicianBottomNav';
 import { shopSettingsService } from '@/lib/services/shopSettings';
 import { dropdownConfigService } from '@/lib/services/dropdownConfig';
 import { usePathname } from 'next/navigation';
@@ -61,8 +62,13 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
   }, [user?.email]);
 
   if (!mounted) {
-    // Prevent hydration mismatch
-    return <div className="min-h-screen bg-background" />;
+    // Prevent hydration mismatch while showing user an active loading state
+    return (
+      <div className="min-h-screen bg-[#0b0e14] flex flex-col items-center justify-center gap-3 text-gray-400">
+        <div className="w-9 h-9 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs text-gray-400 font-medium">অ্যাপ লোড হচ্ছে...</p>
+      </div>
+    );
   }
 
   // If not logged in AT ALL, or if Owner is locked, show AuthScreen
@@ -111,19 +117,22 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
     );
   }
 
+  const isTechnician = user?.role === 'Technician';
+
   return (
     <>
       <TitleUpdater title={shop?.shopName ? shop.shopName + ' Dashboard' : 'Shop Dashboard'} />
       <AutoBackupTrigger />
-      <Sidebar />
-      <div className={`flex-1 flex flex-col h-[100dvh] overflow-hidden transition-all duration-300 md:ml-64`}>
+      {!isTechnician && <Sidebar />}
+      <div className={`flex-1 flex flex-col h-[100dvh] overflow-hidden transition-all duration-300 ${!isTechnician ? 'md:ml-64' : 'w-full'}`}>
         <Topbar />
-        <main className="flex-1 overflow-y-auto min-h-0 p-4 md:p-6">
+        <main className={`flex-1 overflow-y-auto min-h-0 p-4 md:p-6 ${isTechnician ? 'pb-16 md:pb-18' : ''}`}>
           <div className="max-w-[1600px] mx-auto w-full">
             {children}
           </div>
         </main>
       </div>
+      {isTechnician && <TechnicianBottomNav />}
     </>
   );
 }

@@ -6,6 +6,12 @@ export async function POST(request: Request) {
     if (!adminDb || !adminMessaging) {
       return NextResponse.json({ error: 'Firebase Admin not initialized' }, { status: 500 });
     }
+
+    const authHeader = request.headers.get('authorization');
+    const expectedSecret = process.env.CRON_SECRET || process.env.NEXT_PUBLIC_CRON_SECRET || 'backup_secret_shop_2026_antigravity';
+    if (!authHeader || authHeader.replace(/^Bearer\s+/i, '') !== expectedSecret) {
+      return NextResponse.json({ error: 'Unauthorized push notification request' }, { status: 401 });
+    }
     
     const { title, body, link, targetRole } = await request.json();
 
