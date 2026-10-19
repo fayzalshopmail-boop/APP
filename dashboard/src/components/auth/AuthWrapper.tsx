@@ -63,11 +63,11 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
   }, [user?.email]);
 
   if (!mounted) {
-    // Prevent hydration mismatch while showing user an active loading state
+    // Prevent hydration mismatch while showing user an active loading state centered on screen
     return (
-      <div className="min-h-screen bg-[#0b0e14] flex flex-col items-center justify-center gap-3 text-gray-400">
+      <div className="fixed inset-0 z-50 min-h-screen w-full bg-[#0b0e14] flex flex-col items-center justify-center gap-3 text-gray-400">
         <div className="w-9 h-9 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs text-gray-400 font-medium">অ্যাপ লোড হচ্ছে...</p>
+        <p className="text-xs sm:text-sm text-gray-400 font-medium">অ্যাপ লোড হচ্ছে...</p>
       </div>
     );
   }
@@ -82,7 +82,7 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
   
   if (user.role === 'Technician' && isOutsideWorkingHours) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[100dvh] text-center bg-background p-6">
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-[100dvh] w-full text-center bg-background p-6">
         <div className="w-20 h-20 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center mb-6">
           <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         </div>
@@ -110,7 +110,7 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
 
   if (isTechnicianBlocked) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen text-center bg-background">
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-screen w-full text-center bg-background p-6">
         <h2 className="text-2xl font-bold text-red-500">Access Denied</h2>
         <p className="text-gray-500 mt-2">Technicians do not have access to this page.</p>
         <button onClick={() => window.location.href='/customers'} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg">Go Back</button>

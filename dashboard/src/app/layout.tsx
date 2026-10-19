@@ -22,7 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark" style={{ colorScheme: 'dark' }} suppressHydrationWarning>
-      <body className={`${inter.className} bg-background min-h-screen flex text-foreground`} suppressHydrationWarning>
+      <body className={`${inter.className} bg-background min-h-screen w-full flex text-foreground`} suppressHydrationWarning>
         <AuthWrapper>
           {children}
           <Toaster position="top-center" toastOptions={{ style: { background: '#161925', color: '#fff', border: '1px solid #1f2937' } }} />
