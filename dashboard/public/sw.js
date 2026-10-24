@@ -1,5 +1,5 @@
 // Service Worker for VSC POS - 100% Offline-First PWA
-const CACHE_NAME = 'vsc-pos-cache-v6';
+const CACHE_NAME = 'vsc-pos-cache-v7';
 
 // Pre-cache core application shell routes and assets
 const PRECACHE_ASSETS = [
@@ -18,6 +18,7 @@ const PRECACHE_ASSETS = [
   '/staff',
   '/api/manifest',
   '/api/favicon',
+  '/icon.png',
   '/icon.svg',
   '/notification.mp3'
 ];
@@ -184,18 +185,31 @@ try {
   const messaging = firebase.messaging();
 
   messaging.onBackgroundMessage((payload) => {
-    const title = payload.notification?.title || 'VSC শপ নোটিফিকেশন';
+    const title = payload.notification?.title || payload.data?.title || 'VSC শপ নোটিফিকেশন';
+    const body = payload.notification?.body || payload.data?.body || '';
+    const clickUrl = payload.data?.url || payload.data?.link || '/';
+    
     const options = {
-      body: payload.notification?.body || '',
-      icon: '/icon.svg',
-      data: payload.data
+      body: body,
+      icon: '/icon.png',
+      badge: '/icon.png',
+      vibrate: [200, 100, 200],
+      tag: payload.data?.tag || `vsc-${Date.now()}`,
+      renotify: true,
+      requireInteraction: true,
+      data: {
+        url: clickUrl,
+        ...payload.data
+      }
     };
-    self.registration.showNotification(title, options);
+    return self.registration.showNotification(title, options);
   });
 
   self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    const urlToOpen = new URL(event.notification.data?.url || '/', self.location.origin).href;
+    const rawUrl = event.notification.data?.url || event.notification.data?.link || '/';
+    const urlToOpen = new URL(rawUrl, self.location.origin).href;
+    
     event.waitUntil(
       clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
         for (let i = 0; i < windowClients.length; i++) {
@@ -212,4 +226,5 @@ try {
   });
 } catch (e) {
   // FCM offline fallback
+  console.warn('[SW] Firebase messaging init failed:', e);
 }

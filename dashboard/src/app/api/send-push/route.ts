@@ -39,14 +39,49 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'No devices found to send notification' }, { status: 200 });
     }
 
-    // Send push notification via FCM
+    // Send push notification via FCM with High Urgency for background wake-up
     const message = {
       notification: {
         title: title,
         body: body,
       },
       data: {
-        url: link || '/' // Useful if we want clicking the notification to open a specific page
+        title: String(title),
+        body: String(body),
+        url: String(link || '/'),
+        link: String(link || '/'),
+      },
+      webpush: {
+        headers: {
+          Urgency: 'high',
+          TTL: '86400', // 24 hours
+        },
+        notification: {
+          title: title,
+          body: body,
+          icon: '/icon.png',
+          badge: '/icon.png',
+          vibrate: [200, 100, 200],
+          requireInteraction: true,
+          tag: `vsc-alert-${Date.now()}`,
+          renotify: true,
+          data: {
+            url: link || '/'
+          }
+        },
+        fcmOptions: {
+          link: link || '/'
+        }
+      },
+      android: {
+        priority: 'high' as const,
+        notification: {
+          priority: 'high' as const,
+          sound: 'default',
+          channelId: 'default',
+          defaultSound: true,
+          defaultVibrateTimings: true,
+        }
       },
       tokens: tokens,
     };
