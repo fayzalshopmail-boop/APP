@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         realIp
       }
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ ip: '127.0.0.1' }, { status: 200 });
   }
 }

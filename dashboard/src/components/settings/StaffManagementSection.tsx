@@ -1513,6 +1513,11 @@ export function StaffManagementSection({
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                   <input 
                     type="email"
+                    name="new-staff-email"
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-form-type="other"
                     required
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
@@ -1526,6 +1531,11 @@ export function StaffManagementSection({
                 <label className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1.5 block">Full Name</label>
                 <input 
                   type="text"
+                  name="new-staff-fullname"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-form-type="other"
                   required
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
@@ -1540,6 +1550,11 @@ export function StaffManagementSection({
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                   <input 
                     type="password"
+                    name="new-staff-access-pwd"
+                    autoComplete="new-password"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-form-type="other"
                     required
                     minLength={6}
                     value={newPassword}
@@ -1729,7 +1744,7 @@ export function StaffManagementSection({
 
       {/* 1. Manual Attendance Modal */}
       <Dialog open={isManualAttendanceOpen} onOpenChange={setIsManualAttendanceOpen}>
-        <DialogContent className="sm:max-w-md bg-secondary text-white border-gray-800 shadow-2xl p-6">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto bg-secondary text-white border-gray-800 shadow-2xl p-4 sm:p-6 rounded-2xl">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
               <Clock className="w-5 h-5 text-blue-400" />
@@ -1826,7 +1841,7 @@ export function StaffManagementSection({
 
       {/* 2. Payroll Payment Modal */}
       <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
-        <DialogContent className="sm:max-w-md bg-secondary text-white border-gray-800 shadow-2xl p-6">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto bg-secondary text-white border-gray-800 shadow-2xl p-4 sm:p-6 rounded-2xl">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
               <CreditCard className="w-5 h-5 text-emerald-400" />
@@ -1940,7 +1955,7 @@ export function StaffManagementSection({
 
       {/* 3. Salary Config Modal */}
       <Dialog open={isSalaryConfigModalOpen} onOpenChange={setIsSalaryConfigModalOpen}>
-        <DialogContent className="sm:max-w-md bg-secondary text-white border-gray-800 shadow-2xl p-6">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto bg-secondary text-white border-gray-800 shadow-2xl p-4 sm:p-6 rounded-2xl">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
               <Coins className="w-5 h-5 text-yellow-400" />
@@ -2013,7 +2028,7 @@ export function StaffManagementSection({
 
       {/* 4. Technician Serviced Jobs Drilldown Modal */}
       <Dialog open={!!selectedTechnicianJobs} onOpenChange={(open) => !open && setSelectedTechnicianJobs(null)}>
-        <DialogContent className="sm:max-w-2xl bg-secondary text-white border-gray-800 shadow-2xl p-6 max-h-[85vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-2xl bg-secondary text-white border-gray-800 shadow-2xl p-4 sm:p-6 max-h-[85vh] overflow-y-auto rounded-2xl">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
               <Tv className="w-5 h-5 text-indigo-400" />

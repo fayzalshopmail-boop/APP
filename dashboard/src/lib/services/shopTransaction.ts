@@ -11,8 +11,7 @@ import {
   where
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Customer, PartUsed, RepairRecord, normalizePhone } from './customer';
-import { Transaction } from './transaction';
+import { Customer, PartUsed, RepairRecord } from './customer';
 import { InventoryItem } from './inventory';
 import { notificationService } from './notification';
 
@@ -23,8 +22,11 @@ export const shopTransactionService = {
   /**
    * Atomically creates a customer or adds a new repair job to an existing customer's history.
    */
-  async createCustomer(customerData: Omit<Customer, 'id' | 'createdAt' | 'points'>, userEmail: string): Promise<string> {
+  async createCustomer(customerData: Omit<Customer, 'id' | 'createdAt' | 'points'>, userEmail: string, userName?: string): Promise<string> {
     if (!db) throw new Error('Firebase DB is not initialized');
+
+    const effectiveStaffName = customerData.receivedByName || userName || userEmail;
+    const effectiveStaffEmail = customerData.receivedBy || userEmail;
 
     // 1. Check if customer already exists by phone number
     const cleanDigits = customerData.phone ? customerData.phone.replace(/\D/g, '') : '';
@@ -78,6 +80,10 @@ export const shopTransactionService = {
           warrantyMonths: prevData.warrantyMonths,
           partsUsed: prevData.partsUsed || [],
           totalCost: prevData.totalCost || 0,
+          servicedBy: prevData.servicedBy,
+          servicedByName: prevData.servicedByName,
+          receivedBy: prevData.receivedBy,
+          receivedByName: prevData.receivedByName || prevData.receivedBy,
           createdAt: prevData.createdAt || new Date().toISOString()
         });
       }
@@ -86,6 +92,8 @@ export const shopTransactionService = {
       const targetRef = doc(db, 'customers', existingId);
       batch.update(targetRef, {
         ...customerData,
+        receivedBy: effectiveStaffEmail,
+        receivedByName: effectiveStaffName,
         name: customerData.name || prevData.name,
         address: customerData.address || prevData.address,
         points: prevData.points || 0,
@@ -103,7 +111,7 @@ export const shopTransactionService = {
           customerName: customerData.name || prevData.name,
           amount: customerData.advance,
           type: 'Advance Payment',
-          receivedBy: userEmail,
+          receivedBy: effectiveStaffName || userEmail,
           createdAt: serverTimestamp()
         });
       }
@@ -112,7 +120,7 @@ export const shopTransactionService = {
       try {
         await notificationService.add({
           title: 'Repeat Customer Added',
-          message: `${customerData.name} (Returning Customer) brought a new device, added by ${userEmail}.`,
+          message: `${customerData.name} (Returning Customer) brought a new device, added by ${effectiveStaffName}.`,
           type: 'info',
           targetRole: 'Owner',
           link: `/customers?customerId=${existingId}&search=${encodeURIComponent(customerData.name)}`
@@ -131,6 +139,8 @@ export const shopTransactionService = {
     const batch = writeBatch(db);
     batch.set(customerRef, {
       ...customerData,
+      receivedBy: effectiveStaffEmail,
+      receivedByName: effectiveStaffName,
       status: 'Received',
       points: 0,
       repairHistory: [],
@@ -144,7 +154,7 @@ export const shopTransactionService = {
         customerName: customerData.name,
         amount: customerData.advance,
         type: 'Advance Payment',
-        receivedBy: userEmail,
+        receivedBy: effectiveStaffName || userEmail,
         createdAt: serverTimestamp()
       });
     }
@@ -153,7 +163,7 @@ export const shopTransactionService = {
     try {
       await notificationService.add({
         title: 'New Customer Added',
-        message: `${customerData.name} was added by ${userEmail}.`,
+        message: `${customerData.name} was added by ${effectiveStaffName}.`,
         type: 'info',
         targetRole: 'Owner',
         link: `/customers?customerId=${newId}&search=${encodeURIComponent(customerData.name)}`
@@ -181,7 +191,7 @@ export const shopTransactionService = {
     if (!db) throw new Error('Firebase DB is not initialized');
 
     const customerRef = doc(db as any, 'customers', customerId);
-    let lowStockAlerts: any[] = [];
+    const lowStockAlerts: any[] = [];
     
     await runTransaction(db, async (transaction) => {
       const customerSnap = await transaction.get(customerRef);

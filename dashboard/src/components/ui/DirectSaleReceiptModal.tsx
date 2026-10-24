@@ -37,7 +37,7 @@ export function DirectSaleReceiptModal({ isOpen, onClose, receiptData }: DirectS
   const shopSubtitle = shop?.shopTitle || 'Expert LED TV Servicing & Electronics';
   const shopPhone = shop?.phone || '';
   const shopAddress = shop?.address || '';
-  const receiptNo = receiptData.id ? receiptData.id.slice(0, 8).toUpperCase() : `DS-${Date.now().toString().slice(-6)}`;
+  const receiptNo = receiptData.id ? receiptData.id.slice(0, 8).toUpperCase() : 'DS-SALE';
   const dateStr = receiptData.date || new Date().toLocaleDateString('en-GB');
 
   return (

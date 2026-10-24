@@ -29,7 +29,7 @@ export const systemTasksService = {
       const duesSnap = await getDocs(qDues);
       
       const nowMs = now.getTime();
-      let overdueCustomers: {name: string, due: number}[] = [];
+      const overdueCustomers: {name: string, due: number}[] = [];
 
       duesSnap.forEach(doc => {
         const c = doc.data();
@@ -63,7 +63,7 @@ export const systemTasksService = {
       const delSnap = await getDocs(qDeliveries);
       
       const tomorrowMs = nowMs + (24 * 60 * 60 * 1000); // Now + 24 hours
-      let upcomingDeliveries: {name: string, date: string}[] = [];
+      const upcomingDeliveries: {name: string, date: string}[] = [];
 
       delSnap.forEach(doc => {
         const c = doc.data();

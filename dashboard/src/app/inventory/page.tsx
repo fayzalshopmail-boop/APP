@@ -119,6 +119,33 @@ export default function InventoryPage() {
     fetchData();
   }, []);
 
+  const handleOpenModal = (item?: InventoryItem) => {
+    if (item) {
+      setEditingItem(item);
+      setFormData({
+        name: item.name,
+        category: item.category,
+        stock: item.stock,
+        unit: item.unit || 'Pcs',
+        purchasePrice: item.purchasePrice,
+      sellingPrice: item.sellingPrice,
+        supplierId: item.supplierId || '', minStockLevel: item.minStockLevel || 5
+      });
+    } else {
+      setEditingItem(null);
+      setFormData({
+        name: '',
+        category: invSettings.categories.length > 0 ? invSettings.categories[0] : '',
+        stock: 0,
+        unit: 'Pcs',
+        purchasePrice: 0,
+        sellingPrice: 0,
+        supplierId: '', minStockLevel: 5
+        });
+    }
+    setIsModalOpen(true);
+  };
+
   useEffect(() => {
     const handleOpenAdd = () => {
       handleOpenModal();
@@ -294,33 +321,6 @@ export default function InventoryPage() {
       console.error("Error direct selling", error);
       toast.error(error.message || "Failed to process direct sell.");
     }
-  };
-
-  const handleOpenModal = (item?: InventoryItem) => {
-    if (item) {
-      setEditingItem(item);
-      setFormData({
-        name: item.name,
-        category: item.category,
-        stock: item.stock,
-        unit: item.unit || 'Pcs',
-        purchasePrice: item.purchasePrice,
-      sellingPrice: item.sellingPrice,
-        supplierId: item.supplierId || '', minStockLevel: item.minStockLevel || 5
-      });
-    } else {
-      setEditingItem(null);
-      setFormData({
-        name: '',
-        category: invSettings.categories.length > 0 ? invSettings.categories[0] : '',
-        stock: 0,
-        unit: 'Pcs',
-        purchasePrice: 0,
-        sellingPrice: 0,
-        supplierId: '', minStockLevel: 5
-        });
-    }
-    setIsModalOpen(true);
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -694,7 +694,7 @@ export default function InventoryPage() {
 
       {/* Add/Edit Modal */}
       <Dialog open={isModalOpen} onOpenChange={(v) => !v && closeInvModal()}>
-        <DialogContent className="sm:max-w-[700px] bg-popover text-gray-100 border-gray-800 p-0 overflow-hidden shadow-2xl shadow-black">
+        <DialogContent className="w-[95vw] sm:max-w-[700px] max-h-[92vh] overflow-y-auto bg-popover text-gray-100 border-gray-800 p-0 shadow-2xl shadow-black rounded-2xl">
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-900/20 to-indigo-900/10 p-6 border-b border-gray-800 flex items-center justify-between relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
@@ -908,7 +908,7 @@ export default function InventoryPage() {
     
 {/* Restock Modal */}
       <Dialog open={isRestockModalOpen} onOpenChange={(v) => !v && closeRestockModal()}>
-        <DialogContent className="sm:max-w-[500px] bg-popover text-gray-100 border-gray-800 p-0 overflow-hidden shadow-2xl shadow-black">
+        <DialogContent className="w-[95vw] sm:max-w-[500px] max-h-[92vh] overflow-y-auto bg-popover text-gray-100 border-gray-800 p-0 shadow-2xl shadow-black rounded-2xl">
           <div className="bg-gradient-to-r from-emerald-900/20 to-teal-900/10 p-6 border-b border-gray-800 flex items-center justify-between relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             <div className="relative">
@@ -1028,7 +1028,7 @@ export default function InventoryPage() {
     
       {/* Direct Sell Modal */}
       <Dialog open={isSellModalOpen} onOpenChange={(v) => !v && closeSellModal()}>
-        <DialogContent className="sm:max-w-[500px] bg-popover text-gray-100 border-gray-800 p-0 overflow-hidden shadow-2xl shadow-black">
+        <DialogContent className="w-[95vw] sm:max-w-[500px] max-h-[92vh] overflow-y-auto bg-popover text-gray-100 border-gray-800 p-0 shadow-2xl shadow-black rounded-2xl">
           <div className="bg-gradient-to-r from-blue-900/20 to-indigo-900/10 p-6 border-b border-gray-800 flex items-center justify-between relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             <div className="relative">

@@ -42,18 +42,6 @@ export default function MechanicsPage() {
     address: ''
   });
 
-  useEffect(() => {
-    fetchMechanics();
-  }, []);
-
-  useEffect(() => {
-    const handleOpenAdd = () => {
-      handleOpenModal();
-    };
-    window.addEventListener('app:add-mechanic', handleOpenAdd);
-    return () => window.removeEventListener('app:add-mechanic', handleOpenAdd);
-  }, []);
-
   const fetchMechanics = async () => {
     try {
       setLoading(true);
@@ -80,6 +68,18 @@ export default function MechanicsPage() {
     }
     setIsModalOpen(true);
   };
+
+  useEffect(() => {
+    fetchMechanics();
+  }, []);
+
+  useEffect(() => {
+    const handleOpenAdd = () => {
+      handleOpenModal();
+    };
+    window.addEventListener('app:add-mechanic', handleOpenAdd);
+    return () => window.removeEventListener('app:add-mechanic', handleOpenAdd);
+  }, []);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -432,7 +432,7 @@ export default function MechanicsPage() {
 
       {/* Add/Edit Mechanic Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[425px] bg-popover border-border">
+        <DialogContent className="w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto bg-popover border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">
               {editingMechanic ? 'Edit Mechanic' : 'Add Mechanic'}
@@ -477,7 +477,7 @@ export default function MechanicsPage() {
 
       {/* Add Job/Commission Modal */}
       <Dialog open={isCommissionModalOpen} onOpenChange={setIsCommissionModalOpen}>
-        <DialogContent className="sm:max-w-[400px] bg-popover border-border">
+        <DialogContent className="w-[95vw] sm:max-w-[400px] max-h-[90vh] overflow-y-auto bg-popover border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">Record New Job</DialogTitle>
             <DialogDescription className="text-gray-400">
@@ -503,7 +503,7 @@ export default function MechanicsPage() {
 
       {/* Pay Commission Modal */}
       <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
-        <DialogContent className="sm:max-w-[400px] bg-popover border-border">
+        <DialogContent className="w-[95vw] sm:max-w-[400px] max-h-[90vh] overflow-y-auto bg-popover border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">Pay Commission</DialogTitle>
             <DialogDescription className="text-gray-400">

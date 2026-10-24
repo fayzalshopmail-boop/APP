@@ -42,32 +42,9 @@ export default function ExpensesPage() {
     date: getLocalDateString()
   });
 
-  useEffect(() => {
-    fetchExpenses();
-  }, []);
-
-  useEffect(() => {
-    const handleOpenAdd = () => {
-      handleOpenAddModal();
-    };
-    window.addEventListener('app:add-expense', handleOpenAdd);
-    return () => window.removeEventListener('app:add-expense', handleOpenAdd);
-  }, []);
-
   const handleOpenAddModal = () => {
     setEditingExpenseId(null);
     setFormData({ title: '', category: 'Tea & Snacks', amount: '', date: getLocalDateString() });
-    setIsModalOpen(true);
-  };
-
-  const handleOpenEditModal = (expense: Expense) => {
-    setEditingExpenseId(expense.id);
-    setFormData({
-      title: expense.title,
-      category: expense.category,
-      amount: expense.amount.toString(),
-      date: expense.date
-    });
     setIsModalOpen(true);
   };
 
@@ -81,6 +58,29 @@ export default function ExpensesPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchExpenses();
+  }, []);
+
+  useEffect(() => {
+    const handleOpenAdd = () => {
+      handleOpenAddModal();
+    };
+    window.addEventListener('app:add-expense', handleOpenAdd);
+    return () => window.removeEventListener('app:add-expense', handleOpenAdd);
+  }, []);
+
+  const handleOpenEditModal = (expense: Expense) => {
+    setEditingExpenseId(expense.id);
+    setFormData({
+      title: expense.title,
+      category: expense.category,
+      amount: expense.amount.toString(),
+      date: expense.date
+    });
+    setIsModalOpen(true);
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -299,7 +299,7 @@ export default function ExpensesPage() {
             <Wallet className="w-8 h-8 text-pink-400" />
           </div>
           <h3 className="text-lg font-semibold text-white mb-2">কোন খরচ পাওয়া যায়নি</h3>
-          <p className="text-gray-400 text-sm">নতুন খরচ যোগ করতে উপরের "নতুন খরচ" বাটনে ক্লিক করুন।</p>
+          <p className="text-gray-400 text-sm">নতুন খরচ যোগ করতে উপরের &quot;নতুন খরচ&quot; বাটনে ক্লিক করুন।</p>
         </div>
       ) : (
         <>
@@ -438,7 +438,7 @@ export default function ExpensesPage() {
 
       {/* Add / Edit Expense Dialog */}
       <Dialog open={isModalOpen} onOpenChange={(open) => { setIsModalOpen(open); if (!open) setEditingExpenseId(null); }}>
-        <DialogContent className="sm:max-w-md bg-popover border-border">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto bg-popover border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold text-white">
               {editingExpenseId ? 'খরচ এডিট করুন (Edit Expense)' : 'নতুন খরচ যোগ করুন (Add Expense)'}

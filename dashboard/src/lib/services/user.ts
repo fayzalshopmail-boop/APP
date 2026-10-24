@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, orderBy, serverTimestamp, limit, where } from 'firebase/firestore';
+import { collection, doc, getDocs, setDoc, updateDoc, deleteDoc, query, orderBy, serverTimestamp, limit, where } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export type UserRole = 'Owner' | 'Manager' | 'Technician';
@@ -118,7 +118,7 @@ export const userService = {
     if (email !== normalizedEmail) {
       try {
         await deleteDoc(doc(db, COLLECTION_NAME, email));
-      } catch (_) {}
+      } catch {}
     }
 
     // Clean up salary config from salaryConfigs collection

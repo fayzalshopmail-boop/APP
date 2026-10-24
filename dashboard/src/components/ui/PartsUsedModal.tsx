@@ -66,18 +66,6 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
    });
  }, []);
 
- useEffect(() => {
- if (isOpen) {
- setEditableTotalBill(customer?.totalBill || 0);
- loadInventory();
- setSelectedParts(customer?.partsUsed || []);
- setSearch('');
- setPaymentReceived(0);
- setHasDiscount(false);
- setDueDate('');
- }
- }, [isOpen]);
-
  const loadInventory = async () => {
  setLoading(true);
  try {
@@ -89,6 +77,18 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  setLoading(false);
  }
  };
+
+ useEffect(() => {
+ if (isOpen) {
+ setEditableTotalBill(customer?.totalBill || 0);
+ loadInventory();
+ setSelectedParts(customer?.partsUsed || []);
+ setSearch('');
+ setPaymentReceived(0);
+ setHasDiscount(false);
+ setDueDate('');
+ }
+ }, [isOpen]);
 
  const handleAddPart = (item: InventoryItem) => {
  const existing = selectedParts.find(p => p.inventoryId === item.id);
@@ -189,7 +189,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  {/* Top Gradient Highlight Bar */}
  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500" />
  
- <div className="p-5 sm:p-7 max-h-[88vh] overflow-y-auto custom-scrollbar">
+ <div className="p-3.5 sm:p-7 max-h-[88vh] overflow-y-auto custom-scrollbar">
  {/* Header */}
  <DialogHeader className="mb-6">
  <div className="flex items-center justify-between">
@@ -387,7 +387,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  placeholder="0"
  value={paymentReceived || ''}
  onChange={(e) => {
- let valStr = e.target.value.replace(/[^0-9.]/g, "");
+ const valStr = e.target.value.replace(/[^0-9.]/g, "");
  const val = Number(valStr) || 0;
  setPaymentReceived(val);
  if (val >= currentDue) {

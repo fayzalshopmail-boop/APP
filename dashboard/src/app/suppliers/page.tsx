@@ -43,18 +43,6 @@ export default function SuppliersPage() {
   });
   const [paymentAmount, setPaymentAmount] = useState('');
 
-  useEffect(() => {
-    fetchSuppliers();
-  }, []);
-
-  useEffect(() => {
-    const handleOpenAdd = () => {
-      openAddModal();
-    };
-    window.addEventListener('app:add-supplier', handleOpenAdd);
-    return () => window.removeEventListener('app:add-supplier', handleOpenAdd);
-  }, []);
-
   const fetchSuppliers = async () => {
     try {
       setLoading(true);
@@ -72,6 +60,18 @@ export default function SuppliersPage() {
     setFormData({ name: '', company: '', phone: '+880', address: '', status: 'Active' });
     setIsModalOpen(true);
   };
+
+  useEffect(() => {
+    fetchSuppliers();
+  }, []);
+
+  useEffect(() => {
+    const handleOpenAdd = () => {
+      openAddModal();
+    };
+    window.addEventListener('app:add-supplier', handleOpenAdd);
+    return () => window.removeEventListener('app:add-supplier', handleOpenAdd);
+  }, []);
 
   const openEditModal = (supplier: Supplier) => {
     setEditingSupplier(supplier);
@@ -476,7 +476,7 @@ export default function SuppliersPage() {
 
       {/* Add/Edit Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-md bg-popover border-border">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto bg-popover border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold text-white">
               {editingSupplier ? 'Edit Supplier' : 'Add New Supplier'}
@@ -541,7 +541,7 @@ export default function SuppliersPage() {
 
       {/* Pay Due Modal */}
       <Dialog open={!!paymentModalSupplier} onOpenChange={(open) => !open && setPaymentModalSupplier(null)}>
-        <DialogContent className="sm:max-w-[400px] bg-popover border-border">
+        <DialogContent className="w-[95vw] sm:max-w-[400px] max-h-[90vh] overflow-y-auto bg-popover border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">Pay Supplier</DialogTitle>
           </DialogHeader>
@@ -580,7 +580,7 @@ export default function SuppliersPage() {
 
             {/* Add Bill Modal */}
       <Dialog open={!!billModalSupplier} onOpenChange={(open) => !open && setBillModalSupplier(null)}>
-        <DialogContent className="sm:max-w-[400px] bg-popover border-border">
+        <DialogContent className="w-[95vw] sm:max-w-[400px] max-h-[90vh] overflow-y-auto bg-popover border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">Add New Bill</DialogTitle>
           </DialogHeader>

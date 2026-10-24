@@ -1,4 +1,4 @@
-import { collection, doc, addDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, onSnapshot, limit } from 'firebase/firestore';
+import { collection, doc, addDoc, updateDoc, deleteDoc, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export interface AppNotification {

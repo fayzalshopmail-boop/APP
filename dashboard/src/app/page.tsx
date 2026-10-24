@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
-import { LayoutDashboard, Users, Coins, Tv, Wrench, Loader2, UserPlus, ShoppingCart, Receipt, TrendingUp, TrendingDown, ArrowUpRight } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { LayoutDashboard, Users, Coins, Tv, Wrench, Loader2, UserPlus, ShoppingCart, Receipt, TrendingUp, ArrowUpRight } from 'lucide-react';
 import { StatCard } from '@/components/ui/StatCard';
 import { QuickAlerts } from '@/components/ui/QuickAlerts';
 import { RevenueChart } from '@/components/ui/RevenueChart';
 import { RecentCustomers } from '@/components/ui/RecentCustomers';
-import { customerService, Customer, normalizePhone } from '@/lib/services/customer';
-import { transactionService, Transaction } from '@/lib/services/transaction';
+import { normalizePhone } from '@/lib/services/customer';
 import { formatCurrency } from '@/lib/currency';
 import { getLocalDateString } from '@/lib/utils';
 import { useAppStore } from '@/store/useAppStore';
@@ -38,13 +37,12 @@ export default function Dashboard() {
   });
   const lastFetchTimeRef = useRef<number>(0);
 
-  if (user?.role === 'Technician') return null;
-
   useEffect(() => {
-        const loadAggregatedData = async () => {
+    const loadAggregatedData = async () => {
+      if (user?.role === 'Technician') return;
       try {
         setIsLoading(true);
-        const { collection, query, where, getCountFromServer, getAggregateFromServer, sum, getDocs } = await import('firebase/firestore');
+        const { collection, query, where, getCountFromServer, sum, getDocs } = await import('firebase/firestore');
         const { db } = await import('@/lib/firebase');
 
         let startDate = null;
@@ -233,7 +231,9 @@ export default function Dashboard() {
 
   const filteredStats = stats;
 
-return (
+  if (user?.role === 'Technician') return null;
+
+  return (
     <div className="space-y-3 sm:space-y-6 max-w-[1600px] mx-auto pb-6">
       {/* Mobile Add Customer Button (Phone Only <640px) */}
       <div className="sm:hidden">

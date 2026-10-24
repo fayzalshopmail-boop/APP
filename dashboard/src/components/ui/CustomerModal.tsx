@@ -13,7 +13,7 @@ import {
  DialogTitle,
 } from "@/components/ui/dialog";
 import { Customer, normalizePhone } from '@/lib/services/customer';
-import { User, Phone, MapPin, Loader2, Tv, Wrench, Tag, FileText, Settings2, Camera, CheckCircle } from 'lucide-react';
+import { User, Phone, MapPin, Loader2, Tv, Wrench, Tag, FileText, Settings2, Camera, CheckCircle, UserCheck } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { ManageOptionsModal } from './ManageOptionsModal';
 import dynamic from 'next/dynamic';
@@ -34,7 +34,7 @@ interface CustomerModalProps {
 }
 
 export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAddresses = [], existingCustomers = [] }: CustomerModalProps) {
- const { deviceBrands: storeBrands, deviceTypes, deviceProblems: storeProblems } = useAppStore();
+ const { deviceBrands: storeBrands, deviceTypes, deviceProblems: storeProblems, user } = useAppStore();
  
  const [instantDelivery, setInstantDelivery] = useState(false);
  const [matchedCustomer, setMatchedCustomer] = useState<Customer | null>(null);
@@ -49,7 +49,11 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  serialNumber: '',
  totalBill: 0,
  advance: 0,
- warrantyMonths: '', expectedDeliveryDate: '' });
+ warrantyMonths: '',
+ expectedDeliveryDate: '',
+ receivedByName: '',
+ receivedBy: ''
+ });
  const [isScannerOpen, setIsScannerOpen] = useState(false);
  const [isSubmitting, setIsSubmitting] = useState(false);
  const [manageCategory, setManageCategory] = useState<'deviceBrands' | 'deviceTypes' | 'deviceProblems' | null>(null);
@@ -77,7 +81,11 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  serialNumber: initialData.serialNumber || '',
  totalBill: initialData.isBillPending ? 0 : (initialData.totalBill || 0),
  advance: initialData.advance || 0,
- warrantyMonths: initialData.warrantyMonths ? String(initialData.warrantyMonths) : '', expectedDeliveryDate: initialData.expectedDeliveryDate || '' });
+ warrantyMonths: initialData.warrantyMonths ? String(initialData.warrantyMonths) : '',
+ expectedDeliveryDate: initialData.expectedDeliveryDate || '',
+ receivedByName: initialData.receivedByName || user?.name || user?.email || '',
+ receivedBy: initialData.receivedBy || user?.email || ''
+ });
  } else {
  // eslint-disable-next-line react-hooks/set-state-in-effect
  setFormData({ 
@@ -91,10 +99,14 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  serialNumber: '',
  totalBill: 0, 
  advance: 0,
- warrantyMonths: '', expectedDeliveryDate: '' });
+ warrantyMonths: '',
+ expectedDeliveryDate: '',
+ receivedByName: user?.name || user?.email || '',
+ receivedBy: user?.email || ''
+ });
  }
  // eslint-disable-next-line react-hooks/exhaustive-deps
- }, [initialData, isOpen]);
+ }, [initialData, isOpen, user]);
 
  const handleSubmit = async (e: React.FormEvent) => {
  e.preventDefault();
@@ -103,7 +115,14 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  const isPending = !formData.totalBill || Number(formData.totalBill) <= 0;
  const numBill = isPending ? 0 : Number(formData.totalBill);
  const due = isPending ? 0 : Math.max(0, numBill - (formData.advance || 0));
- await onSave({ ...formData, totalBill: numBill, due, isBillPending: isPending }, instantDelivery);
+ await onSave({ 
+   ...formData, 
+   totalBill: numBill, 
+   due, 
+   isBillPending: isPending,
+   receivedByName: formData.receivedByName || user?.name || user?.email || 'Unknown',
+   receivedBy: formData.receivedBy || user?.email || 'Unknown'
+ }, instantDelivery);
  onClose();
  } catch (error) {
  console.error(error);
@@ -118,7 +137,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  {/* Gradient Header Background */}
  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 z-10 shrink-0" />
  
- <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-1">
+ <div className="p-3 sm:p-6 overflow-y-auto custom-scrollbar flex-1">
  <DialogHeader className="mb-4 sm:mb-6 text-left">
  <DialogTitle className="text-lg sm:text-xl font-bold tracking-tight">
  {initialData ? 'Edit Customer Details' : 'Add New Customer'}
@@ -199,6 +218,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  </div>
  </div>
 
+ <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
  {/* Address */}
  <div className="space-y-1.5">
  <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Address</label>
@@ -216,6 +236,21 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  <option key={idx} value={addr} />
  ))}
  </datalist>
+ </div>
+ </div>
+
+ {/* Received By */}
+ <div className="space-y-1.5">
+ <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">রিসিভ করেছেন (Received By)</label>
+ <div className="relative">
+ <UserCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+ <Input 
+ value={formData.receivedByName}
+ onChange={(e) => setFormData({ ...formData, receivedByName: e.target.value })}
+ className="pl-10" 
+ placeholder="যিনি কাজ গ্রহণ করেছেন..."
+ />
+ </div>
  </div>
  </div>
  </div>

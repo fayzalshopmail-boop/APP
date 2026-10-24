@@ -28,7 +28,7 @@ export const sendSMS = async (number: string | string[], message: string, apiKey
         toast.error(`SMS Failed: ${resultObj.error_message || "BulkSMSBD Error"}`);
         return { success: false, error: resultObj.error_message || "BulkSMSBD Error" };
       }
-    } catch (e) {
+    } catch {
       // Not JSON, assume success if HTTP was 200
     }
     

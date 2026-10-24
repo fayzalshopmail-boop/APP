@@ -60,14 +60,6 @@ export function AttendanceSecurityModal({ isOpen, onClose, onSaved }: Attendance
     error?: string;
   } | null>(null);
 
-  // Load Settings on Open
-  useEffect(() => {
-    if (isOpen) {
-      loadSettings();
-      setTestResult(null);
-    }
-  }, [isOpen]);
-
   const loadSettings = async () => {
     try {
       setLoading(true);
@@ -80,6 +72,14 @@ export function AttendanceSecurityModal({ isOpen, onClose, onSaved }: Attendance
       setLoading(false);
     }
   };
+
+  // Load Settings on Open
+  useEffect(() => {
+    if (isOpen) {
+      loadSettings();
+      setTestResult(null);
+    }
+  }, [isOpen]);
 
   // 1. Detect & Set Current GPS
   const handleDetectCurrentGps = async () => {

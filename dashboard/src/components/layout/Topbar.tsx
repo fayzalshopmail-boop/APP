@@ -307,7 +307,13 @@ export function Topbar() {
   const handleSaveNewCustomer = async (data: Omit<Customer, 'id' | 'createdAt' | 'points'>) => {
     if (!user) return;
     try {
-      await shopTransactionService.createCustomer(data, user.name || user.email || 'Unknown');
+      const staffName = data.receivedByName || user.name || user.email || 'Unknown';
+      const staffEmail = data.receivedBy || user.email || user.name || 'Unknown';
+      await shopTransactionService.createCustomer({
+        ...data,
+        receivedBy: staffEmail,
+        receivedByName: staffName
+      }, staffEmail, staffName);
       handleCloseCustomerModal();
       
       // Send Welcome SMS
@@ -335,7 +341,7 @@ export function Topbar() {
   };
 
   return (
-    <header className="h-16 md:h-20 px-4 md:px-8 flex items-center justify-between bg-background sticky top-0 z-40 border-b border-gray-800 md:border-none">
+    <header className="h-16 md:h-20 px-3 sm:px-4 md:px-8 flex items-center justify-between bg-background sticky top-0 z-40 border-b border-gray-800 md:border-none">
       <div className="flex items-center gap-3 sm:gap-4">
         <div className="flex flex-col min-w-0">
           <h1 className="text-lg md:text-2xl font-bold text-white leading-tight truncate">{title}</h1>
@@ -426,7 +432,7 @@ export function Topbar() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
                 transition={{ duration: 0.2 }}
-                className="absolute top-14 right-0 w-[320px] sm:w-[380px] bg-secondary border border-gray-800 rounded-2xl shadow-2xl overflow-hidden z-50"
+                className="absolute top-14 -right-2 sm:right-0 w-[calc(100vw-1rem)] max-w-[380px] sm:w-[380px] bg-secondary border border-gray-800 rounded-2xl shadow-2xl overflow-hidden z-50"
               >
                 <div className="p-3 sm:p-4 border-b border-gray-800 flex items-center justify-between bg-[#1a1d2d] gap-2">
                   <h3 className="font-semibold text-white flex items-center gap-1.5 text-sm sm:text-base shrink-0">

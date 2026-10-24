@@ -86,19 +86,6 @@ export default function LoansPage() {
     if (window.history.state?.modal === 'loans-modal') window.history.back();
   };
 
-  useEffect(() => {
-    fetchLoans();
-  }, []);
-
-  // Topbar "+ Add Record" button integration
-  useEffect(() => {
-    const handleOpenAdd = () => {
-      handleOpenModal();
-    };
-    window.addEventListener('app:add-loan', handleOpenAdd);
-    return () => window.removeEventListener('app:add-loan', handleOpenAdd);
-  }, []);
-
   const fetchLoans = async () => {
     try {
       setLoading(true);
@@ -143,6 +130,19 @@ export default function LoansPage() {
     }
     setIsModalOpen(true);
   };
+
+  useEffect(() => {
+    fetchLoans();
+  }, []);
+
+  // Topbar "+ Add Record" button integration
+  useEffect(() => {
+    const handleOpenAdd = () => {
+      handleOpenModal();
+    };
+    window.addEventListener('app:add-loan', handleOpenAdd);
+    return () => window.removeEventListener('app:add-loan', handleOpenAdd);
+  }, []);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -905,7 +905,7 @@ export default function LoansPage() {
 
       {/* Partial Payment Modal */}
       <Dialog open={!!paymentModalData} onOpenChange={(open) => !open && closePaymentModal()}>
-        <DialogContent className="sm:max-w-[400px] bg-popover border-border">
+        <DialogContent className="w-[95vw] sm:max-w-[400px] max-h-[90vh] overflow-y-auto bg-popover border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">Add Payment (পরিশোধ)</DialogTitle>
             <DialogDescription className="text-gray-400">
@@ -969,7 +969,7 @@ export default function LoansPage() {
 
       {/* Add/Edit Modal (Bug Fixed: Perfectly populates on Edit) */}
       <Dialog open={isModalOpen} onOpenChange={(v) => !v && closeLoanModal()}>
-        <DialogContent className="sm:max-w-[425px] bg-popover border-border">
+        <DialogContent className="w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto bg-popover border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">
               {editingLoan ? 'Edit Record' : 'Add New Record'}

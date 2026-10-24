@@ -635,7 +635,7 @@ export default function StaffAttendancePage() {
           <span>চলতি মাসের হিসাব</span>
           <span className="text-[11px] text-gray-400 font-normal">এই মাস</span>
         </div>
-        <div className="grid grid-cols-4 gap-2 text-center">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
           <div className="bg-[#0e111a] p-2.5 rounded-xl border border-gray-800/80">
             <div className="text-[10px] text-gray-400">উপস্থিত</div>
             <div className="text-base sm:text-lg font-bold text-emerald-400 font-mono mt-0.5">{monthlyStats.presentDays} দিন</div>

@@ -60,7 +60,7 @@ export function SetBillModal({ isOpen, onClose, customer, onSave, smsSettings }:
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md w-[95vw] bg-popover text-white border-gray-800 shadow-2xl p-0 overflow-hidden rounded-2xl">
+      <DialogContent className="sm:max-w-md w-[95vw] max-h-[92vh] overflow-y-auto bg-popover text-white border-gray-800 shadow-2xl p-0 rounded-2xl">
         {/* Top Accent Gradient */}
         <div className="h-1.5 w-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-400" />
 

@@ -65,8 +65,8 @@ export function BarcodeScannerModal({ isOpen, onClose, onScan }: BarcodeScannerM
             onScan(decodedText);
             onClose();
           },
-          (errorMessage) => {
-            // Ignored
+          () => {
+            // Ignored frame parse failures
           }
         ).catch((err) => {
           if (facingMode === "environment") {

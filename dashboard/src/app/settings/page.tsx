@@ -396,6 +396,12 @@ export default function SettingsPage() {
                 <Store className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <input 
                   type="text" 
+                  name="shop-short-name"
+                  id="shop-short-name"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-form-type="other"
                   value={shopForm.shopName}
                   onChange={(e) => setShopForm({ ...shopForm, shopName: e.target.value })}
                   className="w-full bg-popover border border-gray-800 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50" 
@@ -410,6 +416,12 @@ export default function SettingsPage() {
                 <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <input 
                   type="text" 
+                  name="shop-full-title"
+                  id="shop-full-title"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-form-type="other"
                   value={shopForm.shopTitle}
                   onChange={(e) => setShopForm({ ...shopForm, shopTitle: e.target.value })}
                   className="w-full bg-popover border border-gray-800 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50" 
@@ -456,6 +468,12 @@ export default function SettingsPage() {
                   <input 
                     type="tel"
                     maxLength={11}
+                    name="shop-contact-telephone"
+                    id="shop-contact-telephone"
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-form-type="other"
                     value={shopForm.phone ? shopForm.phone.replace(/^\+880/, '') : ''}
                     onChange={(e) => {
                       let digits = e.target.value.replace(/\D/g, ''); 
@@ -475,6 +493,12 @@ export default function SettingsPage() {
                 <UserX className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <input 
                   type="text" 
+                  name="shop-owner-fullname"
+                  id="shop-owner-fullname"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-form-type="other"
                   value={shopForm.ownerName}
                   onChange={(e) => setShopForm({ ...shopForm, ownerName: e.target.value })}
                   className="w-full bg-popover border border-gray-800 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50" 
@@ -488,6 +512,12 @@ export default function SettingsPage() {
               <div className="relative">
                 <MapPin className="absolute left-4 top-4 w-4 h-4 text-gray-500" />
                 <textarea 
+                  name="shop-full-physical-address"
+                  id="shop-full-physical-address"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-form-type="other"
                   value={shopForm.address}
                   onChange={(e) => setShopForm({ ...shopForm, address: e.target.value })}
                   className="w-full bg-popover border border-gray-800 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50 h-24 resize-none" 

@@ -117,7 +117,7 @@ class OfflineSyncService {
         } else {
           remaining.push(item);
         }
-      } catch (err) {
+      } catch {
         remaining.push(item);
       }
     }

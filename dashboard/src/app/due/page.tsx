@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { Customer, customerService } from '@/lib/services/customer';
 import { shopTransactionService } from '@/lib/services/shopTransaction';
@@ -26,11 +26,7 @@ export default function DuePage() {
   
   const [paymentModalCustomer, setPaymentModalCustomer] = useState<Customer | null>(null);
 
-  useEffect(() => {
-    fetchDues();
-  }, []);
-
-  const fetchDues = async () => {
+  const fetchDues = useCallback(async () => {
     try {
       setLoading(true);
       const dueCustomers = await customerService.getWithDue();
@@ -40,7 +36,11 @@ export default function DuePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchDues();
+  }, [fetchDues]);
 
   const handleReceivePayment = async (amount: number, nextDueDate?: string) => {
     if (!paymentModalCustomer) return;
@@ -67,12 +67,18 @@ export default function DuePage() {
     }
   };
 
-  const isOverdue = (dueDate?: string) => {
-    if (!dueDate) return false;
+  const [currentTime, setCurrentTime] = useState(0);
+
+  useEffect(() => {
+    setCurrentTime(Date.now());
+  }, []);
+
+  const isOverdue = useCallback((dueDate?: string) => {
+    if (!dueDate || currentTime === 0) return false;
     const d = new Date(dueDate);
     d.setHours(23, 59, 59, 999);
-    return d.getTime() < Date.now();
-  };
+    return d.getTime() < currentTime;
+  }, [currentTime]);
 
   const totalDues = customers.reduce((sum, c) => sum + c.due, 0);
   const overdueCount = customers.filter(c => isOverdue(c.dueDate)).length;

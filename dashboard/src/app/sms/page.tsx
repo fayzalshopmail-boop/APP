@@ -151,7 +151,7 @@ export default function SmsMarketingPage() {
           const c = validCustomers[i];
           setSendProgress({ current: i + 1, total: validCustomers.length });
           
-          let personalizedMsg = bulkMessage
+          const personalizedMsg = bulkMessage
             .replace(/{name}/g, c.name || '')
             .replace(/{brand}/g, c.deviceBrand || '')
             .replace(/{type}/g, c.deviceType || '')
@@ -208,7 +208,7 @@ export default function SmsMarketingPage() {
         const c = eligible[i];
         setSendProgress({ current: i + 1, total: eligible.length });
         
-        let personalizedMsg = followupMessage
+        const personalizedMsg = followupMessage
           .replace(/{name}/g, c.name || '')
           .replace(/{brand}/g, c.deviceBrand || '')
           .replace(/{type}/g, c.deviceType || '');
@@ -343,7 +343,7 @@ export default function SmsMarketingPage() {
                   className="w-full bg-popover border border-gray-800 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all" 
                   placeholder="e.g. http://bulksmsbd.net/api/smsapi"
                 />
-                <p className="text-xs text-gray-500">The base URL of the SMS provider's API.</p>
+                <p className="text-xs text-gray-500">The base URL of the SMS provider&apos;s API.</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

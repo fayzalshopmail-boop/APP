@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     let result = resultText;
     try {
       result = JSON.parse(resultText);
-    } catch(e) {}
+    } catch {}
     
     return NextResponse.json({ success: true, result });
   } catch (error: any) {

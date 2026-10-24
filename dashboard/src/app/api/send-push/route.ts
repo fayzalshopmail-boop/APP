@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     }
 
     // Avoid composite index requirement by fetching all tokens and filtering in memory
-    let querySnapshot = await adminDb.collection('users')
+    const querySnapshot = await adminDb.collection('users')
       .where('fcmToken', '!=', null)
       .get();
 

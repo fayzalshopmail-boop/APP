@@ -1,10 +1,11 @@
 'use client';
 
 import { Customer, RepairRecord, normalizePhone } from '@/lib/services/customer';
-import { X, User, Phone, PhoneCall, MapPin, Tv, Shield, History, Coins } from 'lucide-react';
+import { X, User, Phone, PhoneCall, MapPin, Tv, Shield, History, Coins, UserCheck, Calendar } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { transactionService } from '@/lib/services/transaction';
 
 interface CustomerProfileSidebarProps {
   isOpen: boolean;
@@ -15,7 +16,8 @@ interface CustomerProfileSidebarProps {
 }
 
 export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers, onOpenSetBill }: CustomerProfileSidebarProps) {
-  
+  const [advanceReceivedByMap, setAdvanceReceivedByMap] = useState<Record<string, string>>({});
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -24,6 +26,19 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
     }
     return () => { document.body.style.overflow = 'unset'; }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!customer?.id) return;
+    transactionService.getByCustomer(customer.id).then((transList) => {
+      const map: Record<string, string> = {};
+      transList.forEach(t => {
+        if (t.receivedBy) {
+          map[t.customerId] = t.receivedBy;
+        }
+      });
+      setAdvanceReceivedByMap(map);
+    }).catch(err => console.error("Error loading customer transactions:", err));
+  }, [customer?.id]);
 
   if (!customer) return null;
 
@@ -44,6 +59,43 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
   });
 
   const totalSpent = history.reduce((sum, c) => sum + (c.totalBill || 0), 0);
+
+  const getReceivedByDisplay = (job: Customer | RepairRecord) => {
+    if (job.receivedByName) return job.receivedByName;
+    if (job.receivedBy) {
+      if (job.receivedBy.includes('@')) return job.receivedBy.split('@')[0];
+      return job.receivedBy;
+    }
+    if (job.id && advanceReceivedByMap[job.id]) {
+      const by = advanceReceivedByMap[job.id];
+      if (by.includes('@')) return by.split('@')[0];
+      return by;
+    }
+    if (job.servicedByName) return job.servicedByName;
+    if (job.servicedBy) {
+      if (job.servicedBy.includes('@')) return job.servicedBy.split('@')[0];
+      return job.servicedBy;
+    }
+    return 'শপ স্টাফ';
+  };
+
+  const formatJobDate = (createdAt: any) => {
+    if (!createdAt) return '';
+    try {
+      let d: Date;
+      if (typeof createdAt.toDate === 'function') {
+        d = createdAt.toDate();
+      } else if (createdAt.seconds) {
+        d = new Date(createdAt.seconds * 1000);
+      } else {
+        d = new Date(createdAt);
+      }
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleDateString('bn-BD', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch {
+      return '';
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -171,6 +223,24 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
                             {job.status?.toUpperCase() || 'RECEIVED'}
                           </p>
                         </div>
+                      </div>
+
+                      {/* Received By Staff & Date Badge */}
+                      <div className="mt-2.5 pt-2.5 border-t border-gray-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <div className="flex items-center gap-1.5 text-gray-300">
+                          <div className="w-5 h-5 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+                            <UserCheck className="w-3 h-3" />
+                          </div>
+                          <span className="text-[11px] text-gray-400">
+                            রিসিভ করেছেন: <strong className="text-white font-semibold">{getReceivedByDisplay(job)}</strong>
+                          </span>
+                        </div>
+                        {formatJobDate(job.createdAt) && (
+                          <div className="flex items-center gap-1 text-[10px] text-gray-400 bg-gray-800/60 px-2 py-0.5 rounded-md border border-gray-700/50">
+                            <Calendar className="w-3 h-3 text-gray-400" />
+                            <span>{formatJobDate(job.createdAt)}</span>
+                          </div>
+                        )}
                       </div>
 
                       {job.id === customer.id && customer.isBillPending && onOpenSetBill && (

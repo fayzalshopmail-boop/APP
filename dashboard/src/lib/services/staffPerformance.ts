@@ -1,5 +1,5 @@
 import { customerService, Customer } from './customer';
-import { AppUser, userService } from './user';
+import { userService } from './user';
 
 export interface StaffPerformanceMetric {
   staffEmail: string;

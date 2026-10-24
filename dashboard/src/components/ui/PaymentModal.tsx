@@ -41,7 +41,7 @@ export function PaymentModal({ isOpen, onClose, customer, onSave }: PaymentModal
 
  return (
  <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
- <DialogContent className="sm:max-w-[400px] bg-popover text-white border-gray-800 shadow-2xl p-0 overflow-hidden ">
+ <DialogContent className="w-[95vw] sm:max-w-[400px] max-h-[92vh] overflow-y-auto bg-popover text-white border-gray-800 shadow-2xl p-0 rounded-2xl">
  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-green-500" />
  
  <div className="p-6">

@@ -1,4 +1,4 @@
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, limit, where } from 'firebase/firestore';
+import { collection, getDocs, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, limit, where } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export type CustomerStatus = 'Received' | 'In Progress' | 'Waiting for Parts' | 'Ready for Delivery' | 'Delivered' | 'Returned (Unrepaired)';
@@ -30,6 +30,8 @@ export interface RepairRecord {
   totalCost?: number;
   servicedBy?: string;
   servicedByName?: string;
+  receivedBy?: string;
+  receivedByName?: string;
   createdAt?: string | Date | any;
   isBillPending?: boolean;
 }
@@ -66,6 +68,8 @@ export interface Customer {
   totalCost?: number;
   servicedBy?: string;
   servicedByName?: string;
+  receivedBy?: string;
+  receivedByName?: string;
   createdAt?: string | Date | any;
   updatedAt?: string | Date | any;
   completedAt?: string | Date | any;

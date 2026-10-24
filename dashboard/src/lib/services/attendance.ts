@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export type AttendanceStatus = 'Present' | 'Late' | 'Half Day' | 'Leave' | 'Absent';
@@ -39,10 +39,12 @@ export const calculateWorkingHours = (checkInTimeStr: string, checkOutTimeStr: s
   try {
     const parseTimeToMinutes = (timeStr: string) => {
       const [time, modifier] = timeStr.trim().split(' ');
-      let [hours, minutes] = time.split(':').map(Number);
+      const parts = time.split(':').map(Number);
+      let hours = parts[0];
+      const minutes = parts[1] || 0;
       if (modifier?.toUpperCase() === 'PM' && hours < 12) hours += 12;
       if (modifier?.toUpperCase() === 'AM' && hours === 12) hours = 0;
-      return hours * 60 + (minutes || 0);
+      return hours * 60 + minutes;
     };
 
     const inMinutes = parseTimeToMinutes(checkInTimeStr);

@@ -4,24 +4,32 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect } from 'react';
-import { Search, Plus, MoreVertical, Edit, Trash2, MessageCircle, Download, FileText, Phone, PhoneCall, MapPin, Tv, Eye, Filter, X, ChevronLeft, ChevronRight, Coins } from 'lucide-react';
+import { Search, Edit, Trash2, MessageCircle, Download, FileText, Phone, PhoneCall, MapPin, Tv, Eye, Filter, X, ChevronLeft, ChevronRight, Coins } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatCurrency } from '@/lib/currency';
 import { useAppStore } from '@/store/useAppStore';
-import { CustomerModal } from '@/components/ui/CustomerModal';
+import dynamic from 'next/dynamic';
+import type { PartsConfirmData } from '@/components/ui/PartsUsedModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { StatusDropdown } from '@/components/ui/StatusDropdown';
 import { PaymentModal } from '@/components/ui/PaymentModal';
-import { InvoiceModal } from '@/components/ui/InvoiceModal';
 import { SetBillModal } from '@/components/ui/SetBillModal';
-import { PartsUsedModal, PartsConfirmData } from '@/components/ui/PartsUsedModal';
 import { CustomerProfileSidebar } from '@/components/ui/CustomerProfileSidebar';
+
+const CustomerModal = dynamic(
+  () => import('@/components/ui/CustomerModal').then((m) => m.CustomerModal),
+  { ssr: false }
+);
+const InvoiceModal = dynamic(
+  () => import('@/components/ui/InvoiceModal').then((m) => m.InvoiceModal),
+  { ssr: false }
+);
+const PartsUsedModal = dynamic(
+  () => import('@/components/ui/PartsUsedModal').then((m) => m.PartsUsedModal),
+  { ssr: false }
+);
 import { customerService, Customer, CustomerStatus, normalizePhone, RepairRecord } from '@/lib/services/customer';
-import { increment } from 'firebase/firestore';
-import { transactionService } from '@/lib/services/transaction';
 import { shopTransactionService } from '@/lib/services/shopTransaction';
-import { inventoryService } from '@/lib/services/inventory';
-import { PartUsed } from '@/lib/services/customer';
 import { sendSMS } from '@/lib/sms';
 import { smsConfigService } from '@/lib/services/smsConfig';
 import toast from 'react-hot-toast';
@@ -121,6 +129,11 @@ export default function CustomersPage() {
       }
     }
   }, []);
+
+  const openAddModal = () => {
+    setEditingCustomer(null);
+    setIsModalOpen(true);
+  };
 
   useEffect(() => {
     const handleOpenAdd = () => {
@@ -267,7 +280,13 @@ export default function CustomersPage() {
         setCustomers(customers.map(c => c.id === editingCustomer.id ? { ...c, ...data } : c));
       } else {
         // Add Atomically
-        const newId = await shopTransactionService.createCustomer(data, user?.name || user?.email || 'Unknown');
+        const staffName = data.receivedByName || user?.name || user?.email || 'Unknown';
+        const staffEmail = data.receivedBy || user?.email || user?.name || 'Unknown';
+        const newId = await shopTransactionService.createCustomer({
+          ...data,
+          receivedBy: staffEmail,
+          receivedByName: staffName
+        }, staffEmail, staffName);
         await fetchCustomers();
 
         if (instantDelivery) {
@@ -577,11 +596,6 @@ export default function CustomersPage() {
       console.error('Error marking as returned', err);
       toast.error(err.message || 'ফেরত মার্ক করতে সমস্যা হয়েছে');
     }
-  };
-
-  const openAddModal = () => {
-    setEditingCustomer(null);
-    setIsModalOpen(true);
   };
 
   const openEditModal = (customer: Customer) => {
@@ -1146,7 +1160,7 @@ export default function CustomersPage() {
             </div>
 
             {/* Single Compact Actions Toolbar */}
-            <div className="flex items-center justify-between gap-1 pt-1.5 border-t border-gray-800/50">
+            <div className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-gray-800/50 flex-wrap">
               <div className="flex items-center gap-1.5 shrink-0">
                 {/* Direct Call Button */}
                 <a 

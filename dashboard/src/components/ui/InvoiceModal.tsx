@@ -31,19 +31,19 @@ export function InvoiceModal({ isOpen, onClose, customer }: InvoiceModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[800px] bg-popover text-white border-gray-800 shadow-2xl p-0 overflow-hidden [&>button]:hidden print:bg-white print:text-black print:border-none print:shadow-none print:max-w-full">
+      <DialogContent className="w-[96vw] sm:max-w-[800px] max-h-[92vh] sm:max-h-[90vh] flex flex-col bg-popover text-white border-gray-800 shadow-2xl p-0 overflow-hidden [&>button]:hidden print:bg-white print:text-black print:border-none print:shadow-none print:max-w-full print:max-h-none print:h-auto">
         {/* Screen Only Header */}
-        <div className="flex justify-between items-center p-4 border-b border-gray-800 bg-secondary print:hidden">
-          <h2 className="text-lg font-bold">Print Invoice</h2>
-          <div className="flex items-center gap-3">
+        <div className="flex justify-between items-center p-3 sm:p-4 border-b border-gray-800 bg-secondary print:hidden shrink-0">
+          <h2 className="text-base sm:text-lg font-bold">Print Invoice</h2>
+          <div className="flex items-center gap-2 sm:gap-3">
             <Button 
               onClick={handlePrint}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 h-9 text-xs sm:text-sm"
             >
               <Printer className="w-4 h-4" />
               Print
             </Button>
-            <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-400 hover:text-white">
+            <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-400 hover:text-white h-9 w-9">
               <X className="w-5 h-5" />
             </Button>
           </div>
@@ -52,32 +52,32 @@ export function InvoiceModal({ isOpen, onClose, customer }: InvoiceModalProps) {
         {/* Printable Area */}
         <div 
           ref={printRef}
-          className="p-8 md:p-12 bg-white text-black min-h-[600px] print:p-0 print:min-h-0"
+          className="p-4 sm:p-8 md:p-12 bg-white text-black min-h-[400px] overflow-y-auto overflow-x-auto flex-1 print:p-0 print:min-h-0 print:overflow-visible"
         >
           {/* Header */}
-          <div className="flex justify-between items-start border-b-2 border-gray-200 pb-6 mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-gray-200 pb-4 sm:pb-6 mb-6 sm:mb-8 gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center print:bg-blue-600">
-                <Tv className="w-7 h-7 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-600 rounded-xl flex items-center justify-center print:bg-blue-600 shrink-0">
+                <Tv className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-black text-gray-900 tracking-tight uppercase">{shopName}</h1>
-                <p className="text-sm text-gray-500 font-medium tracking-wider">{shopSubtitle}</p>
+                <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight uppercase">{shopName}</h1>
+                <p className="text-xs sm:text-sm text-gray-500 font-medium tracking-wider">{shopSubtitle}</p>
                 {(shopPhone || shopAddress) && (
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5">
                     {[shopPhone, shopAddress].filter(Boolean).join(' • ')}
                   </p>
                 )}
               </div>
             </div>
-            <div className="text-right">
-              <h2 className="text-xl font-bold text-gray-800">INVOICE</h2>
-              <p className="text-sm text-gray-500 mt-1">Invoice No: #{customer.id.substring(0, 6).toUpperCase()}</p>
-              <p className="text-sm text-gray-500">Date: {new Date().toLocaleDateString('en-GB')}</p>
+            <div className="text-left sm:text-right">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800">INVOICE</h2>
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">Invoice No: #{customer.id.substring(0, 6).toUpperCase()}</p>
+              <p className="text-xs sm:text-sm text-gray-500">Date: {new Date().toLocaleDateString('en-GB')}</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-12 mb-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-12 mb-8 sm:mb-10">
             {/* Customer Details */}
             <div>
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Billed To</h3>
@@ -177,6 +177,9 @@ export function InvoiceModal({ isOpen, onClose, customer }: InvoiceModalProps) {
             <div className="w-[200px] text-center">
               <div className="border-b border-gray-400 h-10 mb-2"></div>
               <p className="text-xs font-medium text-gray-600">Authorized Signature</p>
+              {customer.receivedByName && (
+                <p className="text-[10px] text-gray-500 mt-0.5">Received by: {customer.receivedByName}</p>
+              )}
             </div>
           </div>
           
