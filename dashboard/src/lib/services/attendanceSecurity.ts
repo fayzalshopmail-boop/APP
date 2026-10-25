@@ -265,7 +265,9 @@ export const attendanceSecurityService = {
           );
 
           const maxAllowed = settings.radiusMeters || 50;
-          if (distanceMeters <= maxAllowed) {
+          // Account for indoor mobile GPS hardware drift (accuracy tolerance)
+          const accuracyTolerance = Math.min(Math.round((loc.accuracy || 0) * 0.5), 35);
+          if (distanceMeters <= (maxAllowed + accuracyTolerance)) {
             gpsMatched = true;
           } else {
             errors.push(`আপনি দোকান থেকে ${distanceMeters}m দূরে আছেন (অনুমোদিত ${maxAllowed}m)`);
