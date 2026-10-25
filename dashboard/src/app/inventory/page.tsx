@@ -233,46 +233,28 @@ export default function InventoryPage() {
     if (!restockItem || restockData.addQuantity <= 0) return;
 
     try {
-      const oldQty = restockItem.stock;
-      const oldPrice = restockItem.purchasePrice;
-      
-      const newQty = oldQty + restockData.addQuantity;
-      
-      const totalOldValue = oldQty * oldPrice;
-      const totalNewValue = restockData.addQuantity * restockData.newPurchasePrice;
-      const avgPurchasePrice = newQty > 0 ? (totalOldValue + totalNewValue) / newQty : oldPrice;
+      const { newStock, avgPurchasePrice } = await shopTransactionService.restockItem({
+        inventoryId: restockItem.id,
+        addQuantity: restockData.addQuantity,
+        newPurchasePrice: restockData.newPurchasePrice,
+        newSellingPrice: restockData.newSellingPrice,
+        supplierId: restockData.supplierId || undefined,
+        userEmail: user?.email || 'Unknown'
+      });
 
       const updates = {
-        stock: newQty,
-        purchasePrice: Number(avgPurchasePrice.toFixed(2)),
-        sellingPrice: restockData.newSellingPrice
+        stock: newStock,
+        purchasePrice: avgPurchasePrice,
+        sellingPrice: restockData.newSellingPrice,
+        ...(restockData.supplierId ? { supplierId: restockData.supplierId } : {})
       };
 
-      await inventoryService.update(restockItem.id, updates);
-      
-      if (totalNewValue > 0) {
-        if (restockData.supplierId) {
-          await supplierService.addBill(restockData.supplierId, totalNewValue);
-          toast.success("Item restocked & Supplier due updated");
-        } else {
-          await transactionService.add({
-            customerId: 'cash-purchase',
-            customerName: restockItem.name + ' (Restock)',
-            amount: totalNewValue,
-            type: 'Inventory Purchase',
-            receivedBy: user?.email || 'Unknown'
-          });
-          toast.success("Item restocked & Cash purchase recorded");
-        }
-      } else {
-        toast.success("Item restocked successfully");
-      }
-      
       setItems(items.map(item => item.id === restockItem.id ? { ...item, ...updates } : item));
+      toast.success(restockData.supplierId ? "Item restocked & Supplier due updated" : "Item restocked & Cash purchase recorded");
       closeRestockModal();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error restocking item", error);
-      toast.error("Failed to restock item.");
+      toast.error(error?.message || "Failed to restock item.");
     }
   };
 

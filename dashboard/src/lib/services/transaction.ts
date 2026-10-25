@@ -1,7 +1,16 @@
 import { collection, addDoc, getDocs, query, orderBy, where, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 
-export type TransactionType = 'Advance Payment' | 'Due Collection' | 'Refund' | 'Direct Sell' | 'Inventory Purchase' | 'Supplier Payment' | 'Mechanic Payment';
+export type TransactionType = 
+  | 'Advance Payment' 
+  | 'Due Collection' 
+  | 'Refund' 
+  | 'Direct Sell' 
+  | 'Inventory Purchase' 
+  | 'Supplier Payment' 
+  | 'Mechanic Payment'
+  | 'Loan Collection'
+  | 'Loan Repayment';
 
 export interface Transaction {
   id: string;

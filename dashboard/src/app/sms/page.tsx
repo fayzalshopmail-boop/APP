@@ -84,13 +84,19 @@ export default function SmsMarketingPage() {
   };
 
   const handleCheckBalance = async () => {
-    if (!settings.apiKey) {
-      toast.error('Please enter and save your API Key first.');
-      return;
-    }
     try {
       setCheckingBalance(true);
-      const res = await fetch(`/api/sms/balance?apiKey=${settings.apiKey}`);
+      const { auth } = await import('@/lib/firebase');
+      const idToken = auth?.currentUser ? await auth.currentUser.getIdToken().catch(() => null) : null;
+
+      const res = await fetch('/api/sms/balance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {})
+        },
+        body: JSON.stringify({ apiKey: settings.apiKey || undefined })
+      });
       const data = await res.json();
       if (data.success) {
         try {

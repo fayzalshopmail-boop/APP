@@ -8,7 +8,8 @@ import {
   serverTimestamp,
   query,
   orderBy,
-  arrayUnion
+  arrayUnion,
+  runTransaction
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -104,7 +105,9 @@ export const loanService = {
     totalAmount: number, 
     nextDate?: string,
     loanType?: 'Given' | 'Taken',
-    customNote?: string
+    customNote?: string,
+    receivedBy?: string,
+    personName?: string
   ): Promise<{ newPaid: number, status: 'Pending' | 'Paid' }> => {
     if (!db) throw new Error('Firebase DB is not initialized');
     const newPaid = (currentPaid || 0) + payment;
@@ -137,7 +140,23 @@ export const loanService = {
     }
 
     const docRef = doc(db, COLLECTION_NAME, id);
-    await updateDoc(docRef, updateData);
+
+    // Atomically update loan and record transaction in general ledger
+    await runTransaction(db, async (transaction) => {
+      transaction.update(docRef, updateData);
+
+      // Record in central transactions collection for cash flow audit trail
+      const transType = loanType === 'Taken' ? 'Loan Repayment' : 'Loan Collection';
+      const transRef = doc(collection(db, 'transactions'));
+      transaction.set(transRef, {
+        customerId: id,
+        customerName: personName ? `${personName} (${loanType === 'Taken' ? 'ঋণ পরিশোধ' : 'পাওনা আদায়'})` : (loanType === 'Taken' ? 'ঋণ পরিশোধ' : 'পাওনা আদায়'),
+        amount: payment,
+        type: transType,
+        receivedBy: receivedBy || 'Owner',
+        createdAt: serverTimestamp()
+      });
+    });
 
     return { newPaid, status: newStatus };
   }

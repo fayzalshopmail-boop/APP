@@ -25,17 +25,17 @@ export function AuthScreen() {
     setError(null);
     try {
       if (!auth || !googleProvider) {
-        setUser({ name: 'Admin', role: 'Owner', avatar: 'AD' });
-        return;
+        throw new Error('Firebase Auth is not properly initialized. Please verify configuration.');
       }
       
       const result = await signInWithPopup(auth, googleProvider);
       const firebaseUser = result.user;
       
       if (!firebaseUser.email) throw new Error('No email found in Google account');
+      const normalizedEmail = firebaseUser.email.toLowerCase().trim();
 
       // Check if user email is pre-authorized in our Firestore DB
-      const existingUser = await userService.getUserByEmail(firebaseUser.email);
+      const existingUser = await userService.getUserByEmail(normalizedEmail);
       
       if (existingUser) {
         if (!existingUser.isActive) {
@@ -44,14 +44,14 @@ export function AuthScreen() {
         }
         
         if (!existingUser.avatar && firebaseUser.photoURL) {
-          await userService.updateUser(firebaseUser.email, { avatar: firebaseUser.photoURL });
+          await userService.updateUser(normalizedEmail, { avatar: firebaseUser.photoURL });
         }
 
         setUser({
           name: existingUser.name,
           role: existingUser.role,
           avatar: existingUser.avatar || firebaseUser.photoURL || 'AD',
-          email: existingUser.email
+          email: normalizedEmail
         });
         setSidebarOpen(false);
       } else {
@@ -59,7 +59,7 @@ export function AuthScreen() {
         
         if (isFirst) {
           const newUser = await userService.createOwner(
-            firebaseUser.email,
+            normalizedEmail,
             firebaseUser.displayName || 'Owner',
             firebaseUser.photoURL || ''
           );
@@ -67,7 +67,7 @@ export function AuthScreen() {
             name: newUser.name,
             role: newUser.role,
             avatar: newUser.avatar || 'AD',
-            email: newUser.email
+            email: normalizedEmail
           });
           setSidebarOpen(false);
         } else {
@@ -76,7 +76,7 @@ export function AuthScreen() {
         }
       }
       
-      requestNotificationPermission(firebaseUser.email);
+      requestNotificationPermission(normalizedEmail);
       
     } catch (err: any) {
       console.error(err);
@@ -97,12 +97,14 @@ export function AuthScreen() {
     try {
       if (!auth) throw new Error('Firebase Auth not initialized');
       const { signInWithEmailAndPassword } = await import('firebase/auth');
-      const result = await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
+      const cleanLoginEmail = loginEmail.toLowerCase().trim();
+      const result = await signInWithEmailAndPassword(auth, cleanLoginEmail, loginPassword);
       const firebaseUser = result.user;
 
       if (!firebaseUser.email) throw new Error('No email found in account');
+      const normalizedEmail = firebaseUser.email.toLowerCase().trim();
 
-      const existingUser = await userService.getUserByEmail(firebaseUser.email);
+      const existingUser = await userService.getUserByEmail(normalizedEmail);
       
       if (existingUser) {
         if (!existingUser.isActive) {
@@ -113,8 +115,8 @@ export function AuthScreen() {
         setUser({
           name: existingUser.name,
           role: existingUser.role,
-          avatar: existingUser.avatar || firebaseUser.email.charAt(0).toUpperCase(),
-          email: existingUser.email
+          avatar: existingUser.avatar || normalizedEmail.charAt(0).toUpperCase(),
+          email: normalizedEmail
         });
         setSidebarOpen(false);
       } else {
@@ -127,10 +129,6 @@ export function AuthScreen() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDevBypass = () => {
-    setUser({ name: 'Dev User', role: 'Dev', avatar: 'DV' });
   };
 
   return (
@@ -231,12 +229,6 @@ export function AuthScreen() {
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>{error}</span>
                 </div>
-              )}
-              
-              {(!auth || !googleProvider) && (
-                <button onClick={handleDevBypass} className="w-full text-xs text-gray-500 hover:text-gray-400 underline mt-4">
-                  Dev Bypass (No Firebase Config)
-                </button>
               )}
             </div>
           </div>

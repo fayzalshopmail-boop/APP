@@ -135,6 +135,7 @@ export const useAppStore = create<AppState>()(
         return {
           ...currentState,
           ...(persistedState as any),
+          isUnlocked: false, // Security: Ensure app always starts locked on initial load / reload
           deviceBrands: migratedBrands,
           deviceProblems: migratedProblems
         };
@@ -143,7 +144,6 @@ export const useAppStore = create<AppState>()(
         user: state.user,
         shop: state.shop,
         pin: state.pin,
-        isUnlocked: state.isUnlocked,
         deviceBrands: state.deviceBrands,
         deviceTypes: state.deviceTypes,
         deviceProblems: state.deviceProblems

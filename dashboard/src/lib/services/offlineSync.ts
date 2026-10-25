@@ -4,8 +4,8 @@ export interface QueuedSMS {
   id: string;
   number: string | string[];
   message: string;
-  apiKey: string;
-  senderId: string;
+  apiKey?: string;
+  senderId?: string;
   apiUrl?: string;
   createdAt: number;
   customerName?: string;
@@ -98,17 +98,23 @@ class OfflineSyncService {
     const remaining: QueuedSMS[] = [];
     let successCount = 0;
 
+    const { auth } = await import('../firebase');
+    const idToken = auth?.currentUser ? await auth.currentUser.getIdToken().catch(() => null) : null;
+
     for (const item of queue) {
       try {
         const res = await fetch('/api/sms', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {})
+          },
           body: JSON.stringify({
             number: item.number,
             message: item.message,
-            apiKey: item.apiKey,
-            senderId: item.senderId,
-            apiUrl: item.apiUrl
+            ...(item.apiKey ? { apiKey: item.apiKey } : {}),
+            ...(item.senderId ? { senderId: item.senderId } : {}),
+            ...(item.apiUrl ? { apiUrl: item.apiUrl } : {})
           })
         });
 

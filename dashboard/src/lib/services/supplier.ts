@@ -61,18 +61,24 @@ export const supplierService = {
   addBill: async (id: string, amount: number): Promise<{ newPurchase: number, newDue: number }> => {
     if (!db) throw new Error('Firebase DB is not initialized');
     const docRef = doc(db, COLLECTION_NAME, id);
-    const snap = await getDoc(docRef);
-    if (!snap.exists()) throw new Error('Supplier not found');
-    
-    const data = snap.data() as Supplier;
-    const newPurchase = (data.totalPurchase || 0) + amount;
-    const newDue = (data.due || 0) + amount;
-    
-    await updateDoc(docRef, {
-      totalPurchase: newPurchase,
-      due: newDue
+    let result = { newPurchase: 0, newDue: 0 };
+
+    await runTransaction(db, async (transaction) => {
+      const snap = await transaction.get(docRef);
+      if (!snap.exists()) throw new Error('Supplier not found');
+
+      const data = snap.data() as Supplier;
+      const newPurchase = (data.totalPurchase || 0) + amount;
+      const newDue = (data.due || 0) + amount;
+
+      transaction.update(docRef, {
+        totalPurchase: newPurchase,
+        due: newDue
+      });
+      result = { newPurchase, newDue };
     });
-    return { newPurchase, newDue };
+
+    return result;
   },
 
   delete: async (id: string): Promise<void> => {

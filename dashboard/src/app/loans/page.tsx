@@ -15,11 +15,13 @@ import { Input } from '@/components/ui/input';
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { getLocalDateString } from '@/lib/utils';
+import { useAppStore } from '@/store/useAppStore';
 import toast from "react-hot-toast";
 
 type FilterType = 'all' | 'pending' | 'paid' | 'given' | 'taken';
 
 export default function LoansPage() {
+  const { user } = useAppStore();
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -206,7 +208,9 @@ export default function LoansPage() {
         paymentModalData.amount,
         paymentAmount < remaining ? nextDate : undefined,
         paymentModalData.type,
-        paymentNote.trim() || undefined
+        paymentNote.trim() || undefined,
+        user?.email || user?.name || 'Owner',
+        paymentModalData.personName
       );
       
       setLoans(prev => prev.map(l => l.id === paymentModalData.id ? { 

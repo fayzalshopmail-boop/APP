@@ -1,6 +1,7 @@
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
+import { getAuth } from 'firebase-admin/auth';
 
 if (!getApps().length) {
   try {
@@ -26,15 +27,19 @@ if (!getApps().length) {
 
 let db: any = null;
 let msg: any = null;
+let authInstance: any = null;
 
 if (getApps().length > 0) {
   try {
     db = getFirestore();
     msg = getMessaging();
+    authInstance = getAuth();
   } catch(e) {
-    console.error(e);
+    console.error("Firebase admin service retrieval error:", e);
   }
 }
 
 export const adminDb = db;
 export const adminMessaging = msg;
+export const adminAuth = authInstance;
+

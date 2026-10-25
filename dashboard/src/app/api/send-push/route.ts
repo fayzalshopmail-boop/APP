@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { adminMessaging, adminDb } from '@/lib/firebase-admin';
+import { adminMessaging, adminDb, adminAuth } from '@/lib/firebase-admin';
 
 export async function POST(request: Request) {
   try {
@@ -7,13 +7,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Firebase Admin not initialized' }, { status: 500 });
     }
 
+    // Dual authorization: either server CRON_SECRET or verified active Firebase User token
     const authHeader = request.headers.get('authorization');
-    const expectedSecret = process.env.CRON_SECRET || process.env.NEXT_PUBLIC_CRON_SECRET || 'backup_secret_shop_2026_antigravity';
-    if (!authHeader || authHeader.replace(/^Bearer\s+/i, '') !== expectedSecret) {
+    const token = (authHeader || '').replace(/^Bearer\s+/i, '').trim();
+
+    const expectedCronSecret = process.env.CRON_SECRET;
+    const isServerCron = Boolean(expectedCronSecret && token && token === expectedCronSecret);
+
+    let isUserAuthorized = false;
+    if (!isServerCron && adminAuth && token) {
+      try {
+        const decoded = await adminAuth.verifyIdToken(token);
+        const email = (decoded.email || '').toLowerCase().trim();
+        if (email) {
+          const userDoc = await adminDb.collection('users').doc(email).get();
+          if (userDoc.exists && userDoc.data()?.isActive !== false) {
+            isUserAuthorized = true;
+          }
+        }
+      } catch (authErr) {
+        // Token invalid or expired
+      }
+    }
+
+    if (!isServerCron && !isUserAuthorized) {
       return NextResponse.json({ error: 'Unauthorized push notification request' }, { status: 401 });
     }
     
-    const { title, body, link, targetRole } = await request.json();
+    const { title, body, link, targetRole } = await request.json().catch(() => ({}));
 
     if (!title || !body) {
       return NextResponse.json({ error: 'Title and body are required' }, { status: 400 });

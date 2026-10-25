@@ -271,7 +271,7 @@ export default function ReportsPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-800/50">
                       {paginatedTransactions.map((t) => {
-                        const isExpense = ['Refund', 'Inventory Purchase', 'Supplier Payment', 'Mechanic Payment'].includes(t.type);
+                        const isExpense = ['Refund', 'Inventory Purchase', 'Supplier Payment', 'Mechanic Payment', 'Loan Repayment'].includes(t.type);
                         return (
                           <tr key={t.id} className="hover:bg-gray-800/20 transition-colors">
                             <td className="px-6 py-4 text-sm text-gray-400">
@@ -303,7 +303,7 @@ export default function ReportsPage() {
                 {/* Mobile Card View */}
                 <div className="md:hidden space-y-3 p-4">
                   {paginatedTransactions.map((t) => {
-                    const isExpense = ['Refund', 'Inventory Purchase', 'Supplier Payment', 'Mechanic Payment'].includes(t.type);
+                    const isExpense = ['Refund', 'Inventory Purchase', 'Supplier Payment', 'Mechanic Payment', 'Loan Repayment'].includes(t.type);
                     const dateStr = t.createdAt && typeof t.createdAt === 'object' && 'seconds' in t.createdAt 
                       ? new Date((t.createdAt as any).seconds * 1000).toLocaleString() 
                       : 'Just now';

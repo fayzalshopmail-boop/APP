@@ -76,16 +76,18 @@ export const mechanicService = {
   addJobCommission: async (id: string, commission: number): Promise<void> => {
     if (!db) throw new Error('Firebase DB is not initialized');
     const docRef = doc(db, COLLECTION_NAME, id);
-    const snap = await getDoc(docRef);
-    if (!snap.exists()) throw new Error('Mechanic not found');
-    
-    const data = snap.data() as Mechanic;
-    
-    await updateDoc(docRef, {
-      totalJobsBrought: (data.totalJobsBrought || 0) + 1,
-      totalCommissionEarned: (data.totalCommissionEarned || 0) + commission,
-      commissionDue: (data.commissionDue || 0) + commission,
-      updatedAt: serverTimestamp()
+
+    await runTransaction(db, async (transaction) => {
+      const snap = await transaction.get(docRef);
+      if (!snap.exists()) throw new Error('Mechanic not found');
+
+      const data = snap.data() as Mechanic;
+      transaction.update(docRef, {
+        totalJobsBrought: (data.totalJobsBrought || 0) + 1,
+        totalCommissionEarned: (data.totalCommissionEarned || 0) + commission,
+        commissionDue: (data.commissionDue || 0) + commission,
+        updatedAt: serverTimestamp()
+      });
     });
   },
 

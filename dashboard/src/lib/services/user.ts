@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, setDoc, updateDoc, deleteDoc, query, orderBy, serverTimestamp, limit, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, orderBy, serverTimestamp, limit, where } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export type UserRole = 'Owner' | 'Manager' | 'Technician';
@@ -21,16 +21,37 @@ const COLLECTION_NAME = 'users';
 export const userService = {
   /**
    * Fetch a user by their Email (used to check if they are authorized)
+   * Uses lowercase normalized email lookup with fallback query
    */
   getUserByEmail: async (email: string): Promise<AppUser | null> => {
-    if (!db) return null;
-    const q = query(collection(db, COLLECTION_NAME), where('email', '==', email), limit(1));
-    const snapshot = await getDocs(q);
-    
-    if (!snapshot.empty) {
-      const doc = snapshot.docs[0];
-      return { id: doc.id, ...doc.data() } as AppUser;
+    if (!db || !email) return null;
+    const normalized = email.toLowerCase().trim();
+
+    // 1. Direct document lookup by normalized email
+    try {
+      const docRef = doc(db, COLLECTION_NAME, normalized);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() } as AppUser;
+      }
+    } catch {}
+
+    // 2. Query fallback (handles documents created with original case)
+    try {
+      const q = query(
+        collection(db, COLLECTION_NAME), 
+        where('email', 'in', [normalized, email.trim()]), 
+        limit(1)
+      );
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        const item = snapshot.docs[0];
+        return { id: item.id, ...item.data() } as AppUser;
+      }
+    } catch (err) {
+      console.warn("Failed querying user by email:", err);
     }
+
     return null;
   },
 
@@ -45,13 +66,14 @@ export const userService = {
   },
 
   /**
-   * Create the first Owner account
+   * Create the first Owner account (normalized email ID)
    */
   createOwner: async (email: string, name: string, avatar: string): Promise<AppUser> => {
     if (!db) throw new Error('Database not connected');
+    const normalized = email.toLowerCase().trim();
     
     const newUser: AppUser = {
-      email,
+      email: normalized,
       name,
       role: 'Owner',
       avatar,
@@ -59,19 +81,19 @@ export const userService = {
       createdAt: serverTimestamp(),
     };
     
-    // Use email as the document ID for easy lookup
-    await setDoc(doc(db, COLLECTION_NAME, email), newUser);
-    return { id: email, ...newUser };
+    await setDoc(doc(db, COLLECTION_NAME, normalized), newUser);
+    return { id: normalized, ...newUser };
   },
 
   /**
-   * Pre-authorize a staff member (Admin only)
+   * Pre-authorize a staff member (Admin only, normalized email ID)
    */
   addStaff: async (email: string, name: string, role: UserRole): Promise<AppUser> => {
     if (!db) throw new Error('Database not connected');
+    const normalized = email.toLowerCase().trim();
     
     const newUser: AppUser = {
-      email,
+      email: normalized,
       name,
       role,
       avatar: '',
@@ -79,8 +101,8 @@ export const userService = {
       createdAt: serverTimestamp(),
     };
     
-    await setDoc(doc(db, COLLECTION_NAME, email), newUser);
-    return { id: email, ...newUser };
+    await setDoc(doc(db, COLLECTION_NAME, normalized), newUser);
+    return { id: normalized, ...newUser };
   },
 
   /**
@@ -97,9 +119,14 @@ export const userService = {
    * Update user access/role (Admin only)
    */
   updateUser: async (email: string, data: Partial<AppUser>) => {
-    if (!db) return;
-    const docRef = doc(db, COLLECTION_NAME, email);
-    await updateDoc(docRef, data);
+    if (!db || !email) return;
+    const normalized = email.toLowerCase().trim();
+    const docRef = doc(db, COLLECTION_NAME, normalized);
+    const updateData = { ...data };
+    if (updateData.email) {
+      updateData.email = updateData.email.toLowerCase().trim();
+    }
+    await updateDoc(docRef, updateData);
   },
 
   /**

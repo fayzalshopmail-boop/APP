@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ShieldCheck, LogOut, RotateCcw } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
+import { hashPin, verifyPin } from '@/lib/security';
 
 interface VaultDoorLockProps {
   expectedPin: string | null;
@@ -146,7 +147,7 @@ export function VaultDoorLock({
   }, []);
 
   // Attempt unlock sequence (accepts explicitCode to bypass any state updates)
-  const attempt = useCallback((explicitCode?: string) => {
+  const attempt = useCallback(async (explicitCode?: string) => {
     const currentCode = explicitCode !== undefined ? explicitCode : codeRef.current;
     if (isBusy || !rootRef.current) return;
 
@@ -192,9 +193,11 @@ export function VaultDoorLock({
             rootRef.current?.classList.add('p-reveal');
             setStatusMessage('ভল্ট আনলকড!');
           });
+          // Hash the PIN before saving to store
+          const hashedPin = await hashPin(currentCode);
           // Door fully opens and stays visible for 1 second before going to dashboard
           at(4300, () => {
-            onPinSet?.(currentCode);
+            onPinSet?.(hashedPin);
             onUnlock();
           });
         } else {
@@ -216,10 +219,13 @@ export function VaultDoorLock({
     }
 
     // 2. UNLOCK MODE
-    // Accept expectedPin OR default '1234' as universal master/fallback
-    const isCorrect = (expectedPin && currentCode === expectedPin) || currentCode === '1234';
+    // Verify using cryptographic SHA-256 hash (or upgrade legacy cleartext pin)
+    const verification = await verifyPin(currentCode, expectedPin);
 
-    if (isCorrect) {
+    if (verification.valid) {
+      if (verification.needsUpgrade && verification.newHash) {
+        onPinSet?.(verification.newHash);
+      }
       setIsBusy(true);
       genRef.current++;
       const myGen = genRef.current;

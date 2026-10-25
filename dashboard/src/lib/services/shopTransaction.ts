@@ -414,8 +414,88 @@ export const shopTransactionService = {
     }
 
     return { newStock: newStockResult };
-  }
-,
+  },
+
+  /**
+   * Processes an inventory restock atomically.
+   * Updates inventory item stock and weighted average purchase price,
+   * and synchronously records either supplier debt or a cash purchase transaction.
+   */
+  async restockItem(params: {
+    inventoryId: string;
+    addQuantity: number;
+    newPurchasePrice: number;
+    newSellingPrice: number;
+    supplierId?: string;
+    userEmail: string;
+  }): Promise<{ newStock: number; avgPurchasePrice: number }> {
+    if (!db) throw new Error('Firebase DB is not initialized');
+
+    const { inventoryId, addQuantity, newPurchasePrice, newSellingPrice, supplierId, userEmail } = params;
+    if (addQuantity <= 0) throw new Error('Quantity must be greater than zero');
+
+    const inventoryRef = doc(db, 'inventory', inventoryId);
+    const supplierRef = supplierId ? doc(db, 'suppliers', supplierId) : null;
+    let result = { newStock: 0, avgPurchasePrice: 0 };
+
+    await runTransaction(db, async (transaction) => {
+      // 1. Read inventory item
+      const itemSnap = await transaction.get(inventoryRef);
+      if (!itemSnap.exists()) throw new Error('Inventory item not found');
+
+      const itemData = itemSnap.data() as InventoryItem;
+      const oldQty = itemData.stock || 0;
+      const oldPrice = itemData.purchasePrice || 0;
+
+      const newQty = oldQty + addQuantity;
+      const totalOldValue = oldQty * oldPrice;
+      const totalNewValue = addQuantity * newPurchasePrice;
+      const avgPrice = newQty > 0 ? Number(((totalOldValue + totalNewValue) / newQty).toFixed(2)) : oldPrice;
+
+      // 2. If supplier purchase, read and validate supplier
+      let supplierSnap: any = null;
+      if (supplierRef) {
+        supplierSnap = await transaction.get(supplierRef);
+        if (!supplierSnap.exists()) throw new Error('Selected supplier not found');
+      }
+
+      // 3. Atomically perform writes
+      transaction.update(inventoryRef, {
+        stock: newQty,
+        purchasePrice: avgPrice,
+        sellingPrice: newSellingPrice,
+        ...(supplierId ? { supplierId } : {}),
+        updatedAt: serverTimestamp()
+      });
+
+      if (totalNewValue > 0) {
+        if (supplierRef && supplierSnap) {
+          const supplierData = supplierSnap.data();
+          const newPurchase = (supplierData.totalPurchase || 0) + totalNewValue;
+          const newDue = (supplierData.due || 0) + totalNewValue;
+          transaction.update(supplierRef, {
+            totalPurchase: newPurchase,
+            due: newDue,
+            updatedAt: serverTimestamp()
+          });
+        } else {
+          const transRef = doc(collection(db, 'transactions'));
+          transaction.set(transRef, {
+            customerId: 'cash-purchase',
+            customerName: `${itemData.name} (Restock)`,
+            amount: totalNewValue,
+            type: 'Inventory Purchase',
+            receivedBy: userEmail || 'Unknown',
+            createdAt: serverTimestamp()
+          });
+        }
+      }
+
+      result = { newStock: newQty, avgPurchasePrice: avgPrice };
+    });
+
+    return result;
+  },
 
   /**
    * Marks a customer as returned (unrepaired).

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { adminDb } from '@/lib/firebase-admin';
 import { defaultShopSettings, ShopSettings } from '@/lib/services/shopSettings';
 
 export const dynamic = 'force-dynamic';
@@ -32,15 +31,14 @@ export async function GET(req: NextRequest) {
   let shopSettings: ShopSettings = defaultShopSettings;
 
   try {
-    if (db) {
-      const docRef = doc(db, 'settings', 'shop');
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
+    if (adminDb) {
+      const docSnap = await adminDb.collection('settings').doc('shop').get();
+      if (docSnap.exists) {
         shopSettings = { ...defaultShopSettings, ...docSnap.data() } as ShopSettings;
       }
     }
   } catch (err) {
-    console.error('Failed to fetch shop settings for favicon', err);
+    console.error('Failed to fetch shop settings for favicon via adminDb:', err);
   }
 
   lastCheckTime = now;
@@ -80,7 +78,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Error parsing logo data URL:', error);
+    console.error('Error parsing logo data URL in favicon route:', error);
     const res = NextResponse.redirect(fallbackUrl);
     res.headers.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
     return res;

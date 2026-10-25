@@ -27,8 +27,9 @@ export const requestNotificationPermission = async (userEmail: string) => {
       });
       
       if (token && db) {
-        // Save the token to the user's document
-        await setDoc(doc(db, 'users', userEmail), {
+        const normalizedEmail = (userEmail || '').toLowerCase().trim();
+        // Save the token to the user's document using normalized email ID
+        await setDoc(doc(db, 'users', normalizedEmail), {
           fcmToken: token,
           fcmTokenUpdatedAt: new Date().toISOString()
         }, { merge: true });

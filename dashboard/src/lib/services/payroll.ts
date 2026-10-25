@@ -63,8 +63,10 @@ export const payrollService = {
       }
     }
 
+    const normalizedEmail = (record.staffEmail || '').toLowerCase().trim();
     const docData: any = {
       ...record,
+      staffEmail: normalizedEmail,
       amount: Number(record.amount) || 0,
       createdAt: serverTimestamp()
     };
@@ -84,14 +86,15 @@ export const payrollService = {
   async getRecords(month?: string, staffEmail?: string): Promise<PayrollRecord[]> {
     if (!db) return [];
     try {
+      const normalizedStaffEmail = staffEmail ? staffEmail.toLowerCase().trim() : undefined;
       let q = collection(db, COLLECTION_NAME) as any;
 
-      if (month && staffEmail) {
-        q = query(q, where('month', '==', month), where('staffEmail', '==', staffEmail));
+      if (month && normalizedStaffEmail) {
+        q = query(q, where('month', '==', month), where('staffEmail', '==', normalizedStaffEmail));
       } else if (month) {
         q = query(q, where('month', '==', month));
-      } else if (staffEmail) {
-        q = query(q, where('staffEmail', '==', staffEmail));
+      } else if (normalizedStaffEmail) {
+        q = query(q, where('staffEmail', '==', normalizedStaffEmail));
       }
 
       const snap = await getDocs(q);

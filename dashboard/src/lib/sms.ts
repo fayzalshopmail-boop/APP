@@ -1,18 +1,39 @@
 import toast from 'react-hot-toast';
 import { offlineSyncService } from './services/offlineSync';
+import { auth } from './firebase';
 
-export const sendSMS = async (number: string | string[], message: string, apiKey: string, senderId: string, apiUrl?: string) => {
+export const sendSMS = async (number: string | string[], message: string, apiKey?: string, senderId?: string, apiUrl?: string) => {
   // Check if browser is offline
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
-    offlineSyncService.queueSMS({ number, message, apiKey, senderId, apiUrl });
+    offlineSyncService.queueSMS({ number, message });
     return { success: true, queued: true };
   }
 
   try {
+    let idToken: string | null = null;
+    if (auth?.currentUser) {
+      try {
+        idToken = await auth.currentUser.getIdToken();
+      } catch (tokenErr) {
+        console.warn("Could not get auth token for SMS:", tokenErr);
+      }
+    }
+
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (idToken) {
+      headers['Authorization'] = `Bearer ${idToken}`;
+    }
+
     const res = await fetch('/api/sms', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ number, message, apiKey, senderId, apiUrl }),
+      headers,
+      body: JSON.stringify({ 
+        number, 
+        message, 
+        ...(apiKey ? { apiKey } : {}), 
+        ...(senderId ? { senderId } : {}), 
+        ...(apiUrl ? { apiUrl } : {}) 
+      }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -38,7 +59,7 @@ export const sendSMS = async (number: string | string[], message: string, apiKey
     console.error("Failed to send SMS:", error);
     // If failed due to sudden network loss, enqueue for background sync
     if (typeof navigator !== 'undefined' && (!navigator.onLine || error?.message?.includes('fetch'))) {
-      offlineSyncService.queueSMS({ number, message, apiKey, senderId, apiUrl });
+      offlineSyncService.queueSMS({ number, message });
       return { success: true, queued: true };
     }
     toast.error(`SMS Failed: ${error.message}`);
