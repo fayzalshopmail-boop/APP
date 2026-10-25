@@ -5,7 +5,6 @@ import { LayoutDashboard, Users, Coins, Tv, Wrench, Loader2, UserPlus, ShoppingC
 import { StatCard } from '@/components/ui/StatCard';
 import { QuickAlerts } from '@/components/ui/QuickAlerts';
 import { RevenueChart } from '@/components/ui/RevenueChart';
-import { RecentCustomers } from '@/components/ui/RecentCustomers';
 import { normalizePhone } from '@/lib/services/customer';
 import { formatCurrency } from '@/lib/currency';
 import { getLocalDateString } from '@/lib/utils';
@@ -380,10 +379,6 @@ export default function Dashboard() {
             <QuickAlerts />
           )}
         </div>
-      </div>
-
-      <div>
-        <RecentCustomers />
       </div>
     </div>
   );
