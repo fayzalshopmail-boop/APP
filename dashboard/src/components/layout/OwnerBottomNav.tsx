@@ -18,7 +18,6 @@ import {
   Star, 
   MessageSquare, 
   Settings, 
-  Lock, 
   LogOut,
   ChevronRight,
   ShieldCheck
@@ -393,23 +392,10 @@ export function OwnerBottomNav() {
           </div>
 
           {/* Section 4: Security & Actions */}
-          <div className="pt-2 border-t border-gray-800/80 flex items-center gap-3">
-            {user?.role === 'Owner' && (
-              <button
-                onClick={() => {
-                  setIsMoreOpen(false);
-                  setUnlocked(false);
-                }}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 text-xs font-semibold transition-colors cursor-pointer"
-              >
-                <Lock className="w-4 h-4" />
-                <span>স্ক্রিন লক (Lock)</span>
-              </button>
-            )}
-            
+          <div className="pt-2 border-t border-gray-800/80 flex items-center">
             <button
               onClick={() => setShowLogoutConfirm(true)}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-semibold transition-colors cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-semibold transition-colors cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
               <span>লগআউট (Logout)</span>

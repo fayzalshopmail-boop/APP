@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { LogIn, ShieldAlert, Loader2, AlertCircle } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
@@ -10,6 +10,7 @@ import { userService } from '@/lib/services/user';
 import { requestNotificationPermission } from '@/lib/services/fcm';
 import { useRouter } from 'next/navigation';
 import { VaultDoorLock } from './VaultDoorLock';
+import { isPhoneDevice } from '@/lib/utils';
 
 export function AuthScreen() {
   const router = useRouter();
@@ -19,6 +20,13 @@ export function AuthScreen() {
 
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+
+  // On phone / mobile devices, bypass lock screen if user is authenticated
+  useEffect(() => {
+    if (user && isPhoneDevice()) {
+      setUnlocked(true);
+    }
+  }, [user, setUnlocked]);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -53,6 +61,9 @@ export function AuthScreen() {
           avatar: existingUser.avatar || firebaseUser.photoURL || 'AD',
           email: normalizedEmail
         });
+        if (isPhoneDevice()) {
+          setUnlocked(true);
+        }
         setSidebarOpen(false);
       } else {
         const isFirst = await userService.isFirstUser();
@@ -118,6 +129,9 @@ export function AuthScreen() {
           avatar: existingUser.avatar || normalizedEmail.charAt(0).toUpperCase(),
           email: normalizedEmail
         });
+        if (isPhoneDevice()) {
+          setUnlocked(true);
+        }
         setSidebarOpen(false);
       } else {
         await auth.signOut();

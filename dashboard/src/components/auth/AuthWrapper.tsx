@@ -12,6 +12,7 @@ import { dropdownConfigService } from '@/lib/services/dropdownConfig';
 import { usePathname } from 'next/navigation';
 import { AutoBackupTrigger } from './AutoBackupTrigger';
 import { requestNotificationPermission } from '@/lib/services/fcm';
+import { isPhoneDevice } from '@/lib/utils';
 
 function TitleUpdater({ title }: { title: string }) {
   const pathname = usePathname();
@@ -72,8 +73,21 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // If not logged in AT ALL, or if Owner is locked, show AuthScreen
-  if (!user || (user.role === 'Owner' && !isUnlocked)) {
+  const isPhone = mounted ? isPhoneDevice() : false;
+
+  useEffect(() => {
+    // If on phone and user is logged in, ensure app is unlocked automatically without PIN prompt
+    if (mounted && user && isPhone && !isUnlocked) {
+      useAppStore.getState().setUnlocked(true);
+    }
+  }, [mounted, user, isPhone, isUnlocked]);
+
+  // If not logged in AT ALL, show AuthScreen (email/password login).
+  // If Owner on PC/desktop is locked, show AuthScreen (Vault PIN).
+  // On phone/mobile, the lock screen is bypassed.
+  const requiresVaultLock = user?.role === 'Owner' && !isUnlocked && !isPhone;
+
+  if (!user || requiresVaultLock) {
     return <AuthScreen />;
   }
   // Time-based access control for Technicians

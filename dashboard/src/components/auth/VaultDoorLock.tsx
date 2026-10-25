@@ -297,16 +297,21 @@ export function VaultDoorLock({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isBusy) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
       // Don't intercept if already typing in another input
       if (document.activeElement && document.activeElement !== inputRef.current && document.activeElement.tagName === 'INPUT') {
         return;
       }
 
       if (e.key >= '0' && e.key <= '9') {
+        e.preventDefault();
         handleKeyClick(parseInt(e.key, 10));
-      } else if (e.key === 'Backspace') {
+      } else if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault();
         handleKeyClick('DEL');
       } else if (e.key === 'Enter') {
+        e.preventDefault();
         attempt(codeRef.current);
       }
     };
