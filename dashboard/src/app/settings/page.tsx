@@ -324,39 +324,40 @@ export default function SettingsPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-6">
 
-      <div className="flex bg-[#131622] p-1.5 rounded-2xl border border-gray-800/80 gap-1.5 overflow-x-auto scrollbar-none mb-6">
+      <div className="grid grid-cols-3 sm:flex bg-[#131622] p-1 sm:p-1.5 rounded-2xl border border-gray-800/80 gap-1 sm:gap-2 mb-6 scrollbar-none">
         <button
           onClick={() => setActiveTab('shop')}
-          className={`flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all shrink-0 select-none ${
+          className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 py-2 sm:px-5 sm:py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all select-none text-center ${
             activeTab === 'shop'
               ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 font-bold'
               : 'text-gray-400 hover:text-white hover:bg-secondary/40'
           }`}
         >
-          <Store className="w-4 h-4" />
-          Shop Profile
+          <Store className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span className="truncate">Shop Profile</span>
         </button>
         <button
           onClick={() => setActiveTab('staff')}
-          className={`flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all shrink-0 select-none ${
+          className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 py-2 sm:px-5 sm:py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all select-none text-center ${
             activeTab === 'staff'
               ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 font-bold'
               : 'text-gray-400 hover:text-white hover:bg-secondary/40'
           }`}
         >
-          <Shield className="w-4 h-4" />
-          Staff Management
+          <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span className="truncate">Staff</span>
+          <span className="hidden xs:inline sm:inline">Management</span>
         </button>
         <button
           onClick={() => setActiveTab('data')}
-          className={`flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all shrink-0 select-none ${
+          className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 py-2 sm:px-5 sm:py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all select-none text-center ${
             activeTab === 'data'
               ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 font-bold'
               : 'text-gray-400 hover:text-white hover:bg-secondary/40'
           }`}
         >
-          <Database className="w-4 h-4" />
-          Data Backup
+          <Database className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span className="truncate">Data Backup</span>
         </button>
       </div>
 

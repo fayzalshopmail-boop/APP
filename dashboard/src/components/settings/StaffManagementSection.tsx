@@ -533,42 +533,42 @@ export function StaffManagementSection({
         </div>
 
         {/* Sleek Underline Tabs */}
-        <div className="flex items-center gap-1 sm:gap-3 overflow-x-auto scrollbar-none border-t border-gray-800/80 pt-1 -mb-px">
+        <div className="grid grid-cols-3 sm:flex items-center gap-1 sm:gap-3 border-t border-gray-800/80 pt-1 -mb-px scrollbar-none">
           <button
             onClick={() => setInternalSubTab('attendance')}
-            className={`flex items-center gap-2 py-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold border-b-2 transition-all whitespace-nowrap select-none ${
+            className={`flex items-center justify-center gap-1.5 py-2.5 sm:py-3 px-1 sm:px-4 text-xs sm:text-sm font-semibold border-b-2 transition-all text-center select-none ${
               subTab === 'attendance'
                 ? 'border-blue-500 text-blue-400 font-bold bg-blue-500/5'
                 : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-700'
             }`}
           >
-            <Clock className="w-4 h-4" />
-            দৈনিক হাজিরা
+            <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="truncate">দৈনিক হাজিরা</span>
           </button>
 
           <button
             onClick={() => setInternalSubTab('payroll')}
-            className={`flex items-center gap-2 py-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold border-b-2 transition-all whitespace-nowrap select-none ${
+            className={`flex items-center justify-center gap-1.5 py-2.5 sm:py-3 px-1 sm:px-4 text-xs sm:text-sm font-semibold border-b-2 transition-all text-center select-none ${
               subTab === 'payroll'
                 ? 'border-blue-500 text-blue-400 font-bold bg-blue-500/5'
                 : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-700'
             }`}
           >
-            <CreditCard className="w-4 h-4" />
-            বেতন ও অগ্রিম লেজার
+            <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="truncate">বেতন লেজার</span>
           </button>
 
           <button
             onClick={() => setInternalSubTab('accounts')}
-            className={`flex items-center gap-2 py-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold border-b-2 transition-all whitespace-nowrap select-none ${
+            className={`flex items-center justify-center gap-1.5 py-2.5 sm:py-3 px-1 sm:px-4 text-xs sm:text-sm font-semibold border-b-2 transition-all text-center select-none ${
               subTab === 'accounts'
                 ? 'border-blue-500 text-blue-400 font-bold bg-blue-500/5'
                 : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-700'
             }`}
           >
-            <Users className="w-4 h-4" />
-            কর্মী এক্সেস ও রোল
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold">
+            <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="truncate">কর্মী এক্সেস</span>
+            <span className="text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold shrink-0">
               {staffList.length}
             </span>
           </button>

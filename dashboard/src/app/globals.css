@@ -157,6 +157,19 @@ html {
   height: 0;
 }
 
+/* Hide scrollbars for clean modern mobile tabs and touch-scrollable lists */
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none !important; /* IE and Edge */
+  scrollbar-width: none !important; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 
 /* Hide number input arrows */
 input[type=number]::-webkit-inner-spin-button, 
