@@ -3,19 +3,17 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Users, UserCheck, Clock, CreditCard, Award, 
+  Users, UserCheck, Clock, CreditCard, 
   CheckCircle2, AlertCircle, Calendar, Wallet, Coins, 
   Plus, Search, Trash2, Edit3, LogIn, LogOut, Wrench, 
-  Tv, Check, X, ChevronRight, UserX, Loader2, Shield,
+  Check, X, ChevronRight, UserX, Loader2, Shield,
   UserPlus, Mail, Lock, CheckCircle, ShieldCheck, MapPin, Wifi
 } from 'lucide-react';
 import { attendanceService, AttendanceRecord, AttendanceStatus, getLocalDateStr } from '@/lib/services/attendance';
 import { attendanceSecurityService, AttendanceSecuritySettings } from '@/lib/services/attendanceSecurity';
 import { AttendanceSecurityModal } from './AttendanceSecurityModal';
 import { payrollService, PayrollRecord, PayrollType, StaffSalaryConfig, getCurrentMonthStr } from '@/lib/services/payroll';
-import { staffPerformanceService, PerformanceSummary } from '@/lib/services/staffPerformance';
 import { userService, AppUser, UserRole } from '@/lib/services/user';
-import { Customer } from '@/lib/services/customer';
 import { formatCurrency } from '@/lib/currency';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
@@ -25,7 +23,7 @@ import { CustomSelect } from '@/components/ui/CustomSelect';
 import toast from 'react-hot-toast';
 
 interface StaffManagementSectionProps {
-  activeSubTab?: 'attendance' | 'payroll' | 'performance' | 'accounts';
+  activeSubTab?: 'attendance' | 'payroll' | 'accounts';
   staffList: AppUser[];
   onRefreshStaff: () => Promise<void>;
   onDeleteStaff: (email: string) => void;
@@ -69,7 +67,7 @@ export function StaffManagementSection({
   const isManagerOrOwner = currentUser?.role === 'Owner' || currentUser?.role === 'Manager';
 
   // Sub Tab Navigation
-  const [internalSubTab, setInternalSubTab] = useState<'attendance' | 'payroll' | 'performance' | 'accounts'>(activeSubTab || 'attendance');
+  const [internalSubTab, setInternalSubTab] = useState<'attendance' | 'payroll' | 'accounts'>(activeSubTab || 'attendance');
 
   useEffect(() => {
     if (activeSubTab) {
@@ -189,13 +187,7 @@ export function StaffManagementSection({
       }));
   }, [staffList]);
 
-  // 3. PERFORMANCE STATE
-  const [performanceFilter, setPerformanceFilter] = useState<'today' | 'week' | 'month' | 'all'>('today');
-  const [performanceData, setPerformanceData] = useState<PerformanceSummary | null>(null);
-  const [loadingPerformance, setLoadingPerformance] = useState(false);
-  const [selectedTechnicianJobs, setSelectedTechnicianJobs] = useState<{ techName: string; jobs: Customer[] } | null>(null);
-
-  // 4. CONFIRM DELETE MODAL (for attendance or payroll)
+  // 3. CONFIRM DELETE MODAL (for attendance or payroll)
   const [confirmDeleteModal, setConfirmDeleteModal] = useState<{
     isOpen: boolean;
     type: 'attendance' | 'payroll' | null;
@@ -242,20 +234,6 @@ export function StaffManagementSection({
     }
   }, []);
 
-  // Load Performance
-  const loadPerformance = useCallback(async (range: 'today' | 'week' | 'month' | 'all') => {
-    try {
-      setLoadingPerformance(true);
-      const res = await staffPerformanceService.getPerformanceReport(range);
-      setPerformanceData(res);
-    } catch (e) {
-      console.error(e);
-      toast.error('পারফরম্যান্স রিপোর্ট লোড করা যায়নি');
-    } finally {
-      setLoadingPerformance(false);
-    }
-  }, []);
-
   // Initial load for security settings
   useEffect(() => {
     loadSecuritySettings();
@@ -274,13 +252,6 @@ export function StaffManagementSection({
       loadPayroll(selectedMonth);
     }
   }, [subTab, selectedMonth, loadPayroll]);
-
-  // Load Performance when on performance sub-tab or filter changes
-  useEffect(() => {
-    if (subTab === 'performance') {
-      loadPerformance(performanceFilter);
-    }
-  }, [subTab, performanceFilter, loadPerformance]);
 
   // Attendance Actions
   const myTodayAttendance = attendanceRecords.find(r => r.userId === currentUser?.email);
@@ -551,7 +522,7 @@ export function StaffManagementSection({
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-white">কর্মী ব্যবস্থাপনা (Staff Management)</h2>
-              <p className="text-xs text-gray-400">হাজিরা, বেতন লেজার, পারফরম্যান্স অ্যানালিটিক্স ও কর্মী এক্সেস</p>
+              <p className="text-xs text-gray-400">দৈনিক হাজিরা, বেতন ও অগ্রিম লেজার এবং কর্মী এক্সেস ও রোল</p>
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-2">
@@ -585,18 +556,6 @@ export function StaffManagementSection({
           >
             <CreditCard className="w-4 h-4" />
             বেতন ও অগ্রিম লেজার
-          </button>
-
-          <button
-            onClick={() => setInternalSubTab('performance')}
-            className={`flex items-center gap-2 py-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold border-b-2 transition-all whitespace-nowrap select-none ${
-              subTab === 'performance'
-                ? 'border-blue-500 text-blue-400 font-bold bg-blue-500/5'
-                : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-700'
-            }`}
-          >
-            <Award className="w-4 h-4" />
-            সার্ভিসিং পারফরম্যান্স
           </button>
 
           <button
@@ -1358,140 +1317,7 @@ export function StaffManagementSection({
       )}
 
       {/* ===================================================================== */}
-      {/* 3. PERFORMANCE SUB-TAB */}
-      {/* ===================================================================== */}
-      {subTab === 'performance' && (
-        <div className="space-y-6">
-          {/* Time Filter Chips */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-secondary/50 border border-gray-800 rounded-2xl p-4">
-            <div>
-              <h3 className="font-bold text-white text-base flex items-center gap-2">
-                <Wrench className="w-5 h-5 text-indigo-400" />
-                টেকনিশিয়ানদের সার্ভিসিং পারফরম্যান্স ও রিপোর্ট
-              </h3>
-              <p className="text-xs text-gray-400 mt-0.5">সারাদিনে কোন কর্মী কয়টি ডিভাইস মেরামত ও ডেলিভারি করেছেন</p>
-            </div>
-
-            <div className="flex items-center gap-1.5 bg-[#10131f] p-1 rounded-xl border border-gray-700">
-              {(['today', 'week', 'month', 'all'] as const).map((r) => (
-                <button
-                  key={r}
-                  onClick={() => setPerformanceFilter(r)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    performanceFilter === r
-                      ? 'bg-blue-600 text-white shadow'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  {r === 'today' ? 'আজ' : r === 'week' ? '৭ দিন' : r === 'month' ? 'এই মাস' : 'সব সময়'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Performance Highlight KPIs */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-card border border-gray-800 rounded-2xl p-4">
-              <span className="text-xs text-emerald-400 font-medium block">সম্পন্ন সার্ভিসিং</span>
-              <h3 className="text-2xl font-black text-emerald-400 mt-1">
-                {performanceData?.totalCompleted || 0} টি
-              </h3>
-              <p className="text-[11px] text-gray-500 mt-1">রেডি ও ডেলিভারিকৃত ডিভাইস</p>
-            </div>
-            <div className="bg-card border border-gray-800 rounded-2xl p-4">
-              <span className="text-xs text-amber-400 font-medium block">চলমান সার্ভিসিং</span>
-              <h3 className="text-2xl font-black text-amber-400 mt-1">
-                {performanceData?.totalInProgress || 0} টি
-              </h3>
-              <p className="text-[11px] text-gray-500 mt-1">ইন-প্রগ্রেস বা পার্টস অপেক্ষায়</p>
-            </div>
-            <div className="bg-card border border-gray-800 rounded-2xl p-4">
-              <span className="text-xs text-blue-400 font-medium block">মোট সার্ভিসিং বিল</span>
-              <h3 className="text-2xl font-black text-blue-400 mt-1">
-                {formatCurrency(performanceData?.totalRevenue || 0)}
-              </h3>
-              <p className="text-[11px] text-gray-500 mt-1">কাজের মোট অর্জিত মূল্য</p>
-            </div>
-            <div className="bg-card border border-gray-800 rounded-2xl p-4">
-              <span className="text-xs text-purple-400 font-medium block">🏆 শীর্ষ পারফর্মার</span>
-              <h3 className="text-lg font-bold text-purple-400 mt-1 truncate">
-                {performanceData?.topTechnician ? performanceData.topTechnician.name : 'N/A'}
-              </h3>
-              <p className="text-[11px] text-gray-500 mt-1">
-                {performanceData?.topTechnician ? `${performanceData.topTechnician.count} টি ডিভাইস মেরামত` : 'কোনো সার্ভিস সম্পন্ন হয়নি'}
-              </p>
-            </div>
-          </div>
-
-          {/* Technicians Servicing Breakdown Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {loadingPerformance ? (
-              <div className="col-span-full flex justify-center py-16">
-                <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-              </div>
-            ) : performanceData?.technicians.length === 0 ? (
-              <div className="col-span-full text-center py-12 text-gray-500">কোনো পারফরম্যান্স ডাটা নেই</div>
-            ) : (
-              performanceData?.technicians.map((tech) => (
-                <div
-                  key={tech.staffEmail}
-                  className="bg-card border border-gray-800 hover:border-blue-500/30 rounded-2xl p-5 flex flex-col justify-between transition-all shadow-lg"
-                >
-                  <div>
-                    {/* Top Header */}
-                    <div className="flex items-center justify-between pb-3 border-b border-gray-800/80">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-sm shrink-0">
-                          {tech.staffName.charAt(0)}
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-white text-sm">{tech.staffName}</h4>
-                          <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
-                            {tech.role}
-                          </span>
-                        </div>
-                      </div>
-                      <span className="text-xs font-mono bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full font-bold">
-                        {tech.completedCount} সম্পন্ন
-                      </span>
-                    </div>
-
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-2 gap-3 py-4">
-                      <div className="bg-[#121524] p-3 rounded-xl border border-gray-800/60">
-                        <span className="text-[11px] text-gray-400 block font-medium">মেরামত সম্পন্ন</span>
-                        <span className="text-xl font-black text-emerald-400">{tech.completedCount} টি</span>
-                      </div>
-                      <div className="bg-[#121524] p-3 rounded-xl border border-gray-800/60">
-                        <span className="text-[11px] text-gray-400 block font-medium">চলমান কাজ</span>
-                        <span className="text-xl font-black text-amber-400">{tech.inProgressCount} টি</span>
-                      </div>
-                    </div>
-
-                    <div className="bg-[#121524] p-3 rounded-xl border border-gray-800/60 flex justify-between items-center mb-4">
-                      <span className="text-xs text-gray-400 font-medium">মোট কাজের বিল:</span>
-                      <span className="text-sm font-bold text-white">{formatCurrency(tech.totalRevenue)}</span>
-                    </div>
-                  </div>
-
-                  {/* View Details Button */}
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedTechnicianJobs({ techName: tech.staffName, jobs: tech.jobs })}
-                    className="w-full border-gray-700 text-gray-200 hover:bg-gray-800 text-xs font-semibold h-9"
-                  >
-                    কাজের তালিকা দেখুন ({tech.jobs.length})
-                    <ChevronRight className="w-3.5 h-3.5 ml-1" />
-                  </Button>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ===================================================================== */}
-      {/* 4. ACCOUNTS & ROLES SUB-TAB */}
+      {/* 3. ACCOUNTS & ROLES SUB-TAB */}
       {/* ===================================================================== */}
       {subTab === 'accounts' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -2026,51 +1852,7 @@ export function StaffManagementSection({
         </DialogContent>
       </Dialog>
 
-      {/* 4. Technician Serviced Jobs Drilldown Modal */}
-      <Dialog open={!!selectedTechnicianJobs} onOpenChange={(open) => !open && setSelectedTechnicianJobs(null)}>
-        <DialogContent className="w-[95vw] sm:max-w-2xl bg-secondary text-white border-gray-800 shadow-2xl p-4 sm:p-6 max-h-[85vh] overflow-y-auto rounded-2xl">
-          <DialogHeader className="mb-4">
-            <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
-              <Tv className="w-5 h-5 text-indigo-400" />
-              {selectedTechnicianJobs?.techName}-এর সার্ভিসিং করা কাজের তালিকা
-            </DialogTitle>
-          </DialogHeader>
-
-          {selectedTechnicianJobs?.jobs.length === 0 ? (
-            <div className="text-center py-12 flex flex-col items-center justify-center">
-              <Tv className="w-10 h-10 text-gray-600 mb-2 stroke-[1.5]" />
-              <p className="text-sm font-medium text-gray-300">এই সময়সীমার মধ্যে কোনো সার্ভিসিং কাজ পাওয়া যায়নি</p>
-              <p className="text-xs text-gray-500 mt-1">টেকনিশিয়ান কাজ ডেলিভারি বা সম্পন্ন করলে এখানে বিস্তারিত দেখা যাবে।</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {selectedTechnicianJobs?.jobs.map((job) => (
-                <div key={job.id} className="bg-[#121524] p-3.5 rounded-xl border border-gray-800 flex justify-between items-center">
-                  <div>
-                    <h5 className="font-bold text-sm text-white">{job.name}</h5>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      ডিভাইস: <span className="text-gray-200 font-medium">{job.deviceBrand} {job.deviceType ? `(${job.deviceType})` : ''}</span>
-                    </p>
-                    <p className="text-xs text-orange-400 mt-0.5">সমস্যা: {job.deviceProblem || 'N/A'}</p>
-                  </div>
-                  <div className="text-right">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border block mb-1 ${
-                      job.status === 'Delivered' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                      job.status === 'Ready for Delivery' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                      'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                    }`}>
-                      {job.status}
-                    </span>
-                    <span className="font-bold text-sm text-white block">{formatCurrency(job.totalBill || 0)}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* 5. Attendance Security Modal (GPS & Wi-Fi Lock) */}
+      {/* Attendance Security Modal (GPS & Wi-Fi Lock) */}
       <AttendanceSecurityModal
         isOpen={isSecurityModalOpen}
         onClose={() => setIsSecurityModalOpen(false)}
