@@ -105,6 +105,23 @@ export const attendanceService = {
     };
 
     await setDoc(docRef, record);
+
+    // Send real-time in-app & push notification to Owner if a staff member checks in
+    if (staff.role !== 'Owner') {
+      try {
+        const { notificationService } = await import('./notification');
+        notificationService.add({
+          title: 'নতুন স্টাফ হাজিরা (Check-in)',
+          message: `${staff.name} (${staff.role}) আজ ${timeNow}-এ হাজিরা দিয়েছেন। স্ট্যাটাস: ${status === 'Late' ? 'দেরি (Late)' : 'উপস্থিত (Present)'}`,
+          type: status === 'Late' ? 'warning' : 'success',
+          targetRole: 'Owner',
+          link: '/staff'
+        }).catch(err => console.warn('Failed to send checkin notification:', err));
+      } catch (err) {
+        console.warn('Failed to import notificationService:', err);
+      }
+    }
+
     return { id: docId, ...record };
   },
 
@@ -134,6 +151,22 @@ export const attendanceService = {
     };
 
     await updateDoc(docRef, updates);
+
+    // Send real-time in-app & push notification to Owner if a staff member checks out
+    if (data.userRole !== 'Owner') {
+      try {
+        const { notificationService } = await import('./notification');
+        notificationService.add({
+          title: 'স্টাফ প্রস্থান (Check-out)',
+          message: `${data.userName} (${data.userRole}) আজ ${timeNow}-এ চেক-আউট করেছেন। মোট কাজের সময়: ${workingHours}`,
+          type: 'info',
+          targetRole: 'Owner',
+          link: '/staff'
+        }).catch(err => console.warn('Failed to send checkout notification:', err));
+      } catch (err) {
+        console.warn('Failed to import notificationService:', err);
+      }
+    }
   },
 
   /**
