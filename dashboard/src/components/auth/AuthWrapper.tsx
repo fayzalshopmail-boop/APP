@@ -63,6 +63,13 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
     }
   }, [user?.email]);
 
+  useEffect(() => {
+    // If on phone and user is logged in, ensure app is unlocked automatically without PIN prompt
+    if (mounted && user && isPhoneDevice() && !isUnlocked) {
+      useAppStore.getState().setUnlocked(true);
+    }
+  }, [mounted, user, isUnlocked]);
+
   if (!mounted) {
     // Prevent hydration mismatch while showing user an active loading state centered on screen
     return (
@@ -73,14 +80,7 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const isPhone = mounted ? isPhoneDevice() : false;
-
-  useEffect(() => {
-    // If on phone and user is logged in, ensure app is unlocked automatically without PIN prompt
-    if (mounted && user && isPhone && !isUnlocked) {
-      useAppStore.getState().setUnlocked(true);
-    }
-  }, [mounted, user, isPhone, isUnlocked]);
+  const isPhone = isPhoneDevice();
 
   // If not logged in AT ALL, show AuthScreen (email/password login).
   // If Owner on PC/desktop is locked, show AuthScreen (Vault PIN).
