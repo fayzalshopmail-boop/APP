@@ -14,7 +14,7 @@ import {
  DialogTitle,
 } from "@/components/ui/dialog";
 import { Customer, normalizePhone } from '@/lib/services/customer';
-import { User, Phone, MapPin, Loader2, Tv, Wrench, Tag, FileText, Settings2, Camera, CheckCircle, X } from 'lucide-react';
+import { User, Phone, MapPin, Loader2, Tv, Wrench, Tag, FileText, Settings2, Camera, CheckCircle, X, RotateCcw } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { ManageOptionsModal } from './ManageOptionsModal';
 import dynamic from 'next/dynamic';
@@ -81,9 +81,29 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  // Automatically bill pending if totalBill is blank or 0
  const isBillPending = !formData.totalBill || Number(formData.totalBill) <= 0;
 
+ const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
+
+ const getBlankFormData = () => ({
+   name: '',
+   phone: '+880',
+   address: '',
+   deviceType: '',
+   deviceProblem: '',
+   deviceBrand: '',
+   deviceDetails: '',
+   serialNumber: '',
+   totalBill: 0,
+   advance: 0,
+   warrantyMonths: '',
+   expectedDeliveryDate: '',
+   receivedByName: user?.name || user?.email || '',
+   receivedBy: user?.email || ''
+ });
+
  useEffect(() => {
  setMatchedCustomer(null);
  if (initialData) {
+   setHasRestoredDraft(false);
    const brand = initialData.deviceBrand || '';
    const chinaMatch = brand.match(/^ch[a]?ina(?:\s*\((.*?)\)|\s+(.*))?$/i);
    if (chinaMatch) {
@@ -111,29 +131,84 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  receivedByName: initialData.receivedByName || user?.name || user?.email || '',
  receivedBy: initialData.receivedBy || user?.email || ''
  });
- } else {
-   setIsChinaSelected(false);
-   setChinaSubBrand('');
- // eslint-disable-next-line react-hooks/set-state-in-effect
- setFormData({ 
- name: '', 
- phone: '+880', 
- address: '', 
- deviceType: '',
- deviceProblem: '',
- deviceBrand: '',
- deviceDetails: '', 
- serialNumber: '',
- totalBill: 0, 
- advance: 0,
- warrantyMonths: '',
- expectedDeliveryDate: '',
- receivedByName: user?.name || user?.email || '',
- receivedBy: user?.email || ''
- });
+ } else if (isOpen) {
+   // Check for saved draft in localStorage
+   let hasDraft = false;
+   try {
+     const saved = localStorage.getItem('vvsc_customer_add_draft');
+     if (saved) {
+       const parsed = JSON.parse(saved);
+       if (parsed && parsed.formData) {
+         setFormData(parsed.formData);
+         setIsChinaSelected(Boolean(parsed.isChinaSelected));
+         setChinaSubBrand(parsed.chinaSubBrand || '');
+         setHasRestoredDraft(true);
+         hasDraft = true;
+       }
+     }
+   } catch (e) {
+     console.warn('Failed to restore draft', e);
+   }
+
+   if (!hasDraft) {
+     setHasRestoredDraft(false);
+     setIsChinaSelected(false);
+     setChinaSubBrand('');
+     setFormData(getBlankFormData());
+   }
  }
  // eslint-disable-next-line react-hooks/exhaustive-deps
  }, [initialData, isOpen, user]);
+
+ // Auto-save draft in real-time when user types in Add mode
+ useEffect(() => {
+   if (initialData || !isOpen) return;
+
+   const hasData = Boolean(
+     formData.name?.trim() ||
+     (formData.phone && formData.phone !== '+880') ||
+     formData.address?.trim() ||
+     formData.deviceBrand?.trim() ||
+     formData.deviceType?.trim() ||
+     formData.deviceProblem?.trim() ||
+     formData.deviceDetails?.trim() ||
+     formData.serialNumber?.trim() ||
+     (formData.totalBill && Number(formData.totalBill) > 0) ||
+     (formData.advance && Number(formData.advance) > 0) ||
+     formData.warrantyMonths ||
+     formData.expectedDeliveryDate ||
+     isChinaSelected ||
+     chinaSubBrand
+   );
+
+   if (hasData) {
+     try {
+       localStorage.setItem(
+         'vvsc_customer_add_draft',
+         JSON.stringify({
+           formData,
+           isChinaSelected,
+           chinaSubBrand,
+           updatedAt: Date.now()
+         })
+       );
+     } catch (e) {
+       console.warn('Failed to save draft', e);
+     }
+   }
+ }, [formData, isChinaSelected, chinaSubBrand, initialData, isOpen]);
+
+ const handleClearDraft = () => {
+   try {
+     localStorage.removeItem('vvsc_customer_add_draft');
+   } catch {}
+   setHasRestoredDraft(false);
+   setIsChinaSelected(false);
+   setChinaSubBrand('');
+   setFormData(getBlankFormData());
+   setMatchedCustomer(null);
+   toast.success('ড্রাফট মুছে নতুন ফর্ম তৈরি করা হয়েছে');
+ };
 
  const handlePhoneInput = (rawInput: string) => {
    let digits = rawInput.replace(/\D/g, '');
@@ -194,6 +269,10 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
    receivedByName: formData.receivedByName || user?.name || user?.email || 'Unknown',
    receivedBy: formData.receivedBy || user?.email || 'Unknown'
  }, instantDelivery);
+ try {
+   localStorage.removeItem('vvsc_customer_add_draft');
+ } catch {}
+ setHasRestoredDraft(false);
  onClose();
  } catch (error) {
  console.error(error);
@@ -217,6 +296,22 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  {initialData ? 'Update the details below to save changes.' : 'Enter the customer details to add them to your POS system.'}
  </DialogDescription>
  </DialogHeader>
+
+ {hasRestoredDraft && !initialData && (
+   <div className="mb-4 flex items-center justify-between p-2.5 sm:p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs sm:text-sm text-amber-400">
+     <div className="flex items-center gap-2">
+       <RotateCcw className="w-4 h-4 shrink-0 text-amber-400" />
+       <span>পূর্বের অসম্পূর্ণ ড্রাফট তথ্য উদ্ধার করা হয়েছে।</span>
+     </div>
+     <button
+       type="button"
+       onClick={handleClearDraft}
+       className="underline hover:text-amber-300 font-semibold ml-2 whitespace-nowrap"
+     >
+       নতুন করে লিখুন
+     </button>
+   </div>
+ )}
 
  <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
  {/* 1. Customer Info */}
