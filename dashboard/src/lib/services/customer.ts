@@ -1,5 +1,6 @@
 import { collection, getDocs, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, limit, where } from 'firebase/firestore';
 import { db } from '../firebase';
+import { sanitizeForFirestore } from '../utils';
 
 export type CustomerStatus = 'Received' | 'In Progress' | 'Waiting for Parts' | 'Ready for Delivery' | 'Delivered' | 'Returned (Unrepaired)';
 
@@ -202,7 +203,7 @@ export const customerService = {
       if (data.status === 'Delivered') {
         if (!updates.deliveredAt) updates.deliveredAt = serverTimestamp();
       }
-      await updateDoc(docRef, updates);
+      await updateDoc(docRef, sanitizeForFirestore(updates));
     } catch (error) {
       console.error("Error updating customer: ", error);
       throw error;

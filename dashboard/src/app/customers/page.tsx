@@ -842,13 +842,11 @@ export default function CustomersPage() {
                   </td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-1.5">
-                      <a 
-                        href={`tel:${customer.phone}`} 
-                        className="text-sm text-gray-300 hover:text-blue-400 font-medium transition-colors"
-                        title="Click to Call"
+                      <span 
+                        className="text-sm text-gray-300 font-medium select-all"
                       >
                         {customer.phone}
-                      </a>
+                      </span>
                       <a 
                         href={`tel:${customer.phone}`}
                         className="text-blue-400 hover:text-blue-300 p-1 bg-blue-500/10 hover:bg-blue-500/20 rounded-md transition-colors"
@@ -1071,13 +1069,12 @@ export default function CustomersPage() {
                   ) : null}
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-gray-400 mt-0.5 flex-wrap">
-                  <a 
-                    href={`tel:${customer.phone}`} 
-                    className="flex items-center gap-1 text-blue-400 hover:underline font-medium text-[11px] shrink-0"
+                  <span 
+                    className="flex items-center gap-1 text-gray-300 font-medium text-[11px] shrink-0 select-all"
                   >
-                    <Phone className="w-3 h-3 text-blue-400" />
+                    <Phone className="w-3 h-3 text-gray-500" />
                     <span>{customer.phone}</span>
-                  </a>
+                  </span>
                   {customer.address ? (
                     <span className="flex items-center gap-0.5 text-gray-400 text-[11px] truncate max-w-[150px]">
                       <span className="text-gray-600">•</span>

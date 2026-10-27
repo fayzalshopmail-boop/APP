@@ -13,7 +13,7 @@ import {
  DialogTitle,
 } from "@/components/ui/dialog";
 import { Customer, normalizePhone } from '@/lib/services/customer';
-import { User, Phone, MapPin, Loader2, Tv, Wrench, Tag, FileText, Settings2, Camera, CheckCircle, UserCheck } from 'lucide-react';
+import { User, Phone, MapPin, Loader2, Tv, Wrench, Tag, FileText, Settings2, Camera, CheckCircle, X } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { ManageOptionsModal } from './ManageOptionsModal';
 import dynamic from 'next/dynamic';
@@ -38,6 +38,8 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  
  const [instantDelivery, setInstantDelivery] = useState(false);
  const [matchedCustomer, setMatchedCustomer] = useState<Customer | null>(null);
+ const [isChinaSelected, setIsChinaSelected] = useState(false);
+ const [chinaSubBrand, setChinaSubBrand] = useState('');
  const [formData, setFormData] = useState({
  name: '',
  phone: '+880',
@@ -59,9 +61,21 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  const [manageCategory, setManageCategory] = useState<'deviceBrands' | 'deviceTypes' | 'deviceProblems' | null>(null);
 
  const currentType = formData.deviceType;
- const currentBrand = formData.deviceBrand;
+ const isChina = isChinaSelected || /^ch[a]?ina/i.test(formData.deviceBrand.trim());
+ const baseBrand = isChina ? 'China' : formData.deviceBrand;
  const currentBrands = currentType ? (storeBrands[currentType] || []) : [];
- const currentProblems = currentBrand ? (storeProblems[currentBrand] || []) : [];
+
+ const findProblemKey = (targetBrand: string) => {
+   if (!targetBrand) return '';
+   if (storeProblems[targetBrand]) return targetBrand;
+   if (/^ch[a]?ina/i.test(targetBrand)) {
+     const matchedKey = Object.keys(storeProblems).find(k => /^ch[a]?ina$/i.test(k));
+     if (matchedKey) return matchedKey;
+   }
+   return targetBrand;
+ };
+ const problemKey = findProblemKey(baseBrand);
+ const currentProblems = problemKey ? (storeProblems[problemKey] || []) : [];
 
  // Automatically bill pending if totalBill is blank or 0
  const isBillPending = !formData.totalBill || Number(formData.totalBill) <= 0;
@@ -69,6 +83,16 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  useEffect(() => {
  setMatchedCustomer(null);
  if (initialData) {
+   const brand = initialData.deviceBrand || '';
+   const chinaMatch = brand.match(/^ch[a]?ina(?:\s*\((.*?)\)|\s+(.*))?$/i);
+   if (chinaMatch) {
+     setIsChinaSelected(true);
+     setChinaSubBrand(chinaMatch[1] || chinaMatch[2] || '');
+   } else {
+     setIsChinaSelected(false);
+     setChinaSubBrand('');
+   }
+
  // eslint-disable-next-line react-hooks/set-state-in-effect
  setFormData({
  name: initialData.name,
@@ -87,6 +111,8 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  receivedBy: initialData.receivedBy || user?.email || ''
  });
  } else {
+   setIsChinaSelected(false);
+   setChinaSubBrand('');
  // eslint-disable-next-line react-hooks/set-state-in-effect
  setFormData({ 
  name: '', 
@@ -108,6 +134,35 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  // eslint-disable-next-line react-hooks/exhaustive-deps
  }, [initialData, isOpen, user]);
 
+ const handlePhoneInput = (rawInput: string) => {
+   let digits = rawInput.replace(/\D/g, '');
+   if (digits.startsWith('880')) digits = digits.slice(3);
+   else if (digits.startsWith('88')) digits = digits.slice(2);
+   if (digits.startsWith('0')) digits = digits.slice(1);
+   if (digits.length > 10) digits = digits.slice(0, 10);
+   const fullPhone = digits ? '+880' + digits : '';
+
+   if (!initialData && digits.length >= 10 && existingCustomers && existingCustomers.length > 0) {
+     const match = existingCustomers.find(c => normalizePhone(c.phone) === normalizePhone(fullPhone));
+     if (match) {
+       setMatchedCustomer(match);
+       setFormData(prev => ({
+         ...prev,
+         phone: fullPhone,
+         name: prev.name ? prev.name : match.name,
+         address: prev.address ? prev.address : (match.address || '')
+       }));
+       return;
+     } else {
+       setMatchedCustomer(null);
+     }
+   } else if (digits.length < 10) {
+     setMatchedCustomer(null);
+   }
+
+   setFormData(prev => ({ ...prev, phone: fullPhone }));
+ };
+
  const handleSubmit = async (e: React.FormEvent) => {
  e.preventDefault();
  setIsSubmitting(true);
@@ -115,8 +170,14 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  const isPending = !formData.totalBill || Number(formData.totalBill) <= 0;
  const numBill = isPending ? 0 : Number(formData.totalBill);
  const due = isPending ? 0 : Math.max(0, numBill - (formData.advance || 0));
+
+ const finalDeviceBrand = isChinaSelected
+   ? (chinaSubBrand.trim() ? `China (${chinaSubBrand.trim()})` : 'China')
+   : formData.deviceBrand;
+
  await onSave({ 
    ...formData, 
+   deviceBrand: finalDeviceBrand,
    totalBill: numBill, 
    due, 
    isBillPending: isPending,
@@ -162,36 +223,20 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  <span className="absolute left-9 top-1/2 -translate-y-1/2 font-medium text-gray-300 pointer-events-none">+880</span>
  <Input 
  required
+ type="tel"
+ inputMode="numeric"
+ pattern="[0-9]*"
+ autoComplete="tel"
  value={formData.phone ? formData.phone.replace(/^\+880/, '') : ''}
- onChange={(e) => {
- let digits = e.target.value.replace(/\D/g, ''); 
- if (digits.startsWith('0')) digits = digits.substring(1);
- if (digits.length > 10) digits = digits.substring(0, 10);
- const fullPhone = '+880' + digits;
-
- if (!initialData && digits.length >= 10 && existingCustomers && existingCustomers.length > 0) {
-   const match = existingCustomers.find(c => normalizePhone(c.phone) === normalizePhone(fullPhone));
-   if (match) {
-     setMatchedCustomer(match);
-     setFormData(prev => ({
-       ...prev,
-       phone: fullPhone,
-       name: prev.name ? prev.name : match.name,
-       address: prev.address ? prev.address : (match.address || '')
-     }));
-     return;
-   } else {
-     setMatchedCustomer(null);
-   }
- } else if (digits.length < 10) {
-   setMatchedCustomer(null);
- }
-
- setFormData({ ...formData, phone: fullPhone });
+ onChange={(e) => handlePhoneInput(e.target.value)}
+ onPaste={(e) => {
+   e.preventDefault();
+   const pasted = e.clipboardData.getData('text');
+   handlePhoneInput(pasted);
  }}
  className="pl-[76px]" 
  placeholder="1711000000"
- maxLength={11}
+ maxLength={25}
  />
  </div>
  {matchedCustomer && (
@@ -218,9 +263,8 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  </div>
  </div>
 
- <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
  {/* Address */}
- <div className="space-y-1.5">
+ <div className="space-y-1.5 pt-1">
  <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Address</label>
  <div className="relative">
  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -236,21 +280,6 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  <option key={idx} value={addr} />
  ))}
  </datalist>
- </div>
- </div>
-
- {/* Received By */}
- <div className="space-y-1.5">
- <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">রিসিভ করেছেন (Received By)</label>
- <div className="relative">
- <UserCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
- <Input 
- value={formData.receivedByName}
- onChange={(e) => setFormData({ ...formData, receivedByName: e.target.value })}
- className="pl-10" 
- placeholder="যিনি কাজ গ্রহণ করেছেন..."
- />
- </div>
  </div>
  </div>
  </div>
@@ -287,14 +316,56 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
      <Settings2 className="w-3.5 h-3.5" />
      </Button>
      </div>
-     <CustomSelect 
-     value={formData.deviceBrand}
-     onChange={(val) => setFormData({ ...formData, deviceBrand: val })}
-     options={currentBrands}
-     placeholder="Select Brand"
-     icon={<Tag className="w-4 h-4" />}
-     />
-     </div>
+     {isChinaSelected ? (
+        <div className="relative flex items-center">
+          <div className="absolute left-2.5 px-2 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-bold pointer-events-none select-none">
+            China
+          </div>
+          <Input 
+            autoFocus
+            value={chinaSubBrand}
+            onChange={(e) => {
+              const sub = e.target.value;
+              setChinaSubBrand(sub);
+              const finalBrand = sub.trim() ? `China (${sub.trim()})` : 'China';
+              setFormData(prev => ({ ...prev, deviceBrand: finalBrand }));
+            }}
+            className="pl-20 pr-8 text-sm bg-secondary border-amber-500/40 focus-visible:ring-amber-500/50" 
+            placeholder="যেমন: Sunny, Vision..."
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setIsChinaSelected(false);
+              setChinaSubBrand('');
+              setFormData(prev => ({ ...prev, deviceBrand: '' }));
+            }}
+            className="absolute right-2 text-gray-400 hover:text-red-400 p-1 rounded transition-colors"
+            title="অন্য ব্র্যান্ড সিলেক্ট করতে ড্রপডাউনে ফিরুন"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      ) : (
+        <CustomSelect 
+        value={formData.deviceBrand}
+        onChange={(val) => {
+          if (/^ch[a]?ina$/i.test(val.trim())) {
+            setIsChinaSelected(true);
+            setChinaSubBrand('');
+            setFormData(prev => ({ ...prev, deviceBrand: 'China' }));
+          } else {
+            setIsChinaSelected(false);
+            setChinaSubBrand('');
+            setFormData(prev => ({ ...prev, deviceBrand: val }));
+          }
+        }}
+        options={currentBrands}
+        placeholder="Select Brand"
+        icon={<Tag className="w-4 h-4" />}
+        />
+      )}
+      </div>
    </div>
 
    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -501,7 +572,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  category={manageCategory || 'deviceBrands'}
  
  title={manageCategory === 'deviceBrands' ? 'Device Brands' : manageCategory === 'deviceTypes' ? 'Device Types' : 'Device Problems'}
- parentKey={manageCategory === 'deviceProblems' ? formData.deviceBrand : formData.deviceType}
+ parentKey={manageCategory === 'deviceProblems' ? (problemKey || baseBrand) : formData.deviceType}
  />
 
  <BarcodeScannerModal 

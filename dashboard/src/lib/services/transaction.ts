@@ -44,16 +44,38 @@ export const transactionService = {
   getByCustomer: async (customerId: string): Promise<Transaction[]> => {
     if (!db) return [];
     try {
+      // Query without server-side orderBy to prevent Firestore Composite Index requirement error
       const q = query(
         collection(db, COLLECTION_NAME),
-        where('customerId', '==', customerId),
-        orderBy('createdAt', 'desc')
+        where('customerId', '==', customerId)
       );
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({
+      const list = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as Transaction[];
+
+      const parseTime = (val: unknown): number => {
+        if (!val) return 0;
+        if (typeof val === 'object' && val !== null) {
+          if ('toMillis' in val && typeof (val as any).toMillis === 'function') {
+            return (val as any).toMillis();
+          }
+          if ('seconds' in val && typeof (val as any).seconds === 'number') {
+            return (val as any).seconds * 1000;
+          }
+          if (val instanceof Date) {
+            return val.getTime();
+          }
+        }
+        if (typeof val === 'string' || typeof val === 'number') {
+          const d = new Date(val).getTime();
+          return isNaN(d) ? 0 : d;
+        }
+        return 0;
+      };
+
+      return list.sort((a, b) => parseTime(b.createdAt) - parseTime(a.createdAt));
     } catch (error) {
       console.error('Error fetching transactions: ', error);
       return [];

@@ -14,6 +14,7 @@ import { db } from '../firebase';
 import { Customer, PartUsed, RepairRecord } from './customer';
 import { InventoryItem } from './inventory';
 import { notificationService } from './notification';
+import { sanitizeForFirestore } from '../utils';
 
 /**
  * Service for compound, atomic financial and inventory operations.
@@ -63,46 +64,52 @@ export const shopTransactionService = {
 
       // If existing customer has an active or past device recorded, archive it
       if (prevData.deviceBrand || prevData.deviceType || prevData.totalBill) {
-        prevHistory.push({
+        const archivedRecord: RepairRecord = {
           id: `${existingId}_${prevHistory.length}_${Date.now()}`,
-          deviceBrand: prevData.deviceBrand,
-          deviceType: prevData.deviceType,
-          deviceProblem: prevData.deviceProblem,
-          deviceDetails: prevData.deviceDetails,
-          serialNumber: prevData.serialNumber,
+          deviceBrand: prevData.deviceBrand || '',
+          deviceType: prevData.deviceType || '',
+          deviceProblem: prevData.deviceProblem || '',
+          deviceDetails: prevData.deviceDetails || '',
+          serialNumber: prevData.serialNumber || '',
           totalBill: prevData.totalBill || 0,
           advance: prevData.advance || 0,
           due: prevData.due || 0,
           discount: prevData.discount || 0,
-          dueDate: prevData.dueDate,
-          expectedDeliveryDate: prevData.expectedDeliveryDate,
           status: prevData.status || 'Received',
-          warrantyMonths: prevData.warrantyMonths,
           partsUsed: prevData.partsUsed || [],
           totalCost: prevData.totalCost || 0,
-          servicedBy: prevData.servicedBy,
-          servicedByName: prevData.servicedByName,
-          receivedBy: prevData.receivedBy,
-          receivedByName: prevData.receivedByName || prevData.receivedBy,
           createdAt: prevData.createdAt || new Date().toISOString()
-        });
+        };
+
+        if (prevData.dueDate) archivedRecord.dueDate = prevData.dueDate;
+        if (prevData.expectedDeliveryDate) archivedRecord.expectedDeliveryDate = prevData.expectedDeliveryDate;
+        if (prevData.warrantyMonths !== undefined && prevData.warrantyMonths !== '') archivedRecord.warrantyMonths = prevData.warrantyMonths;
+        if (prevData.servicedBy) archivedRecord.servicedBy = prevData.servicedBy;
+        if (prevData.servicedByName) archivedRecord.servicedByName = prevData.servicedByName;
+        if (prevData.receivedBy) archivedRecord.receivedBy = prevData.receivedBy;
+        if (prevData.receivedByName) archivedRecord.receivedByName = prevData.receivedByName;
+
+        prevHistory.push(archivedRecord);
       }
 
       const batch = writeBatch(db);
       const targetRef = doc(db, 'customers', existingId);
-      batch.update(targetRef, {
+      
+      const updatePayload = sanitizeForFirestore({
         ...customerData,
         receivedBy: effectiveStaffEmail,
         receivedByName: effectiveStaffName,
-        name: customerData.name || prevData.name,
-        address: customerData.address || prevData.address,
+        name: customerData.name || prevData.name || '',
+        address: customerData.address || prevData.address || '',
         points: prevData.points || 0,
         status: 'Received',
         partsUsed: [],
         totalCost: 0,
-        repairHistory: prevHistory,
+        repairHistory: sanitizeForFirestore(prevHistory),
         createdAt: serverTimestamp()
       });
+
+      batch.update(targetRef, updatePayload);
 
       if (customerData.advance && customerData.advance > 0) {
         const transRef = doc(collection(db, 'transactions'));
@@ -137,7 +144,7 @@ export const shopTransactionService = {
     const newId = customerRef.id;
 
     const batch = writeBatch(db);
-    batch.set(customerRef, {
+    const newCustomerPayload = sanitizeForFirestore({
       ...customerData,
       receivedBy: effectiveStaffEmail,
       receivedByName: effectiveStaffName,
@@ -146,6 +153,7 @@ export const shopTransactionService = {
       repairHistory: [],
       createdAt: serverTimestamp()
     });
+    batch.set(customerRef, newCustomerPayload);
 
     if (customerData.advance && customerData.advance > 0) {
       const transRef = doc(collection(db, 'transactions'));

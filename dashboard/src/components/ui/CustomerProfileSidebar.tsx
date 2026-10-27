@@ -143,13 +143,11 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
                       <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
                         <Phone className="w-4 h-4 text-blue-400" />
                       </div>
-                      <a 
-                        href={`tel:${customer.phone}`} 
-                        className="font-medium tracking-wide hover:text-blue-400 transition-colors"
-                        title="Click to Call"
+                      <span 
+                        className="font-medium tracking-wide text-gray-200 select-all"
                       >
                         {customer.phone}
-                      </a>
+                      </span>
                     </div>
                     <a 
                       href={`tel:${customer.phone}`}

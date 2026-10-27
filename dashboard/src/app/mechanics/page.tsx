@@ -450,16 +450,32 @@ export default function MechanicsPage() {
                   <span className="absolute left-9 top-1/2 -translate-y-1/2 font-medium text-gray-300 pointer-events-none">+880</span>
                   <Input 
                     required
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="tel"
                     value={formData.phone ? formData.phone.replace(/^\+880/, '') : ''}
                     onChange={(e) => {
                       let digits = e.target.value.replace(/\D/g, ''); 
-                      if (digits.startsWith('0')) digits = digits.substring(1);
-                      if (digits.length > 10) digits = digits.substring(0, 10);
-                      setFormData({ ...formData, phone: '+880' + digits });
+                      if (digits.startsWith('880')) digits = digits.slice(3);
+                      else if (digits.startsWith('88')) digits = digits.slice(2);
+                      if (digits.startsWith('0')) digits = digits.slice(1);
+                      if (digits.length > 10) digits = digits.slice(0, 10);
+                      setFormData({ ...formData, phone: digits ? '+880' + digits : '' });
+                    }}
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      const raw = e.clipboardData.getData('text');
+                      let digits = raw.replace(/\D/g, '');
+                      if (digits.startsWith('880')) digits = digits.slice(3);
+                      else if (digits.startsWith('88')) digits = digits.slice(2);
+                      if (digits.startsWith('0')) digits = digits.slice(1);
+                      if (digits.length > 10) digits = digits.slice(0, 10);
+                      setFormData({ ...formData, phone: digits ? '+880' + digits : '' });
                     }}
                     className="pl-[76px]" 
                     placeholder="1711000000"
-                    maxLength={11}
+                    maxLength={25}
                   />
                 </div>
               </div>
