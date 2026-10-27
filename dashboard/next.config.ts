@@ -15,6 +15,7 @@ const withPWA = require("@ducanh2912/next-pwa").default({
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  serverExternalPackages: ['firebase-admin'],
   allowedDevOrigins: ['192.168.10.248', '192.168.10.248:3000', 'localhost', 'localhost:3000'],
   experimental: {
     optimizePackageImports: ['lucide-react'],

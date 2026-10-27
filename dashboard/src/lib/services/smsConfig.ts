@@ -20,7 +20,7 @@ export interface SmsSettings {
 
 export const defaultSmsSettings: SmsSettings = {
   enabled: false,
-  apiUrl: 'http://bulksmsbd.net/api/smsapi',
+  apiUrl: 'https://bulksmsbd.net/api/smsapi',
   apiKey: '',
   senderId: '',
   welcomeTemplate: 'প্রিয় {name}, আপনার {brand} {type} মেরামতের জন্য VISC তে জমা নেওয়া হয়েছে। সমস্যা: {problem}। মোট বিল: {total} টাকা, অগ্রিম: {advance} টাকা। ধন্যবাদ!',

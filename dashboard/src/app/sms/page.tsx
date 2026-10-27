@@ -97,7 +97,13 @@ export default function SmsMarketingPage() {
         },
         body: JSON.stringify({ apiKey: settings.apiKey || undefined })
       });
-      const data = await res.json();
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch (e) {
+        toast.error(`Server error (HTTP ${res.status}). Please check API configuration.`);
+        return;
+      }
       if (data.success) {
         try {
           const parsed = JSON.parse(data.balance);

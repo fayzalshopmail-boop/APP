@@ -103,22 +103,33 @@ export async function POST(request: Request) {
     // 3. SSRF Mitigation: Validate and sanitize SMS Gateway URL
     const baseUrl = sanitizeGatewayUrl(rawApiUrl);
 
-    // 4. Format phone numbers to Bangladesh 880 prefix
-    const formatPhone = (num: string) => {
+    // 4. Format and strictly validate phone numbers to Bangladesh 880 prefix
+    const formatPhone = (num: string): string | null => {
       let f = String(num).replace(/\D/g, '');
-      if (f.startsWith('01')) f = '88' + f;
-      return f;
+      if (f.startsWith('880')) f = f.slice(3);
+      else if (f.startsWith('88')) f = f.slice(2);
+      if (f.startsWith('0')) f = f.slice(1);
+
+      // Valid Bangladesh mobile local part must be 10 digits starting with 13-19 (e.g. 17XXXXXXXX)
+      if (/^1[3-9]\d{8}$/.test(f)) {
+        return '880' + f;
+      }
+      return null;
     };
 
     let targetNumbers = '';
     if (Array.isArray(number)) {
-      targetNumbers = number.map(formatPhone).filter(n => n.length >= 11).join(',');
+      const validList = number.map(formatPhone).filter((n): n is string => Boolean(n));
+      targetNumbers = validList.join(',');
     } else {
-      targetNumbers = formatPhone(number);
+      const formatted = formatPhone(number);
+      if (formatted) targetNumbers = formatted;
     }
 
     if (!targetNumbers) {
-      return NextResponse.json({ error: "No valid recipient phone numbers formatted." }, { status: 400 });
+      return NextResponse.json({ 
+        error: "Invalid recipient phone number. Bangladesh numbers must be 11 digits (e.g. 017XXXXXXXX)." 
+      }, { status: 400 });
     }
 
     const isUnicode = /[\u0980-\u09FF]/.test(message) || /[^\u0000-\u007F]/.test(message);

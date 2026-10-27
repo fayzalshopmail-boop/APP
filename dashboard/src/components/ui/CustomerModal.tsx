@@ -1,5 +1,6 @@
 'use client';
 
+import toast from 'react-hot-toast';
 import { formatCurrency } from '@/lib/currency';
 import { Input } from '@/components/ui/input';
 
@@ -165,6 +166,15 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
 
  const handleSubmit = async (e: React.FormEvent) => {
  e.preventDefault();
+ const phoneDigits = (formData.phone || '').replace(/\D/g, '');
+ let localDigits = phoneDigits.startsWith('880') ? phoneDigits.slice(3) : phoneDigits.startsWith('88') ? phoneDigits.slice(2) : phoneDigits;
+ if (localDigits.startsWith('0')) localDigits = localDigits.slice(1);
+
+ if (!/^1[3-9]\d{8}$/.test(localDigits)) {
+   toast.error('সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)');
+   return;
+ }
+
  setIsSubmitting(true);
  try {
  const isPending = !formData.totalBill || Number(formData.totalBill) <= 0;
