@@ -63,8 +63,16 @@ async function handleBalanceCheck(request: Request, passedApiKey?: string | null
     });
     clearTimeout(timeoutId);
 
-    const result = await response.text();
-    return NextResponse.json({ success: true, balance: result });
+    const resultText = await response.text();
+    let balanceVal: string | number = resultText;
+    try {
+      const parsed = JSON.parse(resultText);
+      if (parsed.balance !== undefined && !isNaN(Number(parsed.balance))) {
+        balanceVal = Number(Number(parsed.balance).toFixed(2));
+      }
+    } catch {}
+
+    return NextResponse.json({ success: true, balance: balanceVal, raw: resultText });
   } catch (error: any) {
     if (error?.name === 'AbortError') {
       return NextResponse.json({ error: "Request timed out while checking balance." }, { status: 504 });

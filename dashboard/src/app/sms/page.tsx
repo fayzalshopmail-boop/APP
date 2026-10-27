@@ -105,17 +105,25 @@ export default function SmsMarketingPage() {
         return;
       }
       if (data.success) {
-        try {
-          const parsed = JSON.parse(data.balance);
-          if (parsed.balance !== undefined) {
-            setBalance(Number(parsed.balance).toFixed(2));
-          } else {
-            setBalance(data.balance);
+        let displayVal = '0.00';
+        if (typeof data.balance === 'number') {
+          displayVal = data.balance.toFixed(2);
+        } else {
+          try {
+            const parsed = typeof data.balance === 'string' ? JSON.parse(data.balance) : data.balance;
+            if (parsed?.balance !== undefined && !isNaN(Number(parsed.balance))) {
+              displayVal = Number(parsed.balance).toFixed(2);
+            } else if (!isNaN(Number(data.balance))) {
+              displayVal = Number(data.balance).toFixed(2);
+            } else {
+              displayVal = String(data.balance);
+            }
+          } catch {
+            displayVal = String(data.balance);
           }
-        } catch (e) {
-          setBalance(data.balance);
         }
-        toast.success(`SMS Balance: ৳${data.balance}`);
+        setBalance(displayVal);
+        toast.success(`SMS Balance: ৳${displayVal}`);
       } else {
         toast.error(data.error || 'Failed to fetch balance');
       }
