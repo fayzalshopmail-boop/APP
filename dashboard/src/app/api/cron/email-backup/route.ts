@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
-import { adminDb, adminAuth } from '@/lib/firebase-admin';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
+    let adminDb: any = null;
+    let adminAuth: any = null;
+    try {
+      const adminMod = await import('@/lib/firebase-admin');
+      adminDb = adminMod.adminDb;
+      adminAuth = adminMod.adminAuth;
+    } catch (e) {
+      console.warn("Could not load firebase-admin:", e);
+    }
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
       return NextResponse.json({ error: 'Missing authorization header' }, { status: 401 });

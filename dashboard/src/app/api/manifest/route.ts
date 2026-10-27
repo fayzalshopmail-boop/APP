@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
 import { defaultShopSettings, ShopSettings } from '@/lib/services/shopSettings';
 
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 let cachedManifest: any = null;
@@ -22,6 +22,7 @@ export async function GET() {
   let shopSettings: ShopSettings = defaultShopSettings;
 
   try {
+    const { adminDb } = await import('@/lib/firebase-admin');
     if (adminDb) {
       const docSnap = await adminDb.collection('settings').doc('shop').get();
       if (docSnap.exists) {
@@ -29,7 +30,7 @@ export async function GET() {
       }
     }
   } catch (err) {
-    console.error('Failed to fetch shop settings for manifest via adminDb:', err);
+    console.warn('Failed to fetch shop settings for manifest via adminDb:', err);
   }
 
   const isPng = shopSettings.logoUrl?.includes('image/png');

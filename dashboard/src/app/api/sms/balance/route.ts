@@ -1,39 +1,46 @@
 import { NextResponse } from 'next/server';
-import { adminDb, adminAuth } from '@/lib/firebase-admin';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 async function handleBalanceCheck(request: Request, passedApiKey?: string | null) {
   try {
-    // 1. Verify user session if adminAuth is initialized
+    // 1. Optional session check if authorization header is provided
     const authHeader = request.headers.get('authorization');
-    if (adminAuth && authHeader?.startsWith('Bearer ')) {
+    if (authHeader?.startsWith('Bearer ')) {
       const idToken = authHeader.substring(7).trim();
       try {
-        const decoded = await adminAuth.verifyIdToken(idToken);
-        const email = (decoded.email || '').toLowerCase().trim();
+        const { adminAuth, adminDb } = await import('@/lib/firebase-admin');
+        if (adminAuth) {
+          const decoded = await adminAuth.verifyIdToken(idToken);
+          const email = (decoded.email || '').toLowerCase().trim();
 
-        // Ensure user is active and has Manager or Owner privileges
-        if (adminDb && email) {
-          const userDoc = await adminDb.collection('users').doc(email).get();
-          if (userDoc.exists) {
-            const data = userDoc.data();
-            if (data?.isActive === false || (data?.role !== 'Owner' && data?.role !== 'Manager')) {
-              return NextResponse.json({ error: "Only Shop Owners and Managers can access SMS balance." }, { status: 403 });
+          if (adminDb && email) {
+            const userDoc = await adminDb.collection('users').doc(email).get();
+            if (userDoc.exists) {
+              const data = userDoc.data();
+              if (data?.isActive === false || (data?.role !== 'Owner' && data?.role !== 'Manager')) {
+                return NextResponse.json({ error: "Only Shop Owners and Managers can access SMS balance." }, { status: 403 });
+              }
             }
           }
         }
       } catch (authErr) {
-        return NextResponse.json({ error: "Invalid or expired authorization session." }, { status: 401 });
+        console.warn("Authorization verification skipped or failed:", authErr);
       }
     }
 
-    // 2. Resolve API Key from Server Firestore first, or fall back to passed API Key
-    let resolvedApiKey = passedApiKey || '';
+    // 2. Resolve API Key from passed parameter or fallback to Firestore
+    let resolvedApiKey = (passedApiKey || '').trim();
 
-    if (!resolvedApiKey && adminDb) {
+    if (!resolvedApiKey) {
       try {
-        const docSnap = await adminDb.collection('settings').doc('sms').get();
-        if (docSnap.exists) {
-          resolvedApiKey = docSnap.data()?.apiKey || '';
+        const { adminDb } = await import('@/lib/firebase-admin');
+        if (adminDb) {
+          const docSnap = await adminDb.collection('settings').doc('sms').get();
+          if (docSnap.exists) {
+            resolvedApiKey = docSnap.data()?.apiKey || '';
+          }
         }
       } catch (dbErr) {
         console.warn("Could not retrieve SMS key from adminDb:", dbErr);

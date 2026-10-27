@@ -1,8 +1,22 @@
 import { NextResponse } from 'next/server';
-import { adminMessaging, adminDb, adminAuth } from '@/lib/firebase-admin';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
+    let adminDb: any = null;
+    let adminMessaging: any = null;
+    let adminAuth: any = null;
+    try {
+      const adminMod = await import('@/lib/firebase-admin');
+      adminDb = adminMod.adminDb;
+      adminMessaging = adminMod.adminMessaging;
+      adminAuth = adminMod.adminAuth;
+    } catch (e) {
+      console.warn("Could not load firebase-admin:", e);
+    }
+
     if (!adminDb || !adminMessaging) {
       return NextResponse.json({ error: 'Firebase Admin not initialized' }, { status: 500 });
     }

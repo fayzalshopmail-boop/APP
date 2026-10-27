@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
 import { defaultShopSettings, ShopSettings } from '@/lib/services/shopSettings';
 
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 interface CachedFavicon {
@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
   let shopSettings: ShopSettings = defaultShopSettings;
 
   try {
+    const { adminDb } = await import('@/lib/firebase-admin');
     if (adminDb) {
       const docSnap = await adminDb.collection('settings').doc('shop').get();
       if (docSnap.exists) {
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest) {
       }
     }
   } catch (err) {
-    console.error('Failed to fetch shop settings for favicon via adminDb:', err);
+    console.warn('Failed to fetch shop settings for favicon via adminDb:', err);
   }
 
   lastCheckTime = now;
