@@ -123,7 +123,6 @@ export default function SmsMarketingPage() {
           }
         }
         setBalance(displayVal);
-        toast.success(`SMS Balance: ৳${displayVal}`);
       } else {
         toast.error(data.error || 'Failed to fetch balance');
       }
