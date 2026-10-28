@@ -58,6 +58,9 @@ export default function SmsMarketingPage() {
         if (!updatedData.pointsRedeemedTemplate) {
           updatedData.pointsRedeemedTemplate = 'সম্মানিত {name}, আপনি আমাদের শপ থেকে সফলভাবে {points} পয়েন্ট ব্যবহার করেছেন। আমাদের সাথে থাকার জন্য ধন্যবাদ!';
         }
+        if (!updatedData.waitingForPartsTemplate) {
+          updatedData.waitingForPartsTemplate = 'প্রিয় {name}, আপনার {brand} {type} মেরামতের জন্য প্রয়োজনীয় পার্টসের অপেক্ষা করা হচ্ছে। পার্টস পাওয়া মাত্রই কাজটি দ্রুত সম্পন্ন করা হবে। ধন্যবাদ!';
+        }
         setSettings(updatedData);
 
         setCustomers(custData);
@@ -480,6 +483,15 @@ export default function SmsMarketingPage() {
                 <textarea 
                   value={settings.returnedTemplate || ''}
                   onChange={(e) => setSettings({ ...settings, returnedTemplate: e.target.value })}
+                  className="w-full bg-popover border border-gray-800 text-gray-200 rounded-xl p-4 text-sm focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all min-h-[120px] resize-none leading-relaxed"
+                />
+              </div>
+              <div className="space-y-3">
+                <h2 className="text-lg font-bold text-white">Waiting for Parts Template</h2>
+                <p className="text-xs text-gray-400">When status marked as Waiting for Parts. Variables: {'{name}, {brand}, {type}, {problem}, {total}, {advance}, {due}'}</p>
+                <textarea 
+                  value={settings.waitingForPartsTemplate || ''}
+                  onChange={(e) => setSettings({ ...settings, waitingForPartsTemplate: e.target.value })}
                   className="w-full bg-popover border border-gray-800 text-gray-200 rounded-xl p-4 text-sm focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all min-h-[120px] resize-none leading-relaxed"
                 />
               </div>

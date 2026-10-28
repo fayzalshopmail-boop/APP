@@ -5,12 +5,14 @@ export interface LoyaltyConfig {
   enabled: boolean;
   spendRequiredForOnePoint: number; // e.g. spend 100 tk to get 1 point
   pointValueInTk: number;           // e.g. 1 point = 1 tk discount
+  minPointsToRedeem: number;        // e.g. minimum points required to redeem
 }
 
 export const defaultLoyaltyConfig: LoyaltyConfig = {
   enabled: true,
   spendRequiredForOnePoint: 100,
   pointValueInTk: 1,
+  minPointsToRedeem: 0,
 };
 
 export const loyaltyConfigService = {

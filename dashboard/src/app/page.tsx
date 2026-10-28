@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { LayoutDashboard, Users, Coins, Tv, Wrench, Loader2, UserPlus, ShoppingCart, Receipt, TrendingUp, ArrowUpRight } from 'lucide-react';
+import { LayoutDashboard, Users, Coins, Tv, Wrench, Loader2, UserPlus, ShoppingCart, Receipt, TrendingUp, ArrowUpRight, Plus } from 'lucide-react';
 import { StatCard } from '@/components/ui/StatCard';
 import { QuickAlerts } from '@/components/ui/QuickAlerts';
 import { RevenueChart } from '@/components/ui/RevenueChart';
@@ -234,24 +234,8 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-3 sm:space-y-6 max-w-[1600px] mx-auto pb-6">
-      {/* Mobile Add Customer Button (Phone Only <640px) */}
-      <div className="sm:hidden">
-        <button
-          onClick={() => {
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(new CustomEvent('app:open-add-customer'));
-            }
-          }}
-          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 active:scale-[0.98] text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 transition-all"
-          title="নতুন কাস্টমার যোগ করুন"
-        >
-          <UserPlus className="w-4 h-4 shrink-0" />
-          <span>+ নতুন কাস্টমার যোগ করুন</span>
-        </button>
-      </div>
-
       {/* 4 Core StatCards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         <StatCard 
           title="মোট কাস্টমার" 
           value={isLoading ? '...' : filteredStats.totalCustomers.toString()} 
@@ -380,6 +364,21 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* Mobile Floating Action Button (FAB) - Bottom Right (+ icon only) */}
+      <button
+        type="button"
+        onClick={() => {
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('app:open-add-customer'));
+          }
+        }}
+        className="sm:hidden fixed bottom-20 right-4 z-40 w-13 h-13 bg-gradient-to-tr from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 active:scale-90 text-white rounded-full flex items-center justify-center shadow-xl shadow-blue-600/40 border border-blue-400/30 transition-all focus:outline-none"
+        title="নতুন কাস্টমার যোগ করুন"
+        aria-label="নতুন কাস্টমার যোগ করুন"
+      >
+        <Plus className="w-6 h-6 stroke-[2.5]" />
+      </button>
     </div>
   );
 }

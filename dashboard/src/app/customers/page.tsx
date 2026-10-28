@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect } from 'react';
-import { Search, Edit, Trash2, MessageCircle, Download, FileText, Phone, PhoneCall, MapPin, Tv, Eye, Filter, X, ChevronLeft, ChevronRight, Coins } from 'lucide-react';
+import { Search, Edit, Trash2, MessageCircle, Download, FileText, Phone, PhoneCall, MapPin, Tv, Eye, Filter, X, ChevronLeft, ChevronRight, Coins, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatCurrency } from '@/lib/currency';
 import { useAppStore } from '@/store/useAppStore';
@@ -48,6 +48,7 @@ export default function CustomersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   // Confirm Modal State
   const [confirmModal, setConfirmModal] = useState<{isOpen: boolean; actionType: 'delete' | 'return' | null; id: string | null;}>({isOpen: false, actionType: null, id: null});
+  const [deleteCustomerTransactions, setDeleteCustomerTransactions] = useState<boolean>(true);
   const [profileSidebarCustomer, setProfileSidebarCustomer] = useState<Customer | null>(null);
 
   useEffect(() => {
@@ -380,12 +381,22 @@ export default function CustomersPage() {
         setProfileSidebarCustomer(mergedCustomer);
       }
       
-      // Send SMS if Ready, Delivered, or Returned
-      if (newStatus === 'Ready for Delivery' || newStatus === 'Delivered' || newStatus === 'Returned (Unrepaired)') {
+      // Send SMS if Ready, Delivered, Returned, or Waiting for Parts
+      if (
+        newStatus === 'Ready for Delivery' || 
+        newStatus === 'Delivered' || 
+        newStatus === 'Returned (Unrepaired)' ||
+        newStatus === 'Waiting for Parts'
+      ) {
         if (mergedCustomer.phone) {
           const smsSettings = await smsConfigService.getSettings();
           if (smsSettings.enabled && smsSettings.apiKey && smsSettings.senderId) {
-            const template = newStatus === 'Ready for Delivery' ? smsSettings.readyTemplate : newStatus === 'Delivered' ? smsSettings.deliveredTemplate : smsSettings.returnedTemplate;
+            let template = '';
+            if (newStatus === 'Ready for Delivery') template = smsSettings.readyTemplate;
+            else if (newStatus === 'Delivered') template = smsSettings.deliveredTemplate;
+            else if (newStatus === 'Returned (Unrepaired)') template = smsSettings.returnedTemplate || '';
+            else if (newStatus === 'Waiting for Parts') template = smsSettings.waitingForPartsTemplate || '';
+
             if (template) {
               const msg = template
                 .replace(/{name}/g, mergedCustomer.name || '')
@@ -421,7 +432,8 @@ export default function CustomersPage() {
         const config = await loyaltyConfigService.getSettings();
         if (config.enabled && partsModalCustomer.pendingStatus === 'Delivered') {
            let newPoints = c.points || 0;
-           if (redeemPoints && newPoints > 0) {
+           const minPoints = config.minPointsToRedeem || 0;
+           if (redeemPoints && newPoints >= minPoints && newPoints > 0) {
               newPoints = 0;
            }
            if (paymentReceived > 0 && config.spendRequiredForOnePoint > 0) {
@@ -526,17 +538,22 @@ export default function CustomersPage() {
   };
 
   const handleDeleteRequest = (id: string) => {
+    setDeleteCustomerTransactions(true);
     setConfirmModal({ isOpen: true, actionType: 'delete', id });
   };
 
-  const executeDelete = async (id: string) => {
+  const executeDelete = async (id: string, deleteTransactions: boolean) => {
     try {
-      await shopTransactionService.deleteCustomerSafely(id);
+      await shopTransactionService.deleteCustomerSafely(id, deleteTransactions);
       setCustomers(customers.filter(c => c.id !== id));
       if (profileSidebarCustomer?.id === id) {
         setProfileSidebarCustomer(null);
       }
-      toast.success("কাস্টমার সফলভাবে মুছে ফেলা হয়েছে (প্রযোজ্য পার্টস রিস্টক করা হয়েছে)");
+      if (deleteTransactions) {
+        toast.success("কাস্টমার ও তার সমস্ত লেনদেন সফলভাবে মুছে ফেলা হয়েছে");
+      } else {
+        toast.success("কাস্টমার মুছে ফেলা হয়েছে (লেনদেন হিস্ট্রি রিপোর্টে সংরক্ষিত আছে)");
+      }
     } catch (error) { 
       console.error("Firebase error", error); 
       toast.error("কাস্টমার মুছতে সমস্যা হয়েছে। ইন্টারনেট সংযোগ চেক করুন।"); 
@@ -548,7 +565,7 @@ export default function CustomersPage() {
     if (!id || !confirmModal.actionType) return;
     try {
       if (confirmModal.actionType === 'delete') {
-        await executeDelete(id);
+        await executeDelete(id, deleteCustomerTransactions);
       } else if (confirmModal.actionType === 'return') {
         await executeMarkAsReturned(id);
       }
@@ -1384,7 +1401,39 @@ export default function CustomersPage() {
           : "Are you sure you want to delete this customer? This action cannot be undone and all data will be permanently lost."}
         confirmText={confirmModal.actionType === 'return' ? "হ্যাঁ, ফেরত দিন" : "Delete Customer"}
         cancelText="বাতিল"
-      />
+      >
+        {confirmModal.actionType === 'delete' && (
+          <div className="p-3.5 rounded-xl bg-secondary/60 border border-gray-800 text-left space-y-2 mt-2">
+            <label className="flex items-start gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={deleteCustomerTransactions}
+                onChange={(e) => setDeleteCustomerTransactions(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded border-gray-700 bg-gray-900 text-red-500 focus:ring-red-500 focus:ring-offset-0 cursor-pointer accent-red-500"
+              />
+              <div className="text-xs">
+                <span className="font-semibold text-gray-200 block">
+                  এই কাস্টমারের লেনদেন হিস্ট্রিও মুছে ফেলুন
+                </span>
+                <span className="text-gray-400 text-[11px] block mt-0.5 leading-snug">
+                  টিক দেওয়া থাকলে রিপোর্ট ও খতিয়ান থেকে এই কাস্টমারের সব পেমেন্ট/অ্যাডভান্স রেকর্ড স্থায়ীভাবে মুছে যাবে।
+                </span>
+              </div>
+            </label>
+          </div>
+        )}
+      </ConfirmModal>
+
+      {/* Floating Action Button (FAB) for Mobile - Bottom Right (+ icon only) */}
+      <button
+        type="button"
+        onClick={openAddModal}
+        className="sm:hidden fixed bottom-20 right-4 z-40 w-13 h-13 bg-gradient-to-tr from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 active:scale-90 text-white rounded-full flex items-center justify-center shadow-xl shadow-blue-600/40 border border-blue-400/30 transition-all focus:outline-none"
+        title="নতুন কাস্টমার যোগ করুন"
+        aria-label="নতুন কাস্টমার যোগ করুন"
+      >
+        <Plus className="w-6 h-6 stroke-[2.5]" />
+      </button>
     </div>
   );
 }

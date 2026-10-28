@@ -22,6 +22,7 @@ interface ConfirmModalProps {
  variant?: 'danger' | 'warning';
  requireMatchString?: string;
  requireMatchPlaceholder?: string;
+ children?: React.ReactNode;
 }
 
 export function ConfirmModal({ 
@@ -34,7 +35,8 @@ export function ConfirmModal({
  cancelText = "Cancel",
  variant = 'danger',
  requireMatchString,
- requireMatchPlaceholder
+ requireMatchPlaceholder,
+ children
 }: ConfirmModalProps) {
  const [isLoading, setIsLoading] = useState(false);
  const [matchInput, setMatchInput] = useState('');
@@ -80,6 +82,12 @@ export function ConfirmModal({
  </DialogDescription>
  </div>
  </div>
+
+ {children && (
+ <div className="mt-4">
+ {children}
+ </div>
+ )}
 
  {requireMatchString && (
    <div className="space-y-2 text-left w-full mt-4 bg-background/50 p-3 rounded-xl border border-gray-800">

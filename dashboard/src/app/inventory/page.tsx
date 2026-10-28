@@ -231,6 +231,10 @@ export default function InventoryPage() {
   const handleSaveRestock = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!restockItem || restockData.addQuantity <= 0) return;
+    if (restockData.newPurchasePrice > 0 && restockData.newSellingPrice < restockData.newPurchasePrice) {
+      toast.error("নতুন বিক্রয়মূল্য কেনা দামের চেয়ে কম হতে পারে না!");
+      return;
+    }
 
     try {
       const { newStock, avgPurchasePrice } = await shopTransactionService.restockItem({
@@ -307,6 +311,10 @@ export default function InventoryPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.purchasePrice > 0 && formData.sellingPrice < formData.purchasePrice) {
+      toast.error("বিক্রয়মূল্য অবশ্যই ক্রয়মূল্যের (কেনা দাম) চেয়ে বেশি বা সমান হতে হবে!");
+      return;
+    }
     try {
       if (editingItem) {
         await inventoryService.update(editingItem.id, formData);
@@ -837,9 +845,19 @@ export default function InventoryPage() {
                         placeholder="0.00"
                         value={formData.sellingPrice === 0 ? '' : formData.sellingPrice}
                         onChange={e => setFormData({...formData, sellingPrice: parseFloat(e.target.value) || 0})}
-                        className="w-full bg-secondary border border-gray-800 text-gray-100 rounded-lg pl-8 pr-4 py-2.5 text-sm focus:outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/50 transition-all"
+                        className={`w-full bg-secondary border rounded-lg pl-8 pr-4 py-2.5 text-sm focus:outline-none transition-all ${
+                          formData.purchasePrice > 0 && formData.sellingPrice > 0 && formData.sellingPrice < formData.purchasePrice
+                            ? 'border-red-500 text-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-500'
+                            : 'border-gray-800 text-gray-100 focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/50'
+                        }`}
                       />
                     </div>
+                    {formData.purchasePrice > 0 && formData.sellingPrice > 0 && formData.sellingPrice < formData.purchasePrice && (
+                      <p className="text-[11px] text-red-400 flex items-center gap-1 mt-1 font-medium animate-in fade-in">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        বিক্রয়মূল্য অবশ্যই ক্রয়মূল্যের (কেনা দাম) চেয়ে বেশি বা সমান হতে হবে!
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -968,9 +986,19 @@ export default function InventoryPage() {
                           required min="0" step="0.01"
                           value={restockData.newSellingPrice === 0 ? '' : restockData.newSellingPrice}
                           onChange={e => setRestockData({...restockData, newSellingPrice: parseFloat(e.target.value) || 0})}
-                          className="pl-8"
+                          className={`pl-8 ${
+                            restockData.newPurchasePrice > 0 && restockData.newSellingPrice > 0 && restockData.newSellingPrice < restockData.newPurchasePrice
+                              ? 'border-red-500 text-red-400 focus-visible:ring-red-500'
+                              : ''
+                          }`}
                         />
                       </div>
+                      {restockData.newPurchasePrice > 0 && restockData.newSellingPrice > 0 && restockData.newSellingPrice < restockData.newPurchasePrice && (
+                        <p className="text-[11px] text-red-400 flex items-center gap-1 mt-1 font-medium animate-in fade-in">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                          বিক্রয়মূল্য কেনা দামের চেয়ে কম হতে পারে না!
+                        </p>
+                      )}
                     </div>
                   </div>
 

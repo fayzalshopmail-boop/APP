@@ -14,6 +14,7 @@ export interface SmsSettings {
   followupTemplate: string; // 6-Month Reminder
   pointsRedeemedTemplate: string;
   returnedTemplate?: string;
+  waitingForPartsTemplate?: string;
   loanGivenTemplate?: string;
   loanTakenTemplate?: string;
 }
@@ -31,6 +32,7 @@ export const defaultSmsSettings: SmsSettings = {
   followupTemplate: 'হ্যালো {name}, VISC থেকে আপনার {brand} {type} মেরামতের ৬ মাস পূর্ণ হয়েছে। আশা করি এটি ঠিকঠাক চলছে! কোনো চেকাপের প্রয়োজন হলে আমাদের সাথে যোগাযোগ করুন।',
   pointsRedeemedTemplate: 'সম্মানিত {name}, আপনি আমাদের শপ থেকে সফলভাবে {points} পয়েন্ট ব্যবহার করেছেন। আমাদের সাথে থাকার জন্য ধন্যবাদ!',
   returnedTemplate: 'প্রিয় {name}, আপনার {brand} {type} ডিভাইসটি চেক করা হয়েছে এবং আনরিপেয়ার্ড অবস্থায় ফেরত দেওয়া হচ্ছে। VISC এ আসার জন্য ধন্যবাদ!',
+  waitingForPartsTemplate: 'প্রিয় {name}, আপনার {brand} {type} মেরামতের জন্য প্রয়োজনীয় পার্টসের অপেক্ষা করা হচ্ছে। পার্টস পাওয়া মাত্রই কাজটি দ্রুত সম্পন্ন করা হবে। ধন্যবাদ!',
   loanGivenTemplate: 'সম্মানিত {name}, আমাদের শপ {shop} থেকে আপনার নেওয়া ধারের {due} টাকা বকেয়া রয়েছে। অনুগ্রহ করে আপনার বকেয়াটি পরিশোধ করুন। ধন্যবাদ।',
   loanTakenTemplate: 'সম্মানিত {name}, আপনি আমাদের শপ {shop} এর কাছে {due} টাকা পান। আপনার পাওনাটি দ্রুত পরিশোধের ব্যবস্থা করা হচ্ছে। ধন্যবাদ।'
 };

@@ -572,7 +572,7 @@ export const shopTransactionService = {
    * Restocks any parts if they were not 'Delivered'
    * Preserves historical financial transactions for bookkeeping audit trails.
    */
-  async deleteCustomerSafely(customerId: string): Promise<void> {
+  async deleteCustomerSafely(customerId: string, deleteTransactions: boolean = false): Promise<void> {
     if (!db) throw new Error('Firebase DB is not initialized');
 
     // 1. Fetch customer to see if we need to restock
@@ -583,8 +583,7 @@ export const shopTransactionService = {
     const customerData = customerSnap.data() as Customer;
     const parts = customerData.partsUsed || [];
 
-    // 2. WriteBatch to restock parts and delete customer record
-    // We intentionally PRESERVE transactions in the 'transactions' ledger so past income and reports remain accurate.
+    // 2. WriteBatch to restock parts, delete customer record, and optionally delete transactions
     const batch = writeBatch(db);
     
     // We only restock if the job wasn't Delivered or Returned
@@ -597,6 +596,19 @@ export const shopTransactionService = {
 
     // Delete customer document
     batch.delete(customerRef);
+
+    // If requested, query and batch-delete all transactions for this customer
+    if (deleteTransactions) {
+      try {
+        const transQuery = query(collection(db, 'transactions'), where('customerId', '==', customerId));
+        const transSnap = await getDocs(transQuery);
+        transSnap.docs.forEach(transDoc => {
+          batch.delete(transDoc.ref);
+        });
+      } catch (err) {
+        console.warn("Failed to query transactions to delete with customer:", err);
+      }
+    }
 
     await batch.commit();
   }

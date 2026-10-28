@@ -10,7 +10,7 @@ import {
  DialogHeader,
  DialogTitle,
 } from "@/components/ui/dialog";
-import { inventoryService, InventoryItem } from '@/lib/services/inventory';
+import { inventoryService, inventorySettingsService, InventoryItem } from '@/lib/services/inventory';
 import { PartUsed, Customer } from '@/lib/services/customer';
 import { 
  Search, 
@@ -24,7 +24,10 @@ import {
  Package, 
  AlertCircle,
  Receipt,
- Check
+ Check,
+ X,
+ Loader2,
+ Star
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import toast from 'react-hot-toast';
@@ -59,6 +62,16 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  const [redeemPoints, setRedeemPoints] = useState<boolean>(false);
  const [loyaltyConfig, setLoyaltyConfig] = useState<any>(null);
  const [dueDate, setDueDate] = useState<string>('');
+ const [categories, setCategories] = useState<string[]>(['Motherboard', 'Panel', 'Backlight', 'Power Supply', 'Accessories']);
+ const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+ const [isSavingQuickPart, setIsSavingQuickPart] = useState(false);
+ const [quickPartForm, setQuickPartForm] = useState({
+ name: '',
+ category: 'General',
+ purchasePrice: 0,
+ sellingPrice: 0,
+ stock: 1
+ });
 
  useEffect(() => {
    import('@/lib/services/loyaltyConfig').then(({ loyaltyConfigService }) => {
@@ -87,8 +100,67 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  setPaymentReceived(0);
  setHasDiscount(false);
  setDueDate('');
+ setIsQuickAddOpen(false);
+ setQuickPartForm({ name: '', category: 'General', purchasePrice: 0, sellingPrice: 0, stock: 1 });
  }
  }, [isOpen]);
+
+ const handleSaveQuickPart = async () => {
+ if (!quickPartForm.name.trim()) {
+ toast.error("পার্টসের নাম আবশ্যক");
+ return;
+ }
+ if (!quickPartForm.sellingPrice || quickPartForm.sellingPrice <= 0) {
+ toast.error("সঠিক বিক্রয়মূল্য (৳) ইনপুট দিন");
+ return;
+ }
+ if (quickPartForm.purchasePrice > 0 && quickPartForm.sellingPrice < quickPartForm.purchasePrice) {
+ toast.error("বিক্রয়মূল্য অবশ্যই ক্রয়মূল্যের (কেনা দাম) চেয়ে বেশি বা সমান হতে হবে!");
+ return;
+ }
+
+ try {
+ setIsSavingQuickPart(true);
+ const stockQty = Math.max(1, quickPartForm.stock || 1);
+ const purchasePrice = Number(quickPartForm.purchasePrice) || 0;
+ const sellingPrice = Number(quickPartForm.sellingPrice) || 0;
+ const category = quickPartForm.category || 'General';
+
+ const newItemData: Omit<InventoryItem, 'id' | 'createdAt' | 'updatedAt'> = {
+ name: quickPartForm.name.trim(),
+ category,
+ stock: stockQty,
+ unit: 'Pcs',
+ purchasePrice,
+ sellingPrice,
+ minStockLevel: 2
+ };
+
+ const newId = await inventoryService.add(newItemData);
+ const newItem: InventoryItem = {
+ id: newId,
+ ...newItemData
+ };
+
+ // Add to local inventory state
+ setInventory(prev => [newItem, ...prev]);
+
+ // Automatically attach to selectedParts
+ handleAddPart(newItem);
+
+ toast.success(`"${newItem.name}" ইনভেন্টরিতে যুক্ত হয়েছে এবং সার্ভিসে সিলেক্ট করা হয়েছে!`);
+ 
+ // Reset form and close
+ setQuickPartForm({ name: '', category: 'General', purchasePrice: 0, sellingPrice: 0, stock: 1 });
+ setIsQuickAddOpen(false);
+ setSearch('');
+ } catch (error) {
+ console.error("Error quick adding inventory item:", error);
+ toast.error("ইনভেন্টরিতে যুক্ত করতে সমস্যা হয়েছে");
+ } finally {
+ setIsSavingQuickPart(false);
+ }
+ };
 
  const handleAddPart = (item: InventoryItem) => {
  const existing = selectedParts.find(p => p.inventoryId === item.id);
@@ -138,8 +210,11 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
 
  if (!customer) return null;
 
- const pointsValueTk = (loyaltyConfig?.enabled && (customer?.points || 0) > 0) ? Math.floor((customer?.points || 0) * (loyaltyConfig.pointValueInTk || 1)) : 0;
- const pointsDiscount = redeemPoints ? pointsValueTk : 0;
+ const minPointsRequired = Number(loyaltyConfig?.minPointsToRedeem) || 0;
+ const customerPoints = customer?.points || 0;
+ const canRedeemPoints = Boolean(loyaltyConfig?.enabled && customerPoints > 0 && customerPoints >= minPointsRequired);
+ const pointsValueTk = canRedeemPoints ? Math.floor(customerPoints * (loyaltyConfig?.pointValueInTk || 1)) : 0;
+ const pointsDiscount = (redeemPoints && canRedeemPoints) ? pointsValueTk : 0;
  
  const currentDue = Math.max(0, editableTotalBill - (customer.advance || 0) - pointsDiscount);
  
@@ -210,12 +285,142 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  {/* Left Column: Inventory & Parts Used (7 cols) */}
  <div className={`flex flex-col gap-4 ${pendingStatus === "Delivered" ? "lg:col-span-7" : "lg:col-span-12"}`}>
  <div className="bg-secondary/60 border border-gray-800/80 rounded-xl p-4 sm:p-5 flex flex-col h-full">
- <div className="flex items-center justify-between mb-3">
+ <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
  <h4 className="text-sm font-semibold text-blue-400 flex items-center gap-2">
  <Wrench className="w-4 h-4" /> Parts Replacement
  </h4>
- <span className="text-xs text-gray-500">Optional</span>
+ <Button
+ type="button"
+ size="sm"
+ onClick={() => {
+ setQuickPartForm({ name: search || '', category: categories[0] || 'General', purchasePrice: 0, sellingPrice: 0, stock: 1 });
+ setIsQuickAddOpen(prev => !prev);
+ }}
+ className="h-7 px-2.5 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg flex items-center gap-1 shadow-sm transition-all"
+ >
+ {isQuickAddOpen ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+ <span>{isQuickAddOpen ? 'ফর্ম বন্ধ করুন' : '+ নতুন আইটেম যুক্ত করুন'}</span>
+ </Button>
  </div>
+
+ {/* Inline Quick Add Inventory Item Card */}
+ {isQuickAddOpen && (
+ <div className="mb-3.5 p-3.5 rounded-xl bg-[#0d0f17] border border-indigo-500/50 shadow-xl shadow-indigo-950/20 space-y-3 animate-in fade-in duration-150">
+ <div className="flex items-center justify-between border-b border-gray-800 pb-2">
+ <div className="flex items-center gap-2 text-indigo-400 font-semibold text-xs">
+ <Package className="w-4 h-4" />
+ <span>ইনভেন্টরিতে নতুন আইটেম যুক্ত করুন</span>
+ </div>
+ <button
+ type="button"
+ onClick={() => setIsQuickAddOpen(false)}
+ className="text-gray-400 hover:text-white p-1 rounded-md"
+ >
+ <X className="w-4 h-4" />
+ </button>
+ </div>
+
+ <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+ {/* Name */}
+ <div className="sm:col-span-2 space-y-1">
+ <label className="text-[11px] font-medium text-gray-300">পার্টসের নাম <span className="text-red-400">*</span></label>
+ <Input
+ type="text"
+ placeholder="যেমন: Samsung 32 Backlight Bar"
+ value={quickPartForm.name}
+ onChange={(e) => setQuickPartForm(prev => ({ ...prev, name: e.target.value }))}
+ className="h-8.5 text-xs bg-secondary/80 border-gray-700 text-gray-100"
+ autoFocus
+ />
+ </div>
+
+ {/* Category */}
+ <div className="space-y-1">
+ <label className="text-[11px] font-medium text-gray-300">ক্যাটাগরি</label>
+ <select
+ value={quickPartForm.category}
+ onChange={(e) => setQuickPartForm(prev => ({ ...prev, category: e.target.value }))}
+ className="w-full h-8.5 px-2.5 rounded-lg text-xs bg-secondary/80 border border-gray-700 text-gray-200 focus:outline-none focus:border-indigo-500"
+ >
+ {categories.map(cat => (
+ <option key={cat} value={cat}>{cat}</option>
+ ))}
+ {!categories.includes('General') && <option value="General">General</option>}
+ </select>
+ </div>
+
+ {/* Stock Quantity */}
+ <div className="space-y-1">
+ <label className="text-[11px] font-medium text-gray-300">স্টক সংখ্যা (কত পিস কিনলেন?)</label>
+ <Input
+ type="number"
+ min="1"
+ placeholder="1"
+ value={quickPartForm.stock || ''}
+ onChange={(e) => setQuickPartForm(prev => ({ ...prev, stock: Math.max(1, parseInt(e.target.value) || 1) }))}
+ className="h-8.5 text-xs bg-secondary/80 border-gray-700"
+ />
+ </div>
+
+ {/* Purchase Price (Cost) */}
+ <div className="space-y-1">
+ <label className="text-[11px] font-medium text-gray-300">ক্রয়মূল্য / কেনা দাম (৳)</label>
+ <Input
+ type="number"
+ min="0"
+ placeholder="0"
+ value={quickPartForm.purchasePrice || ''}
+ onChange={(e) => setQuickPartForm(prev => ({ ...prev, purchasePrice: parseFloat(e.target.value) || 0 }))}
+ className="h-8.5 text-xs bg-secondary/80 border-gray-700"
+ />
+ </div>
+
+ {/* Selling Price */}
+ <div className="space-y-1">
+ <label className="text-[11px] font-medium text-gray-300">কাস্টমার রেট / বিক্রয়মূল্য (৳) <span className="text-red-400">*</span></label>
+ <Input
+ type="number"
+ min="0"
+ placeholder="0"
+ value={quickPartForm.sellingPrice || ''}
+ onChange={(e) => setQuickPartForm(prev => ({ ...prev, sellingPrice: parseFloat(e.target.value) || 0 }))}
+ className={`h-8.5 text-xs bg-secondary/80 font-semibold ${
+ quickPartForm.purchasePrice > 0 && quickPartForm.sellingPrice > 0 && quickPartForm.sellingPrice < quickPartForm.purchasePrice
+ ? 'border-red-500 text-red-400 focus:border-red-500'
+ : 'border-gray-700 text-emerald-400'
+ }`}
+ />
+ {quickPartForm.purchasePrice > 0 && quickPartForm.sellingPrice > 0 && quickPartForm.sellingPrice < quickPartForm.purchasePrice && (
+ <p className="text-[10px] text-red-400 flex items-center gap-1 mt-0.5">
+ <AlertCircle className="w-3 h-3 shrink-0" /> কেনা দামের চেয়ে কম রেট দেওয়া যাবে না!
+ </p>
+ )}
+ </div>
+ </div>
+
+ <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-800/80">
+ <Button
+ type="button"
+ variant="ghost"
+ size="sm"
+ onClick={() => setIsQuickAddOpen(false)}
+ className="h-7 text-xs text-gray-400 hover:text-white"
+ >
+ বাতিল
+ </Button>
+ <Button
+ type="button"
+ size="sm"
+ disabled={isSavingQuickPart || !quickPartForm.name.trim() || !quickPartForm.sellingPrice}
+ onClick={handleSaveQuickPart}
+ className="h-7 px-3 text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg flex items-center gap-1.5 shadow-sm"
+ >
+ {isSavingQuickPart ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+ ইনভেন্টরিতে সেভ ও ব্যবহার করুন
+ </Button>
+ </div>
+ </div>
+ )}
 
  {/* Inventory Search */}
  <div className="relative mb-3">
@@ -234,7 +439,20 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  {loading ? (
  <div className="text-center py-6 text-gray-500 text-xs">Loading available inventory...</div>
  ) : filteredInventory.length === 0 ? (
- <div className="text-center py-6 text-gray-500 text-xs">No parts match search</div>
+ <div className="text-center py-5 text-gray-500 text-xs space-y-2">
+ <p>{search ? `"${search}" ইনভেন্টরিতে পাওয়া যায়নি` : "ইনভেন্টরিতে কোনো পার্টস নেই"}</p>
+ <Button
+ type="button"
+ size="sm"
+ onClick={() => {
+ setQuickPartForm(prev => ({ ...prev, name: search || '', category: categories[0] || 'General' }));
+ setIsQuickAddOpen(true);
+ }}
+ className="h-7 text-xs bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/30 border border-indigo-500/30 rounded-lg inline-flex items-center gap-1"
+ >
+ <Plus className="w-3.5 h-3.5" /> {search ? `"${search}" ইনভেন্টরিতে যোগ করুন` : "+ নতুন আইটেম যুক্ত করুন"}
+ </Button>
+ </div>
  ) : (
  filteredInventory.map(item => (
  <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-secondary border border-gray-800/60 hover:border-gray-700 transition-colors">
@@ -348,16 +566,23 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  </div>
 
  {/* Loyalty Check */}
- {loyaltyConfig?.enabled && (customer?.points || 0) > 0 && pointsValueTk > 0 && (
+ {loyaltyConfig?.enabled && customerPoints > 0 && (
    <div className="bg-[#0d0f17] p-3 rounded-xl border border-gray-800/80 space-y-2 mb-4">
-     <label className="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-emerald-300 select-none">
-       <input type="checkbox"
-         checked={redeemPoints}
-         onChange={(e) => setRedeemPoints(e.target.checked)}
-         className="w-4 h-4 rounded border-gray-700 bg-gray-900 text-emerald-500 focus:ring-emerald-500"
-       />
-       <span>Redeem {customer?.points} Points for {formatCurrency(pointsValueTk)} off!</span>
-     </label>
+     {canRedeemPoints ? (
+       <label className="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-emerald-300 select-none">
+         <input type="checkbox"
+           checked={redeemPoints}
+           onChange={(e) => setRedeemPoints(e.target.checked)}
+           className="w-4 h-4 rounded border-gray-700 bg-gray-900 text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+         />
+         <span>Redeem {customerPoints} Points for {formatCurrency(pointsValueTk)} off!</span>
+       </label>
+     ) : (
+       <div className="flex items-center gap-2 text-xs text-amber-400/90 py-0.5">
+         <Star className="w-4 h-4 text-amber-400 shrink-0 fill-amber-400/20" />
+         <span>কাস্টমারের <strong>{customerPoints}</strong> পয়েন্ট আছে (পয়েন্ট ভাঙাতে সর্বনিম্ন <strong>{minPointsRequired}</strong> পয়েন্ট প্রয়োজন)</span>
+       </div>
+     )}
    </div>
  )}
 
