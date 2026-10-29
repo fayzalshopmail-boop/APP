@@ -1,7 +1,6 @@
 'use client';
 
 import { Bell, Lock, Menu, CheckCircle2, AlertTriangle, Info, BellRing, X, UserPlus, PackagePlus, PlusCircle, Wrench, Truck, Wallet, ShoppingCart, Receipt, Coins, WifiOff, ChevronLeft } from 'lucide-react';
-import { MORE_MENU_ROUTES } from '@/components/layout/NavigationBackHandler';
 import { useAppStore } from '@/store/useAppStore';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
@@ -97,29 +96,10 @@ export function Topbar() {
   };
 
   const handleHeaderBack = () => {
-    const isMenuPage = MORE_MENU_ROUTES.some(p => pathname === p || pathname.startsWith(p + '/'));
-    const wasOpenedFromMenu = typeof window !== 'undefined' && sessionStorage.getItem('nav_opened_from_menu') === 'true';
-
-    // 1. If More menu is currently open:
-    if (useAppStore.getState().isMoreMenuOpen) {
-      useAppStore.getState().setIsMoreMenuOpen(false);
-      router.push('/');
-      return;
+    useAppStore.getState().setIsMoreMenuOpen(false);
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('nav_opened_from_menu');
     }
-
-    // 2. If opened from menu:
-    if (isMenuPage || wasOpenedFromMenu) {
-      if (typeof window !== 'undefined') {
-        sessionStorage.removeItem('nav_opened_from_menu');
-      }
-      router.push('/');
-      setTimeout(() => {
-        useAppStore.getState().setIsMoreMenuOpen(true);
-      }, 50);
-      return;
-    }
-
-    // 3. Otherwise (e.g. /customers, /inventory, /due):
     router.push('/');
   };
 

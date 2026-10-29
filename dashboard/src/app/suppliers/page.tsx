@@ -12,7 +12,6 @@ import { supplierService, Supplier } from '@/lib/services/supplier';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { FilterChipBar } from '@/components/ui/FilterChipBar';
-import { MobileDataCard } from '@/components/ui/MobileDataCard';
 import { useAppStore } from '@/store/useAppStore';
 import toast from 'react-hot-toast';
 
@@ -208,75 +207,92 @@ export default function SuppliersPage() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300 pb-10">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-300 pb-10 max-w-[1600px] mx-auto">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Truck className="w-6 h-6 text-purple-500" />
-            Suppliers & Dealers
+          <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+            <Truck className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
+            Suppliers & Dealers (সাপ্লায়ার)
           </h1>
-          <p className="text-sm text-gray-400 mt-1">Manage your parts suppliers and their payment dues</p>
+          <p className="text-xs sm:text-sm text-gray-400 mt-0.5 sm:mt-1">পার্টস সাপ্লায়ার ও মহাজনদের দেনা-পাওনার হিসাব</p>
         </div>
-        <Button onClick={openAddModal} className="hidden sm:inline-flex bg-purple-600 hover:bg-purple-700 text-white gap-2">
-          <Plus className="w-4 h-4" /> Add Supplier
+        <Button 
+          onClick={openAddModal} 
+          className="w-full sm:w-auto bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20 gap-1.5 shrink-0 text-xs sm:text-sm h-9 sm:h-10 px-3.5 rounded-xl font-semibold"
+        >
+          <Plus className="w-4 h-4" /> 
+          <span>নতুন সাপ্লায়ার যোগ করুন</span>
         </Button>
       </div>
 
-      {/* 3-Card Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-card border border-orange-500/20 rounded-2xl p-5 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
-          <div className="flex items-center justify-between relative z-10">
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">সাপ্লায়ার বাকি (Payable Due)</p>
-              <h2 className="text-2xl font-bold text-orange-400">{formatCurrency(totalShopDue)}</h2>
-              <p className="text-[11px] text-gray-500 mt-1">{dueCount} জন সাপ্লায়ারের বাকি আছে</p>
+      {/* 3-Card Summary: Side-by-side 3 cols on mobile & desktop */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        {/* Payable Due */}
+        <div className="bg-card/90 border border-orange-500/20 hover:border-orange-500/40 rounded-xl sm:rounded-2xl p-2.5 sm:p-5 relative overflow-hidden group shadow-sm transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2">
+            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">সাপ্লায়ার বাকি</span>
+            <div className="w-6 h-6 sm:w-9 sm:h-9 bg-orange-500/10 rounded-lg sm:rounded-xl flex items-center justify-center border border-orange-500/20 text-orange-400 shrink-0">
+              <Wallet className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
             </div>
-            <div className="w-12 h-12 bg-orange-500/10 rounded-xl flex items-center justify-center border border-orange-500/20">
-              <Wallet className="w-6 h-6 text-orange-400" />
+          </div>
+          <div>
+            <div className="text-sm sm:text-2xl font-bold text-orange-400 tracking-tight leading-tight truncate">
+              {formatCurrency(totalShopDue)}
             </div>
+            <p className="text-[9px] sm:text-[11px] text-gray-500 mt-0.5 truncate hidden sm:block">
+              {dueCount} জনের বাকি আছে
+            </p>
           </div>
         </div>
 
-        <div className="bg-card border border-purple-500/20 rounded-2xl p-5 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
-          <div className="flex items-center justify-between relative z-10">
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">মোট সাপ্লায়ার (Suppliers)</p>
-              <h2 className="text-2xl font-bold text-white">{suppliers.length}</h2>
-              <p className="text-[11px] text-gray-500 mt-1">{clearedCount} জন পরিশোধিত</p>
+        {/* Total Suppliers */}
+        <div className="bg-card/90 border border-purple-500/20 hover:border-purple-500/40 rounded-xl sm:rounded-2xl p-2.5 sm:p-5 relative overflow-hidden group shadow-sm transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2">
+            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">মোট সাপ্লায়ার</span>
+            <div className="w-6 h-6 sm:w-9 sm:h-9 bg-purple-500/10 rounded-lg sm:rounded-xl flex items-center justify-center border border-purple-500/20 text-purple-400 shrink-0">
+              <Truck className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
             </div>
-            <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center border border-purple-500/20">
-              <Truck className="w-6 h-6 text-purple-400" />
+          </div>
+          <div>
+            <div className="text-sm sm:text-2xl font-bold text-white tracking-tight leading-tight truncate">
+              {suppliers.length} জন
             </div>
+            <p className="text-[9px] sm:text-[11px] text-gray-500 mt-0.5 truncate hidden sm:block">
+              {clearedCount} জন পরিশোধিত
+            </p>
           </div>
         </div>
 
-        <div className="bg-card border border-emerald-500/20 rounded-2xl p-5 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
-          <div className="flex items-center justify-between relative z-10">
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">মোট মালামাল ক্রয় (Purchases)</p>
-              <h2 className="text-2xl font-bold text-emerald-400">{formatCurrency(totalPurchases)}</h2>
-              <p className="text-[11px] text-gray-500 mt-1">সর্বমোট ক্রয় হিসাব</p>
+        {/* Total Purchases */}
+        <div className="bg-card/90 border border-emerald-500/20 hover:border-emerald-500/40 rounded-xl sm:rounded-2xl p-2.5 sm:p-5 relative overflow-hidden group shadow-sm transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2">
+            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">মোট মালামাল ক্রয়</span>
+            <div className="w-6 h-6 sm:w-9 sm:h-9 bg-emerald-500/10 rounded-lg sm:rounded-xl flex items-center justify-center border border-emerald-500/20 text-emerald-400 shrink-0">
+              <Building className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
             </div>
-            <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20">
-              <Building className="w-6 h-6 text-emerald-400" />
+          </div>
+          <div>
+            <div className="text-sm sm:text-2xl font-bold text-emerald-400 tracking-tight leading-tight truncate">
+              {formatCurrency(totalPurchases)}
             </div>
+            <p className="text-[9px] sm:text-[11px] text-gray-500 mt-0.5 truncate hidden sm:block">
+              সর্বমোট ক্রয় হিসাব
+            </p>
           </div>
         </div>
       </div>
 
       {/* Search & Filter Chip Bar */}
-      <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
+      <div className="bg-card/90 border border-gray-800 rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 shadow-sm space-y-2.5">
+        <div className="flex flex-col sm:flex-row gap-2.5 justify-between items-stretch sm:items-center">
           <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <Input 
               placeholder="নাম, প্রতিষ্ঠান বা মোবাইল দিয়ে খুঁজুন..." 
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-9 bg-background/50 h-10"
+              className="pl-9 bg-popover/80 border-gray-800 h-9 sm:h-10 text-xs sm:text-sm rounded-xl focus:border-blue-500"
             />
           </div>
           <FilterChipBar
@@ -385,51 +401,70 @@ export default function SuppliersPage() {
             </div>
           </div>
 
-          {/* Mobile Card View */}
-          <div className="md:hidden space-y-3">
+          {/* Mobile Card View (Sleek, Compact & Space-Efficient) */}
+          <div className="md:hidden space-y-2.5">
             {paginatedSuppliers.map((s) => (
-              <MobileDataCard key={s.id}>
-                <MobileDataCard.Header
-                  title={s.name}
-                  subtitle={s.company}
-                  badge={
-                    s.due > 0 ? (
-                      <span className="text-[11px] bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-full font-medium">
-                        বাকি আছে
-                      </span>
-                    ) : (
-                      <span className="text-[11px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-medium">
-                        পরিশোধিত
-                      </span>
-                    )
-                  }
-                />
-                <MobileDataCard.Details>
-                  <div className="flex flex-col gap-1 text-xs text-gray-400">
-                    <div className="flex items-center gap-1.5">
-                      <Phone className="w-3.5 h-3.5 text-gray-500" />
-                      <span>{s.phone}</span>
+              <div 
+                key={s.id} 
+                className="bg-card/90 border border-gray-800/90 rounded-xl p-3 shadow-sm hover:border-gray-700 transition-all space-y-2.5"
+              >
+                {/* Top Row: Name, Company & Due Status */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-gray-100 text-sm truncate">
+                      {s.name}
                     </div>
-                    {s.address && (
-                      <div className="flex items-center gap-1.5 truncate">
-                        <MapPin className="w-3.5 h-3.5 text-gray-500 shrink-0" />
-                        <span className="truncate">{s.address}</span>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1.5 text-xs text-gray-400 mt-0.5 truncate">
+                      <span className="text-gray-300 font-medium truncate">{s.company}</span>
+                      {s.phone && (
+                        <>
+                          <span>•</span>
+                          <a 
+                            href={`tel:${s.phone}`} 
+                            className="text-blue-400 hover:underline flex items-center gap-1 font-medium shrink-0"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Phone className="w-3 h-3 text-blue-400" />
+                            <span>{s.phone}</span>
+                          </a>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </MobileDataCard.Details>
-                <MobileDataCard.FinancialStrip
-                  items={[
-                    { label: 'মোট ক্রয়', value: formatCurrency(s.totalPurchase) },
-                    { label: 'বাকি পাওনা', value: formatCurrency(s.due), highlight: s.due > 0 ? 'danger' : 'success' },
-                  ]}
-                />
-                <MobileDataCard.Actions>
+
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 border ${
+                    s.due > 0 
+                      ? 'bg-orange-500/10 text-orange-400 border-orange-500/25' 
+                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
+                  }`}>
+                    {s.due > 0 ? 'বাকি আছে' : 'পরিশোধিত'}
+                  </span>
+                </div>
+
+                {/* Middle Financial Strip: Total Purchase & Due Amount */}
+                <div className="grid grid-cols-2 gap-2 bg-[#121523]/80 p-2 rounded-lg border border-gray-800/60 text-xs">
+                  <div>
+                    <span className="text-[10px] text-gray-400 block">মোট ক্রয়:</span>
+                    <span className="font-semibold text-gray-200">
+                      {formatCurrency(s.totalPurchase)}
+                    </span>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="text-[10px] text-gray-400 block">বাকি পাওনা:</span>
+                    <span className={`font-bold ${s.due > 0 ? 'text-orange-400' : 'text-emerald-400'}`}>
+                      {formatCurrency(s.due)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Bottom Actions Row */}
+                <div className="flex items-center gap-1.5 pt-0.5">
                   {s.due > 0 && (
                     <Button 
                       size="sm" 
                       onClick={() => setPaymentModalSupplier(s)} 
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs h-8"
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs h-7.5 rounded-lg shadow-sm font-medium"
                     >
                       <span className="font-bold text-xs mr-1 leading-none">৳</span> পে ডিউ
                     </Button>
@@ -438,7 +473,7 @@ export default function SuppliersPage() {
                     size="sm" 
                     variant="outline" 
                     onClick={() => setBillModalSupplier(s)} 
-                    className="flex-1 border-blue-500/30 text-blue-400 hover:bg-blue-500/10 text-xs h-8"
+                    className="flex-1 border-blue-500/30 text-blue-400 hover:bg-blue-500/10 text-xs h-7.5 rounded-lg font-medium"
                   >
                     <Plus className="w-3.5 h-3.5 mr-1" /> বিল যোগ
                   </Button>
@@ -446,7 +481,8 @@ export default function SuppliersPage() {
                     size="sm" 
                     variant="ghost" 
                     onClick={() => openEditModal(s)} 
-                    className="h-8 w-8 p-0 text-gray-400 hover:text-white"
+                    className="h-7.5 w-7.5 p-0 bg-gray-800/50 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg shrink-0"
+                    title="এডিট"
                   >
                     <Edit className="w-3.5 h-3.5" />
                   </Button>
@@ -454,12 +490,13 @@ export default function SuppliersPage() {
                     size="sm" 
                     variant="ghost" 
                     onClick={() => setConfirmModal({ isOpen: true, id: s.id })} 
-                    className="h-8 w-8 p-0 text-gray-400 hover:text-red-400"
+                    className="h-7.5 w-7.5 p-0 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg shrink-0"
+                    title="মুছে ফেলুন"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
-                </MobileDataCard.Actions>
-              </MobileDataCard>
+                </div>
+              </div>
             ))}
           </div>
 

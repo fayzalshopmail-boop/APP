@@ -35,16 +35,10 @@ export function OwnerBottomNav() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleOpenMenuLink = () => {
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem('nav_opened_from_menu', 'true');
-    }
     setIsMoreMenuOpen(false);
   };
 
   const handlePrimaryTabClick = () => {
-    if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('nav_opened_from_menu');
-    }
     setIsMoreMenuOpen(false);
   };
 

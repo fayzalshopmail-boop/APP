@@ -12,7 +12,6 @@ import { formatCurrency } from '@/lib/currency';
 import { expenseService, Expense } from '@/lib/services/expense';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { FilterChipBar } from '@/components/ui/FilterChipBar';
-import { MobileDataCard } from '@/components/ui/MobileDataCard';
 import { getLocalDateString } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
@@ -202,81 +201,93 @@ export default function ExpensesPage() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300 pb-10">
+    <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-300 pb-10 max-w-[1600px] mx-auto">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Wallet className="w-6 h-6 text-pink-500" />
+          <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+            <Wallet className="w-5 h-5 sm:w-6 sm:h-6 text-pink-500" />
             Shop Expenses (দোকানের খরচ)
           </h1>
-          <p className="text-sm text-gray-400 mt-1">দৈনন্দিন খরচ ও নিয়মিত ব্যয় ট্র্যাকিং</p>
+          <p className="text-xs sm:text-sm text-gray-400 mt-0.5 sm:mt-1">দৈনন্দিন খরচ ও নিয়মিত ব্যয় ট্র্যাকিং</p>
         </div>
         <Button 
           onClick={handleOpenAddModal}
-          className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 shrink-0"
+          className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-1.5 shrink-0 text-xs sm:text-sm h-9 sm:h-10 px-3.5 rounded-xl font-semibold"
         >
           <Plus className="w-4 h-4" />
-          <span>নতুন খরচ (Add Expense)</span>
+          <span>নতুন খরচ যোগ করুন</span>
         </Button>
       </div>
 
-      {/* 3-Card Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-card border border-pink-500/20 rounded-2xl p-5 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
-          <div className="flex items-center justify-between relative z-10">
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">চলতি মাসের খরচ (This Month)</p>
-              <h2 className="text-2xl font-bold text-pink-400">{formatCurrency(thisMonthExpenses)}</h2>
-              <p className="text-[11px] text-gray-500 mt-1">চলতি মাসের মোট ব্যয়</p>
+      {/* 3-Card Summary: Side-by-side 3 cols on mobile & desktop */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        {/* Card 1: This Month */}
+        <div className="bg-card/90 border border-pink-500/20 hover:border-pink-500/40 rounded-xl sm:rounded-2xl p-2.5 sm:p-5 relative overflow-hidden group shadow-sm transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2">
+            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">চলতি মাস</span>
+            <div className="w-6 h-6 sm:w-9 sm:h-9 bg-pink-500/10 rounded-lg sm:rounded-xl flex items-center justify-center border border-pink-500/20 text-pink-400 shrink-0">
+              <Wallet className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
             </div>
-            <div className="w-12 h-12 bg-pink-500/10 rounded-xl flex items-center justify-center border border-pink-500/20">
-              <Wallet className="w-6 h-6 text-pink-400" />
+          </div>
+          <div>
+            <div className="text-sm sm:text-2xl font-bold text-pink-400 tracking-tight leading-tight truncate">
+              {formatCurrency(thisMonthExpenses)}
             </div>
+            <p className="text-[9px] sm:text-[11px] text-gray-500 mt-0.5 truncate hidden sm:block">
+              চলতি মাসের মোট ব্যয়
+            </p>
           </div>
         </div>
 
-        <div className="bg-card border border-blue-500/20 rounded-2xl p-5 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
-          <div className="flex items-center justify-between relative z-10">
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">আজকের খরচ (Today)</p>
-              <h2 className="text-2xl font-bold text-blue-400">{formatCurrency(todayExpenses)}</h2>
-              <p className="text-[11px] text-gray-500 mt-1">আজকের মোট ব্যয়</p>
+        {/* Card 2: Today */}
+        <div className="bg-card/90 border border-blue-500/20 hover:border-blue-500/40 rounded-xl sm:rounded-2xl p-2.5 sm:p-5 relative overflow-hidden group shadow-sm transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2">
+            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">আজকের খরচ</span>
+            <div className="w-6 h-6 sm:w-9 sm:h-9 bg-blue-500/10 rounded-lg sm:rounded-xl flex items-center justify-center border border-blue-500/20 text-blue-400 shrink-0">
+              <Calendar className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
             </div>
-            <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center border border-blue-500/20">
-              <Calendar className="w-6 h-6 text-blue-400" />
+          </div>
+          <div>
+            <div className="text-sm sm:text-2xl font-bold text-blue-400 tracking-tight leading-tight truncate">
+              {formatCurrency(todayExpenses)}
             </div>
+            <p className="text-[9px] sm:text-[11px] text-gray-500 mt-0.5 truncate hidden sm:block">
+              আজকের মোট ব্যয়
+            </p>
           </div>
         </div>
 
-        <div className="bg-card border border-emerald-500/20 rounded-2xl p-5 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
-          <div className="flex items-center justify-between relative z-10">
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">সর্বমোট খরচ (All Time)</p>
-              <h2 className="text-2xl font-bold text-emerald-400">{formatCurrency(totalAllTimeExpenses)}</h2>
-              <p className="text-[11px] text-gray-500 mt-1">মোট {expenses.length} টি খরচ রেকর্ড</p>
+        {/* Card 3: Total Expenses */}
+        <div className="bg-card/90 border border-emerald-500/20 hover:border-emerald-500/40 rounded-xl sm:rounded-2xl p-2.5 sm:p-5 relative overflow-hidden group shadow-sm transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2">
+            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">সর্বমোট খরচ</span>
+            <div className="w-6 h-6 sm:w-9 sm:h-9 bg-emerald-500/10 rounded-xl sm:rounded-xl flex items-center justify-center border border-emerald-500/20 text-emerald-400 shrink-0">
+              <Coffee className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
             </div>
-            <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20">
-              <Coffee className="w-6 h-6 text-emerald-400" />
+          </div>
+          <div>
+            <div className="text-sm sm:text-2xl font-bold text-emerald-400 tracking-tight leading-tight truncate">
+              {formatCurrency(totalAllTimeExpenses)}
             </div>
+            <p className="text-[9px] sm:text-[11px] text-gray-500 mt-0.5 truncate hidden sm:block">
+              মোট {expenses.length} টি রেকর্ড
+            </p>
           </div>
         </div>
       </div>
 
       {/* Search and Filter Chip Bar */}
-      <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
+      <div className="bg-card/90 border border-gray-800 rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 shadow-sm space-y-2.5">
+        <div className="flex flex-col sm:flex-row gap-2.5 justify-between items-stretch sm:items-center">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             <Input 
               type="text" 
-              placeholder="খরচের বিবরণ বা ক্যাটাগরি দিয়ে খুঁজুন..." 
+              placeholder="খরচের বিবরণ বা ক্যাটাগরি..." 
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-9 bg-background/50 h-10"
+              className="pl-9 bg-popover/80 border-gray-800 h-9 sm:h-10 text-xs sm:text-sm rounded-xl focus:border-blue-500"
             />
           </div>
           <FilterChipBar
@@ -380,47 +391,58 @@ export default function ExpensesPage() {
             </div>
           </div>
 
-          {/* Mobile Card View */}
-          <div className="md:hidden space-y-3">
+          {/* Mobile Card View (Sleek, Compact & Space-Efficient) */}
+          <div className="md:hidden space-y-2">
             {paginatedExpenses.map((expense) => {
               const Category = getCategoryIcon(expense.category);
               const Icon = Category.icon;
               return (
-                <MobileDataCard key={expense.id}>
-                  <MobileDataCard.Header
-                    title={expense.title}
-                    subtitle={expense.date}
-                    badge={
-                      <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-secondary/80 ${Category.color}`}>
-                        <Icon className="w-3.5 h-3.5" />
-                        <span>{expense.category}</span>
+                <div 
+                  key={expense.id} 
+                  className="bg-card/90 border border-gray-800/90 rounded-xl p-3 shadow-sm hover:border-gray-700 transition-all flex items-center justify-between gap-2.5"
+                >
+                  {/* Left: Category Icon */}
+                  <div className={`w-9 h-9 rounded-xl bg-secondary/80 border border-border flex items-center justify-center shrink-0 ${Category.color}`}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+
+                  {/* Middle: Title & Meta */}
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-gray-100 text-sm truncate">
+                      {expense.title}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[11px] text-gray-400 mt-0.5 truncate">
+                      <span>{expense.date}</span>
+                      <span>•</span>
+                      <span className="text-gray-300 font-medium truncate">{expense.category}</span>
+                    </div>
+                  </div>
+
+                  {/* Right: Amount & Actions */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="text-right">
+                      <div className="text-sm sm:text-base font-bold text-pink-400 tabular-nums">
+                        {formatCurrency(expense.amount)}
                       </div>
-                    }
-                  />
-                  <MobileDataCard.FinancialStrip
-                    items={[
-                      { label: 'খরচের পরিমাণ', value: formatCurrency(expense.amount), highlight: 'danger' },
-                    ]}
-                  />
-                  <MobileDataCard.Actions>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => handleOpenEditModal(expense)} 
-                      className="flex-1 border-blue-500/20 text-blue-400 hover:bg-blue-500/10 text-xs h-8"
-                    >
-                      <Edit2 className="w-3.5 h-3.5 mr-1" /> এডিট
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => handleDeleteRequest(expense.id)} 
-                      className="flex-1 border-red-500/20 text-red-400 hover:bg-red-500/10 text-xs h-8"
-                    >
-                      <Trash2 className="w-3.5 h-3.5 mr-1" /> মুছে ফেলুন
-                    </Button>
-                  </MobileDataCard.Actions>
-                </MobileDataCard>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleOpenEditModal(expense)}
+                        className="w-7 h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 flex items-center justify-center transition-colors"
+                        title="এডিট"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteRequest(expense.id)}
+                        className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition-colors"
+                        title="মুছে ফেলুন"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               );
             })}
           </div>
