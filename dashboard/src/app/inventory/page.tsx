@@ -16,7 +16,6 @@ import { InventoryManageModal } from "@/components/ui/InventoryManageModal";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { PaginationControl } from '@/components/ui/PaginationControl';
-import { MobileDataCard } from '@/components/ui/MobileDataCard';
 import { DirectSaleReceiptModal, DirectSaleReceiptData } from "@/components/ui/DirectSaleReceiptModal";
 import toast from "react-hot-toast";
 
@@ -418,77 +417,111 @@ export default function InventoryPage() {
 }
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-6 pb-10">
-      {/* 3-Card Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-card border border-blue-500/20 rounded-2xl p-5 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
-          <div className="flex items-center justify-between relative z-10">
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">মোট আইটেম / পার্টস</p>
-              <h2 className="text-2xl font-bold text-white">{items.length}</h2>
-              <p className="text-[11px] text-gray-500 mt-1">দোকানের মোট নিবন্ধিত পার্টস</p>
+    <div className="max-w-[1600px] mx-auto space-y-4 sm:space-y-6 pb-10">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+            <Box className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
+            দোকানের ইনভেন্টরি (Inventory)
+          </h1>
+          <p className="text-gray-400 text-xs sm:text-sm mt-0.5 sm:mt-1">
+            পার্টস স্টক, ক্রয়-বিক্রয় মূল্য ও সরাসরি সেল
+          </p>
+        </div>
+        {hasFullAccess && (
+          <Button
+            onClick={() => handleOpenModal()}
+            className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-1.5 shrink-0 text-xs sm:text-sm h-9 sm:h-10 px-3.5 rounded-xl font-semibold"
+          >
+            <Plus className="w-4 h-4" />
+            <span>নতুন পার্টস যুক্ত করুন</span>
+          </Button>
+        )}
+      </div>
+
+      {/* 3-Card Summary: Side-by-side 3 cols on mobile & desktop */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        {/* Card 1: Total Items */}
+        <div className="bg-card/90 border border-blue-500/20 hover:border-blue-500/40 rounded-xl sm:rounded-2xl p-2.5 sm:p-5 relative overflow-hidden group shadow-sm transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2">
+            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">মোট পার্টস</span>
+            <div className="w-6 h-6 sm:w-9 sm:h-9 bg-blue-500/10 rounded-lg sm:rounded-xl flex items-center justify-center border border-blue-500/20 text-blue-400 shrink-0">
+              <Box className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
             </div>
-            <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center border border-blue-500/20">
-              <Box className="w-6 h-6 text-blue-400" />
+          </div>
+          <div>
+            <div className="text-sm sm:text-2xl font-bold text-white tracking-tight leading-tight truncate">
+              {items.length}
             </div>
+            <p className="text-[9px] sm:text-[11px] text-gray-500 mt-0.5 truncate hidden sm:block">
+              দোকানের নিবন্ধিত পার্টস
+            </p>
           </div>
         </div>
 
-        <div className="bg-card border border-emerald-500/20 rounded-2xl p-5 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
-          <div className="flex items-center justify-between relative z-10">
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">মোট স্টক মূল্য (Stock Value)</p>
-              <h2 className="text-2xl font-bold text-emerald-400">{formatCurrency(totalInventoryValue)}</h2>
-              <p className="text-[11px] text-gray-500 mt-1">ক্রয়মূল্যের ভিত্তিতে বর্তমান ইনভেন্টরি</p>
+        {/* Card 2: Total Stock Value */}
+        <div className="bg-card/90 border border-emerald-500/20 hover:border-emerald-500/40 rounded-xl sm:rounded-2xl p-2.5 sm:p-5 relative overflow-hidden group shadow-sm transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2">
+            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">স্টক মূল্য</span>
+            <div className="w-6 h-6 sm:w-9 sm:h-9 bg-emerald-500/10 rounded-xl sm:rounded-xl flex items-center justify-center border border-emerald-500/20 text-emerald-400 shrink-0">
+              <Coins className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
             </div>
-            <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20">
-              <Coins className="w-6 h-6 text-emerald-400" />
+          </div>
+          <div>
+            <div className="text-sm sm:text-2xl font-bold text-emerald-400 tracking-tight leading-tight truncate">
+              {formatCurrency(totalInventoryValue)}
             </div>
+            <p className="text-[9px] sm:text-[11px] text-gray-500 mt-0.5 truncate hidden sm:block">
+              বর্তমান ইনভেন্টরি
+            </p>
           </div>
         </div>
 
-        <div className="bg-card border border-red-500/20 rounded-2xl p-5 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
-          <div className="flex items-center justify-between relative z-10">
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">লো স্টক সতর্কতা (Low Stock)</p>
-              <h2 className="text-2xl font-bold text-red-400">{lowStockItems.length}</h2>
-              <p className="text-[11px] text-gray-500 mt-1">রি-স্টক প্রয়োজন এমন পার্টস</p>
+        {/* Card 3: Low Stock Alerts */}
+        <div className="bg-card/90 border border-red-500/20 hover:border-red-500/40 rounded-xl sm:rounded-2xl p-2.5 sm:p-5 relative overflow-hidden group shadow-sm transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2">
+            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">লো স্টক</span>
+            <div className="w-6 h-6 sm:w-9 sm:h-9 bg-red-500/10 rounded-lg sm:rounded-xl flex items-center justify-center border border-red-500/20 text-red-400 shrink-0">
+              <AlertCircle className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
             </div>
-            <div className="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center border border-red-500/20">
-              <AlertCircle className="w-6 h-6 text-red-400" />
+          </div>
+          <div>
+            <div className="text-sm sm:text-2xl font-bold text-red-400 tracking-tight leading-tight truncate">
+              {lowStockItems.length}
             </div>
+            <p className="text-[9px] sm:text-[11px] text-gray-500 mt-0.5 truncate hidden sm:block">
+              রি-স্টক প্রয়োজন
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-card border border-gray-800 rounded-2xl p-4 flex flex-col md:flex-row gap-4">
+      {/* Filters: Search & Category Chips */}
+      <div className="bg-card/90 border border-gray-800 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 flex flex-col md:flex-row gap-2.5 sm:gap-4 shadow-sm">
         <div className="relative flex-1">
-          <Search className="w-5 h-5 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <Input 
             type="text" 
             placeholder="পার্টসের নাম দিয়ে খুঁজুন..." 
             value={searchTerm}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-11 h-11 rounded-xl bg-popover"
+            className="pl-9 h-9 sm:h-11 text-xs sm:text-sm rounded-xl bg-popover/80 border-gray-800 focus:border-blue-500"
           />
         </div>
-        <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-1 md:pb-0">
+        <div className="flex gap-1.5 overflow-x-auto custom-scrollbar pb-1 md:pb-0 scrollbar-none">
           {categories.map(cat => (
-            <Button
+            <button
               key={cat}
               onClick={() => handleCategoryChange(cat)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all border ${
+              className={`px-3 py-1.5 rounded-lg sm:rounded-xl text-xs font-medium whitespace-nowrap transition-all border shrink-0 ${
                 categoryFilter === cat 
-                  ? 'bg-blue-500/10 text-blue-400 border-indigo-500/30' 
-                  : 'bg-popover text-gray-400 border-gray-800 hover:text-white'
+                  ? 'bg-blue-600 text-white border-blue-500 shadow-sm font-semibold' 
+                  : 'bg-popover/60 text-gray-400 border-gray-800 hover:text-white hover:bg-gray-800'
               }`}
             >
               {cat === 'Low Stock' ? `⚠️ লো স্টক (${lowStockItems.length})` : cat}
-            </Button>
+            </button>
           ))}
         </div>
       </div>
@@ -595,63 +628,89 @@ export default function InventoryPage() {
             </div>
           </div>
 
-          {/* Mobile Card View */}
-          <div className="md:hidden space-y-3">
+          {/* Mobile Card View (Compact, Beautiful & Space-Efficient) */}
+          <div className="md:hidden space-y-2.5">
             {paginatedItems.map((item) => {
               const isLow = item.stock <= (item.minStockLevel || 5);
               return (
-                <MobileDataCard key={item.id}>
-                  <MobileDataCard.Header
-                    title={item.name}
-                    subtitle={item.category}
-                    badge={
-                      isLow ? (
-                        <span className="text-[11px] bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-full font-medium">
-                          লো স্টক ({item.stock} {item.unit || 'Pcs'})
+                <div 
+                  key={item.id} 
+                  className="bg-card/90 border border-gray-800/90 rounded-xl p-3 shadow-sm hover:border-gray-700 transition-all space-y-2.5"
+                >
+                  {/* Top Row: Part Name + Stock Pill */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-gray-100 text-sm truncate">
+                        {item.name}
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] px-2 py-0.5 rounded-md bg-gray-800 text-gray-300 font-medium">
+                          {item.category}
                         </span>
-                      ) : (
-                        <span className="text-[11px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-medium">
-                          স্টকে আছে ({item.stock} {item.unit || 'Pcs'})
-                        </span>
-                      )
-                    }
-                  />
-                  <MobileDataCard.Details>
-                    <div className="flex items-center justify-between text-xs text-gray-400">
-                      <span>মিনিমাম স্টক লেভেল:</span>
-                      <span className="text-gray-300 font-medium">{item.minStockLevel || 5} {item.unit || 'Pcs'}</span>
+                        {item.unit && (
+                          <span className="text-[10px] text-gray-500">
+                            • {item.unit}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </MobileDataCard.Details>
-                  <MobileDataCard.FinancialStrip
-                    items={[
-                      { label: 'ক্রয়মূল্য', value: formatCurrency(item.purchasePrice) },
-                      { label: 'বিক্রয়মূল্য', value: formatCurrency(item.sellingPrice) },
-                      { label: 'স্টক মূল্য', value: formatCurrency(item.stock * item.purchasePrice), highlight: isLow ? 'danger' : 'success' },
-                    ]}
-                  />
-                  <MobileDataCard.Actions>
+
+                    <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold shrink-0 border ${
+                      isLow 
+                        ? 'bg-red-500/10 text-red-400 border-red-500/25' 
+                        : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
+                    }`}>
+                      {item.stock} {item.unit || 'Pcs'}
+                    </span>
+                  </div>
+
+                  {/* Financial Grid: Buy Price, Sell Price, Stock Valuation */}
+                  <div className="grid grid-cols-3 gap-1.5 bg-[#121523]/80 p-2 rounded-lg border border-gray-800/60 text-center">
+                    <div>
+                      <div className="text-[9px] text-gray-400">ক্রয়মূল্য</div>
+                      <div className="text-xs font-semibold text-gray-300 truncate mt-0.5">
+                        {formatCurrency(item.purchasePrice)}
+                      </div>
+                    </div>
+                    <div className="border-x border-gray-800/80">
+                      <div className="text-[9px] text-gray-400">বিক্রয়মূল্য</div>
+                      <div className="text-xs font-semibold text-white truncate mt-0.5">
+                        {formatCurrency(item.sellingPrice)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[9px] text-gray-400">মোট মূল্য</div>
+                      <div className={`text-xs font-bold truncate mt-0.5 ${isLow ? 'text-red-400' : 'text-emerald-400'}`}>
+                        {formatCurrency(item.stock * item.purchasePrice)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bottom Action Row */}
+                  <div className="flex items-center gap-1.5 pt-0.5">
                     <Button 
                       size="sm" 
                       onClick={() => handleOpenSell(item)} 
-                      className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-xs h-8"
+                      className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-xs h-7.5 rounded-lg shadow-sm font-medium"
                     >
-                      <ShoppingCart className="w-3.5 h-3.5 mr-1" /> ডাইরেক্ট সেল
+                      <ShoppingCart className="w-3.5 h-3.5 mr-1" /> সেল
                     </Button>
                     <Button 
                       size="sm" 
                       variant="outline" 
                       onClick={() => handleOpenRestock(item)} 
-                      className="flex-1 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 text-xs h-8"
+                      className="flex-1 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 text-xs h-7.5 rounded-lg font-medium"
                     >
                       <PlusCircle className="w-3.5 h-3.5 mr-1" /> রিস্টক
                     </Button>
                     {hasFullAccess && (
-                      <>
+                      <div className="flex items-center gap-1 shrink-0">
                         <Button 
                           size="sm" 
                           variant="ghost" 
                           onClick={() => handleOpenModal(item)} 
-                          className="h-8 w-8 p-0 text-gray-400 hover:text-white"
+                          className="h-7.5 w-7.5 p-0 bg-gray-800/50 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg"
+                          title="Edit Part"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </Button>
@@ -659,14 +718,15 @@ export default function InventoryPage() {
                           size="sm" 
                           variant="ghost" 
                           onClick={() => handleDeleteRequest(item.id)} 
-                          className="h-8 w-8 p-0 text-gray-400 hover:text-red-400"
+                          className="h-7.5 w-7.5 p-0 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg"
+                          title="Delete Part"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
-                      </>
+                      </div>
                     )}
-                  </MobileDataCard.Actions>
-                </MobileDataCard>
+                  </div>
+                </div>
               );
             })}
           </div>

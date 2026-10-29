@@ -1428,7 +1428,7 @@ export default function CustomersPage() {
       <button
         type="button"
         onClick={openAddModal}
-        className="sm:hidden fixed bottom-20 right-4 z-40 w-13 h-13 bg-gradient-to-tr from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 active:scale-90 text-white rounded-full flex items-center justify-center shadow-xl shadow-blue-600/40 border border-blue-400/30 transition-all focus:outline-none"
+        className="sm:hidden fixed bottom-24 right-4 z-40 w-13 h-13 bg-gradient-to-tr from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 active:scale-90 text-white rounded-full flex items-center justify-center shadow-2xl shadow-blue-600/50 border border-blue-400/30 transition-all focus:outline-none"
         title="নতুন কাস্টমার যোগ করুন"
         aria-label="নতুন কাস্টমার যোগ করুন"
       >

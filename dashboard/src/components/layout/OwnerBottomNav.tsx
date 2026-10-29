@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
@@ -29,9 +29,64 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 export function OwnerBottomNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, setUser, setUnlocked, shop } = useAppStore();
-  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const { user, setUser, setUnlocked, shop, isMoreMenuOpen, setIsMoreMenuOpen } = useAppStore();
+  const isMoreOpen = isMoreMenuOpen;
+  const setIsMoreOpen = setIsMoreMenuOpen;
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const handleOpenMenuLink = () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('nav_opened_from_menu', 'true');
+    }
+    setIsMoreMenuOpen(false);
+  };
+
+  const handlePrimaryTabClick = () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('nav_opened_from_menu');
+    }
+    setIsMoreMenuOpen(false);
+  };
+
+  const handleCloseMenu = () => {
+    setIsMoreMenuOpen(false);
+    if (pathname !== '/') {
+      router.push('/');
+    }
+  };
+
+  // Touch Slide-to-Close Gestures (Only for Top Grab Handle)
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const touchStartY = useRef(0);
+  const currentDragDiff = useRef(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+    currentDragDiff.current = 0;
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - touchStartY.current;
+    if (diff > 0) {
+      currentDragDiff.current = diff;
+      setDragOffset(diff);
+    } else {
+      currentDragDiff.current = 0;
+      setDragOffset(0);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (currentDragDiff.current > 60) {
+      handleCloseMenu();
+    }
+    setIsDragging(false);
+    setDragOffset(0);
+    currentDragDiff.current = 0;
+  };
 
   // Prevent background scrolling while More drawer is open on mobile
   useEffect(() => {
@@ -111,12 +166,12 @@ export function OwnerBottomNav() {
 
   return (
     <>
-      {/* Fixed Bottom Navigation Bar for Owner/Manager (Mobile Only) */}
+      {/* iOS-Style Floating Bottom Navigation Bar for Owner/Manager (Mobile Only) */}
       <nav 
         aria-label="Owner Bottom Navigation"
-        className="fixed bottom-0 left-0 right-0 z-40 bg-[#0d101a] border-t border-gray-800/90 shadow-[0_-4px_20px_rgba(0,0,0,0.6)] px-2 py-1 md:hidden select-none"
+        className="fixed bottom-3.5 left-4 right-4 sm:bottom-5 sm:left-6 sm:right-6 z-40 max-w-md mx-auto bg-[#0a0d18]/50 backdrop-blur-3xl backdrop-saturate-150 border border-white/15 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.65)] px-3 py-1.5 md:hidden select-none transition-all"
       >
-        <div className="grid grid-cols-5 items-center max-w-md mx-auto">
+        <div className="grid grid-cols-5 items-center gap-1">
           {primaryTabs.map((tab) => {
             const Icon = tab.icon;
             const active = tab.isActive;
@@ -125,22 +180,21 @@ export function OwnerBottomNav() {
               <Link
                 key={tab.id}
                 href={tab.href}
-                className={`flex flex-col items-center justify-center py-1 px-0.5 transition-all duration-150 relative group ${
-                  active ? 'text-blue-400' : 'text-gray-400 hover:text-gray-200'
+                onClick={handlePrimaryTabClick}
+                className={`flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all duration-200 relative group active:scale-95 ${
+                  active ? 'text-blue-400 font-bold' : 'text-gray-400 hover:text-gray-200'
                 }`}
               >
-                <div className={`p-1 rounded-xl transition-all ${
-                  active ? 'bg-blue-500/15 scale-105' : 'group-hover:bg-gray-800/40'
+                <div className={`p-1 rounded-xl transition-all duration-200 ${
+                  active ? 'bg-blue-500/20 text-blue-400 scale-105 shadow-[0_0_12px_rgba(59,130,246,0.25)]' : 'group-hover:bg-gray-800/40 text-gray-400'
                 }`}>
-                  <Icon className={`w-5 h-5 ${active ? 'text-blue-400' : 'text-gray-400'}`} />
+                  <Icon className="w-5 h-5" />
                 </div>
-                <span className={`text-[10px] mt-0.5 leading-none tracking-tight ${
-                  active ? 'font-bold text-blue-400' : 'font-medium text-gray-400'
-                }`}>
+                <span className="text-[10px] mt-0.5 leading-none tracking-tight">
                   {tab.name}
                 </span>
                 {active && (
-                  <span className="absolute top-0 w-8 h-0.5 bg-blue-500 rounded-full" />
+                  <span className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-0.5 shadow-[0_0_6px_rgba(59,130,246,0.8)]" />
                 )}
               </Link>
             );
@@ -148,23 +202,21 @@ export function OwnerBottomNav() {
 
           {/* 5th Tab: "More / আরও" Button */}
           <button
-            onClick={() => setIsMoreOpen(prev => !prev)}
-            className={`flex flex-col items-center justify-center py-1 px-0.5 transition-all duration-150 relative group ${
-              isMoreActive ? 'text-blue-400' : 'text-gray-400 hover:text-gray-200'
+            onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+            className={`flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all duration-200 relative group active:scale-95 ${
+              isMoreActive ? 'text-blue-400 font-bold' : 'text-gray-400 hover:text-gray-200'
             }`}
           >
-            <div className={`p-1 rounded-xl transition-all ${
-              isMoreActive ? 'bg-blue-500/15 scale-105' : 'group-hover:bg-gray-800/40'
+            <div className={`p-1 rounded-xl transition-all duration-200 ${
+              isMoreActive ? 'bg-blue-500/20 text-blue-400 scale-105 shadow-[0_0_12px_rgba(59,130,246,0.25)]' : 'group-hover:bg-gray-800/40 text-gray-400'
             }`}>
-              <LayoutGrid className={`w-5 h-5 ${isMoreActive ? 'text-blue-400' : 'text-gray-400'}`} />
+              <LayoutGrid className="w-5 h-5" />
             </div>
-            <span className={`text-[10px] mt-0.5 leading-none tracking-tight ${
-              isMoreActive ? 'font-bold text-blue-400' : 'font-medium text-gray-400'
-            }`}>
-              মেনু (More)
+            <span className="text-[10px] mt-0.5 leading-none tracking-tight">
+              মেনু
             </span>
             {isMoreActive && (
-              <span className="absolute top-0 w-8 h-0.5 bg-blue-500 rounded-full" />
+              <span className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-0.5 shadow-[0_0_6px_rgba(59,130,246,0.8)]" />
             )}
           </button>
         </div>
@@ -176,24 +228,39 @@ export function OwnerBottomNav() {
         className={`fixed inset-0 bg-black/60 z-50 md:hidden transition-opacity duration-200 ease-out ${
           isMoreOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
-        onClick={() => setIsMoreOpen(false)}
+        onClick={handleCloseMenu}
         aria-hidden={!isMoreOpen}
       />
 
       {/* Bottom Sheet Modal */}
       <div 
-        className={`fixed bottom-0 left-0 right-0 z-50 bg-[#121523] border-t border-gray-800 rounded-t-3xl shadow-2xl max-h-[85vh] overflow-y-auto md:hidden pb-8 transition-transform duration-250 ease-out transform-gpu will-change-transform ${
-          isMoreOpen ? 'translate-y-0 pointer-events-auto' : 'translate-y-full pointer-events-none'
+        style={{
+          transform: !isMoreOpen 
+            ? 'translateY(100%)' 
+            : dragOffset > 0 
+              ? `translateY(${dragOffset}px)` 
+              : 'translateY(0)',
+          transition: isDragging ? 'none' : 'transform 240ms cubic-bezier(0.16, 1, 0.3, 1)',
+        }}
+        className={`fixed bottom-0 left-0 right-0 z-50 bg-[#121523] border-t border-gray-800 rounded-t-3xl shadow-2xl max-h-[85vh] overflow-y-auto md:hidden pb-8 will-change-transform ${
+          isMoreOpen ? 'pointer-events-auto' : 'pointer-events-none'
         }`}
         aria-hidden={!isMoreOpen}
       >
-        {/* Grab Handle */}
-        <div className="pt-3 pb-2 flex justify-center cursor-pointer" onClick={() => setIsMoreOpen(false)}>
-          <div className="w-12 h-1.5 bg-gray-700 rounded-full" />
+        {/* Grab Handle (Touch here and drag down to close) */}
+        <div 
+          className="pt-3.5 pb-2.5 px-12 flex flex-col items-center justify-center cursor-grab active:cursor-grabbing touch-none select-none w-full" 
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onClick={handleCloseMenu}
+          title="নিচে টেনে বন্ধ করুন"
+        >
+          <div className="w-14 h-1.5 bg-gray-500/80 hover:bg-gray-400 active:bg-gray-300 rounded-full transition-colors" />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 pb-3 border-b border-gray-800/80">
+        <div className="flex items-center justify-between px-6 pb-3 border-b border-gray-800/80 select-none">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-bold text-sm">
               {shop?.shopName ? shop.shopName.charAt(0).toUpperCase() : 'V'}
@@ -205,12 +272,6 @@ export function OwnerBottomNav() {
               <p className="text-xs text-gray-400">ব্যবসার অন্যান্য সব অপশন</p>
             </div>
           </div>
-          <button 
-            onClick={() => setIsMoreOpen(false)}
-            className="p-1.5 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
         </div>
 
         {/* Hub Sections */}
@@ -225,7 +286,7 @@ export function OwnerBottomNav() {
             <div className="grid grid-cols-3 gap-2.5">
               <Link
                 href="/loans"
-                onClick={() => setIsMoreOpen(false)}
+                onClick={handleOpenMenuLink}
                 className={`flex flex-col items-center text-center p-3 rounded-2xl border transition-all ${
                   pathname.startsWith('/loans') 
                     ? 'bg-blue-500/10 border-blue-500/40 text-blue-400' 
@@ -241,7 +302,7 @@ export function OwnerBottomNav() {
 
               <Link
                 href="/expenses"
-                onClick={() => setIsMoreOpen(false)}
+                onClick={handleOpenMenuLink}
                 className={`flex flex-col items-center text-center p-3 rounded-2xl border transition-all ${
                   pathname.startsWith('/expenses') 
                     ? 'bg-blue-500/10 border-blue-500/40 text-blue-400' 
@@ -257,7 +318,7 @@ export function OwnerBottomNav() {
 
               <Link
                 href="/reports"
-                onClick={() => setIsMoreOpen(false)}
+                onClick={handleOpenMenuLink}
                 className={`flex flex-col items-center text-center p-3 rounded-2xl border transition-all ${
                   pathname.startsWith('/reports') 
                     ? 'bg-blue-500/10 border-blue-500/40 text-blue-400' 
@@ -282,7 +343,7 @@ export function OwnerBottomNav() {
             <div className="grid grid-cols-3 gap-2.5">
               <Link
                 href="/suppliers"
-                onClick={() => setIsMoreOpen(false)}
+                onClick={handleOpenMenuLink}
                 className={`flex flex-col items-center text-center p-3 rounded-2xl border transition-all ${
                   pathname.startsWith('/suppliers') 
                     ? 'bg-blue-500/10 border-blue-500/40 text-blue-400' 
@@ -298,7 +359,7 @@ export function OwnerBottomNav() {
 
               <Link
                 href="/mechanics"
-                onClick={() => setIsMoreOpen(false)}
+                onClick={handleOpenMenuLink}
                 className={`flex flex-col items-center text-center p-3 rounded-2xl border transition-all ${
                   pathname.startsWith('/mechanics') 
                     ? 'bg-blue-500/10 border-blue-500/40 text-blue-400' 
@@ -314,7 +375,7 @@ export function OwnerBottomNav() {
 
               <Link
                 href="/loyalty"
-                onClick={() => setIsMoreOpen(false)}
+                onClick={handleOpenMenuLink}
                 className={`flex flex-col items-center text-center p-3 rounded-2xl border transition-all ${
                   pathname.startsWith('/loyalty') 
                     ? 'bg-blue-500/10 border-blue-500/40 text-blue-400' 
@@ -339,7 +400,7 @@ export function OwnerBottomNav() {
             <div className="grid grid-cols-2 gap-2.5">
               <Link
                 href="/settings"
-                onClick={() => setIsMoreOpen(false)}
+                onClick={handleOpenMenuLink}
                 className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all ${
                   pathname.startsWith('/settings') 
                     ? 'bg-blue-500/10 border-blue-500/40 text-blue-400' 
@@ -357,7 +418,7 @@ export function OwnerBottomNav() {
 
               <Link
                 href="/sms"
-                onClick={() => setIsMoreOpen(false)}
+                onClick={handleOpenMenuLink}
                 className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all ${
                   pathname.startsWith('/sms') 
                     ? 'bg-blue-500/10 border-blue-500/40 text-blue-400' 

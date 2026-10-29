@@ -44,6 +44,11 @@ interface AppState {
   // Dashboard Filters
   dashboardTimeFilter: 'Today' | 'This Week' | 'This Month' | 'This Year' | 'All Time';
   setDashboardTimeFilter: (filter: 'Today' | 'This Week' | 'This Month' | 'This Year' | 'All Time') => void;
+
+  // Mobile Bottom More Menu Drawer
+  isMoreMenuOpen: boolean;
+  setIsMoreMenuOpen: (isOpen: boolean) => void;
+  toggleMoreMenu: () => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -72,6 +77,10 @@ export const useAppStore = create<AppState>()(
 
       dashboardTimeFilter: 'This Week',
       setDashboardTimeFilter: (dashboardTimeFilter) => set({ dashboardTimeFilter }),
+
+      isMoreMenuOpen: false,
+      setIsMoreMenuOpen: (isMoreMenuOpen) => set({ isMoreMenuOpen }),
+      toggleMoreMenu: () => set((state) => ({ isMoreMenuOpen: !state.isMoreMenuOpen })),
 
       // Default Options
       deviceTypes: ['LED TV', 'LCD TV', 'Smart TV', 'Android TV', 'Monitor'],

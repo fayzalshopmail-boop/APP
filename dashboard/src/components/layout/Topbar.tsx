@@ -1,6 +1,7 @@
 'use client';
 
-import { Bell, Lock, Menu, CheckCircle2, AlertTriangle, Info, BellRing, X, UserPlus, PackagePlus, PlusCircle, Wrench, Truck, Wallet, ShoppingCart, Receipt, Coins, WifiOff } from 'lucide-react';
+import { Bell, Lock, Menu, CheckCircle2, AlertTriangle, Info, BellRing, X, UserPlus, PackagePlus, PlusCircle, Wrench, Truck, Wallet, ShoppingCart, Receipt, Coins, WifiOff, ChevronLeft } from 'lucide-react';
+import { MORE_MENU_ROUTES } from '@/components/layout/NavigationBackHandler';
 import { useAppStore } from '@/store/useAppStore';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
@@ -93,6 +94,33 @@ export function Topbar() {
     } else if (currentAddButton.event) {
       window.dispatchEvent(new CustomEvent(currentAddButton.event));
     }
+  };
+
+  const handleHeaderBack = () => {
+    const isMenuPage = MORE_MENU_ROUTES.some(p => pathname === p || pathname.startsWith(p + '/'));
+    const wasOpenedFromMenu = typeof window !== 'undefined' && sessionStorage.getItem('nav_opened_from_menu') === 'true';
+
+    // 1. If More menu is currently open:
+    if (useAppStore.getState().isMoreMenuOpen) {
+      useAppStore.getState().setIsMoreMenuOpen(false);
+      router.push('/');
+      return;
+    }
+
+    // 2. If opened from menu:
+    if (isMenuPage || wasOpenedFromMenu) {
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('nav_opened_from_menu');
+      }
+      router.push('/');
+      setTimeout(() => {
+        useAppStore.getState().setIsMoreMenuOpen(true);
+      }, 50);
+      return;
+    }
+
+    // 3. Otherwise (e.g. /customers, /inventory, /due):
+    router.push('/');
   };
 
   useEffect(() => {
@@ -342,7 +370,18 @@ export function Topbar() {
 
   return (
     <header className="h-16 md:h-20 px-3 sm:px-4 md:px-8 flex items-center justify-between bg-background sticky top-0 z-40 border-b border-gray-800 md:border-none">
-      <div className="flex items-center gap-3 sm:gap-4">
+      <div className="flex items-center gap-2 sm:gap-3">
+        {pathname !== '/' && (
+          <button
+            type="button"
+            onClick={handleHeaderBack}
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-secondary/80 hover:bg-secondary border border-gray-800 hover:border-gray-700 active:scale-95 flex items-center justify-center text-gray-300 hover:text-white transition-all shrink-0 cursor-pointer"
+            title="ফিরে যান"
+            aria-label="Back"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+        )}
         <div className="flex flex-col min-w-0">
           <h1 className="text-lg md:text-2xl font-bold text-white leading-tight truncate">{title}</h1>
           {subtitle && <p className="text-[10px] md:text-sm text-gray-400 leading-tight truncate">{subtitle}</p>}

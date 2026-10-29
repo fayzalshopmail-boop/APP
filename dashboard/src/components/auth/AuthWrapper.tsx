@@ -13,6 +13,7 @@ import { usePathname } from 'next/navigation';
 import { AutoBackupTrigger } from './AutoBackupTrigger';
 import { requestNotificationPermission } from '@/lib/services/fcm';
 import { isPhoneDevice } from '@/lib/utils';
+import { NavigationBackHandler } from '@/components/layout/NavigationBackHandler';
 
 function TitleUpdater({ title }: { title: string }) {
   const pathname = usePathname();
@@ -138,10 +139,11 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
     <>
       <TitleUpdater title={shop?.shopName ? shop.shopName + ' Dashboard' : 'Shop Dashboard'} />
       <AutoBackupTrigger />
+      <NavigationBackHandler />
       {!isTechnician && <Sidebar />}
       <div className={`flex-1 flex flex-col h-[100dvh] overflow-hidden transition-all duration-300 ${!isTechnician ? 'md:ml-64' : 'w-full'}`}>
         <Topbar />
-        <main className={`flex-1 overflow-y-auto min-h-0 p-3 sm:p-4 md:p-6 ${isTechnician ? 'pb-16 md:pb-18' : 'pb-20 md:pb-6'}`}>
+        <main className={`flex-1 overflow-y-auto min-h-0 p-3 sm:p-4 md:p-6 ${isTechnician ? 'pb-24 md:pb-18' : 'pb-24 md:pb-6'}`}>
           <div className="max-w-[1600px] mx-auto w-full">
             {children}
           </div>
