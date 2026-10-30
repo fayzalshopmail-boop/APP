@@ -20,12 +20,12 @@ const CustomerModal = dynamic(
 );
 
 const headerAddButtons: Record<string, { label: string; icon: any; event?: string }> = {
-  '/customers': { label: 'Add Customer', icon: UserPlus, event: 'app:add-customer' },
-  '/inventory': { label: 'Add Part', icon: PackagePlus, event: 'app:add-inventory' },
-  '/loans': { label: 'Add Record', icon: PlusCircle, event: 'app:add-loan' },
-  '/mechanics': { label: 'Add Mechanic', icon: Wrench, event: 'app:add-mechanic' },
-  '/suppliers': { label: 'Add Supplier', icon: Truck, event: 'app:add-supplier' },
-  '/expenses': { label: 'Add Expense', icon: Wallet, event: 'app:add-expense' },
+  '/customers': { label: 'নতুন কাস্টমার', icon: UserPlus, event: 'app:add-customer' },
+  '/inventory': { label: 'নতুন পার্টস', icon: PackagePlus, event: 'app:add-inventory' },
+  '/loans': { label: 'নতুন এন্ট্রি', icon: PlusCircle, event: 'app:add-loan' },
+  '/mechanics': { label: 'নতুন মেকানিক', icon: Wrench, event: 'app:add-mechanic' },
+  '/suppliers': { label: 'নতুন সাপ্লায়ার', icon: Truck, event: 'app:add-supplier' },
+  '/expenses': { label: 'নতুন খরচ', icon: Wallet, event: 'app:add-expense' },
 };
 
 const routeTitles: Record<string, string> = {
@@ -104,21 +104,6 @@ export function Topbar() {
   };
 
   useEffect(() => {
-    const handlePopState = () => {
-      if (isCustomerModalOpen) {
-        setIsCustomerModalOpen(false);
-      }
-    };
-    if (isCustomerModalOpen) {
-      window.history.pushState({ modal: 'add-customer' }, '');
-      window.addEventListener('popstate', handlePopState);
-    }
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, [isCustomerModalOpen]);
-
-  useEffect(() => {
     const handleOpenAddCustomer = () => {
       setIsCustomerModalOpen(true);
     };
@@ -128,9 +113,6 @@ export function Topbar() {
 
   const handleCloseCustomerModal = () => {
     setIsCustomerModalOpen(false);
-    if (window.history.state && window.history.state.modal === 'add-customer') {
-      window.history.back();
-    }
   };
   const notifRef = useRef<HTMLDivElement>(null);
   
@@ -385,16 +367,16 @@ export function Topbar() {
         )}
 
         {pathname !== '/' && currentAddButton && (
-          <div className="flex items-center">
+          <div className={`items-center ${pathname === '/customers' ? 'hidden sm:flex' : 'flex'}`}>
             {/* DYNAMIC PAGE ADD ACTION BUTTON */}
             <button
               onClick={handleHeaderAdd}
-              className="flex items-center gap-1.5 sm:gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-2.5 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2 rounded-lg text-sm font-medium transition-all shadow-lg shadow-blue-500/20 mr-1 sm:mr-0"
+              className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-md shadow-blue-500/20 mr-1 sm:mr-0 cursor-pointer"
               title={currentAddButton.label}
               aria-label={currentAddButton.label}
             >
-              <currentAddButton.icon className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="hidden sm:inline">{currentAddButton.label}</span>
+              <currentAddButton.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">+ {currentAddButton.label}</span>
             </button>
           </div>
         )}

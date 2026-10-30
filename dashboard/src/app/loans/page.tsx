@@ -53,26 +53,9 @@ export default function LoansPage() {
     date: getLocalDateString()
   });
 
-  // Popstate Modal Management
-  useEffect(() => {
-    const handlePopState = () => {
-      if (isModalOpen) setIsModalOpen(false);
-      if (paymentModalData) setPaymentModalData(null);
-      if (historyModalData) setHistoryModalData(null);
-    };
-    
-    if (isModalOpen || paymentModalData || historyModalData) {
-      window.history.pushState({ modal: 'loans-modal' }, '');
-      window.addEventListener('popstate', handlePopState);
-    }
-    
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [isModalOpen, paymentModalData, historyModalData]);
-
   const closeLoanModal = () => {
     setIsModalOpen(false);
     setEditingLoan(null);
-    if (window.history.state?.modal === 'loans-modal') window.history.back();
   };
 
   const closePaymentModal = () => {
@@ -80,12 +63,10 @@ export default function LoansPage() {
     setPaymentAmount(0);
     setNextDate('');
     setPaymentNote('');
-    if (window.history.state?.modal === 'loans-modal') window.history.back();
   };
 
   const closeHistoryModal = () => {
     setHistoryModalData(null);
-    if (window.history.state?.modal === 'loans-modal') window.history.back();
   };
 
   const fetchLoans = async () => {
@@ -384,7 +365,7 @@ export default function LoansPage() {
   };
 
   return (
-    <div className="space-y-3 sm:space-y-6 max-w-[1600px] mx-auto pb-6 sm:pb-10 px-1 sm:px-0">
+    <div className="space-y-3 sm:space-y-6 max-w-[1600px] mx-auto w-full pb-6 sm:pb-10 px-1 sm:px-0">
       
       {/* 2 Core Summary Cards (Compact 2-col on mobile to prevent excessive scrolling) */}
       <div className="grid grid-cols-2 gap-2 sm:gap-6">

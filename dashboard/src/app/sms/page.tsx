@@ -269,7 +269,7 @@ export default function SmsMarketingPage() {
   }
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-6">
+    <div className="max-w-[1600px] mx-auto w-full space-y-6">
 
       {/* Tabs */}
       <div className="flex bg-[#131622] p-1.5 rounded-2xl border border-gray-800/80 gap-1.5 overflow-x-auto scrollbar-none mb-6">

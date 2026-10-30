@@ -322,7 +322,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-[1600px] mx-auto w-full space-y-6">
 
       <div className="grid grid-cols-3 sm:flex bg-[#131622] p-1 sm:p-1.5 rounded-2xl border border-gray-800/80 gap-1 sm:gap-2 mb-6 scrollbar-none">
         <button

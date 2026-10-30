@@ -418,7 +418,7 @@ export default function StaffAttendancePage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4 pb-20 px-1 sm:px-0">
+    <div className="max-w-4xl mx-auto w-full space-y-4 pb-20 px-1 sm:px-0">
       
       {/* 1. Header: Greeting & Date */}
       <div className="flex items-center justify-between py-1 px-1">

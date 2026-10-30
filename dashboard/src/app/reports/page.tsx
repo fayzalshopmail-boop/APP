@@ -149,7 +149,7 @@ export default function ReportsPage() {
   );
 
   return (
-    <div className="space-y-4 sm:space-y-6 max-w-[1600px] mx-auto pb-10">
+    <div className="space-y-4 sm:space-y-6 max-w-[1600px] mx-auto w-full pb-10">
       {/* Top Header & Time Filter */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-2 sm:mb-4">
         <div>

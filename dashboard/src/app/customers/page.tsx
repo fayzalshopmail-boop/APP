@@ -51,50 +51,17 @@ export default function CustomersPage() {
   const [deleteCustomerTransactions, setDeleteCustomerTransactions] = useState<boolean>(true);
   const [profileSidebarCustomer, setProfileSidebarCustomer] = useState<Customer | null>(null);
 
-  useEffect(() => {
-    const handlePopState = () => {
-      if (profileSidebarCustomer) {
-        setProfileSidebarCustomer(null);
-        setSearch('');
-      } else if (confirmModal.isOpen) {
-        setConfirmModal({ isOpen: false, actionType: null, id: null });
-      } else if (isModalOpen) {
-        setIsModalOpen(false);
-      }
-    };
-    if (profileSidebarCustomer) {
-      window.history.pushState({ modal: 'profile-sidebar' }, '');
-      window.addEventListener('popstate', handlePopState);
-    } else if (confirmModal.isOpen) {
-      window.history.pushState({ modal: 'confirm-modal' }, '');
-      window.addEventListener('popstate', handlePopState);
-    } else if (isModalOpen) {
-      window.history.pushState({ modal: 'customer-modal' }, '');
-      window.addEventListener('popstate', handlePopState);
-    }
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [profileSidebarCustomer, confirmModal.isOpen, isModalOpen]);
-
   const closeProfileSidebar = () => {
     setProfileSidebarCustomer(null);
     setSearch('');
-    if (window.history.state?.modal === 'profile-sidebar') {
-      window.history.back();
-    }
   };
 
   const closeConfirmModal = () => {
     setConfirmModal({ isOpen: false, actionType: null, id: null });
-    if (window.history.state?.modal === 'confirm-modal') {
-      window.history.back();
-    }
   };
 
   const closeCustomerModal = () => {
     setIsModalOpen(false);
-    if (window.history.state?.modal === 'customer-modal') {
-      window.history.back();
-    }
   };
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
 

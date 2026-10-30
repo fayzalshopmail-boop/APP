@@ -201,7 +201,7 @@ export default function ExpensesPage() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-300 pb-10 max-w-[1600px] mx-auto">
+    <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-300 pb-10 max-w-[1600px] mx-auto w-full">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
         <div>
@@ -211,13 +211,6 @@ export default function ExpensesPage() {
           </h1>
           <p className="text-xs sm:text-sm text-gray-400 mt-0.5 sm:mt-1">দৈনন্দিন খরচ ও নিয়মিত ব্যয় ট্র্যাকিং</p>
         </div>
-        <Button 
-          onClick={handleOpenAddModal}
-          className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-1.5 shrink-0 text-xs sm:text-sm h-9 sm:h-10 px-3.5 rounded-xl font-semibold"
-        >
-          <Plus className="w-4 h-4" />
-          <span>নতুন খরচ যোগ করুন</span>
-        </Button>
       </div>
 
       {/* 3-Card Summary: Side-by-side 3 cols on mobile & desktop */}

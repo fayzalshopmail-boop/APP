@@ -83,7 +83,7 @@ export default function LoyaltyPage() {
   );
 
   return (
-    <div className="max-w-[1600px] mx-auto pb-6 lg:pb-0">
+    <div className="max-w-[1600px] mx-auto w-full pb-6 lg:pb-0">
       {/* 3 Top Summary KPI Cards (Program Impact) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3.5 mb-3 sm:mb-4">
         {/* Card 1: Total Points Distributed */}

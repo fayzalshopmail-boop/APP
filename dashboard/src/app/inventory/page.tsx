@@ -47,32 +47,14 @@ export default function InventoryPage() {
     }
   }, [highlightInventorySearch]);
 
-  useEffect(() => {
-    const handlePopState = () => {
-      if (isModalOpen) setIsModalOpen(false);
-      if (isRestockModalOpen) setIsRestockModalOpen(false);
-      if (isSellModalOpen) setIsSellModalOpen(false);
-    };
-    
-    if (isModalOpen || isRestockModalOpen || isSellModalOpen) {
-      window.history.pushState({ modal: 'inventory-modal' }, '');
-      window.addEventListener('popstate', handlePopState);
-    }
-    
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [isModalOpen, isRestockModalOpen, isSellModalOpen]);
-
   const closeInvModal = () => {
     setIsModalOpen(false);
-    if (window.history.state?.modal === 'inventory-modal') window.history.back();
   };
   const closeRestockModal = () => {
     setIsRestockModalOpen(false);
-    if (window.history.state?.modal === 'inventory-modal') window.history.back();
   };
   const closeSellModal = () => {
     setIsSellModalOpen(false);
-    if (window.history.state?.modal === 'inventory-modal') window.history.back();
   };
 
   const [deleteConfirm, setDeleteConfirm] = useState<{isOpen: boolean, id: string | null}>({isOpen: false, id: null});
@@ -417,7 +399,7 @@ export default function InventoryPage() {
 }
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-4 sm:space-y-6 pb-10">
+    <div className="max-w-[1600px] mx-auto w-full space-y-4 sm:space-y-6 pb-10">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
@@ -429,15 +411,6 @@ export default function InventoryPage() {
             পার্টস স্টক, ক্রয়-বিক্রয় মূল্য ও সরাসরি সেল
           </p>
         </div>
-        {hasFullAccess && (
-          <Button
-            onClick={() => handleOpenModal()}
-            className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-1.5 shrink-0 text-xs sm:text-sm h-9 sm:h-10 px-3.5 rounded-xl font-semibold"
-          >
-            <Plus className="w-4 h-4" />
-            <span>নতুন পার্টস যুক্ত করুন</span>
-          </Button>
-        )}
       </div>
 
       {/* 3-Card Summary: Side-by-side 3 cols on mobile & desktop */}
