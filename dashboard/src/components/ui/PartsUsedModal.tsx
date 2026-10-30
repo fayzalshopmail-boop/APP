@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import toast from 'react-hot-toast';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export interface PartsConfirmData {
  parts: PartUsed[];
@@ -50,6 +51,7 @@ interface PartsUsedModalProps {
 }
 
 export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingStatus }: PartsUsedModalProps) {
+ const { t, language } = useTranslation();
  const [inventory, setInventory] = useState<InventoryItem[]>([]);
  const [loading, setLoading] = useState(true);
  const [search, setSearch] = useState('');
@@ -107,15 +109,15 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
 
  const handleSaveQuickPart = async () => {
  if (!quickPartForm.name.trim()) {
- toast.error("পার্টসের নাম আবশ্যক");
+ toast.error(language === 'bn' ? "পার্টসের নাম আবশ্যক" : "Part name is required");
  return;
  }
  if (!quickPartForm.sellingPrice || quickPartForm.sellingPrice <= 0) {
- toast.error("সঠিক বিক্রয়মূল্য (৳) ইনপুট দিন");
+ toast.error(language === 'bn' ? "সঠিক বিক্রয়মূল্য (৳) ইনপুট দিন" : "Enter a valid selling price (৳)");
  return;
  }
  if (quickPartForm.purchasePrice > 0 && quickPartForm.sellingPrice < quickPartForm.purchasePrice) {
- toast.error("বিক্রয়মূল্য অবশ্যই ক্রয়মূল্যের (কেনা দাম) চেয়ে বেশি বা সমান হতে হবে!");
+ toast.error(language === 'bn' ? "বিক্রয়মূল্য অবশ্যই ক্রয়মূল্যের চেয়ে বেশি বা সমান হতে হবে!" : "Selling price must be greater than or equal to purchase price!");
  return;
  }
 
@@ -242,9 +244,9 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
 
  const handleSubmit = () => {
  if (isOverpaid) return;
- if (paymentReceived < 0) return toast.error("পেমেন্ট নেতিবাচক হতে পারবে না");
+ if (paymentReceived < 0) return toast.error(language === 'bn' ? "পেমেন্ট নেতিবাচক হতে পারবে না" : "Payment cannot be negative");
  if (pendingStatus === "Delivered" && finalDue > 0 && !dueDate) {
- toast.error("বকেয়া টাকার জন্য অনুগ্রহ করে তাগাদার তারিখ নির্বাচন করুন।");
+ toast.error(language === 'bn' ? "বকেয়া টাকার জন্য অনুগ্রহ করে তাগাদার তারিখ নির্বাচন করুন।" : "Please select a due date for the remaining balance.");
  return;
  }
  
@@ -271,10 +273,10 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  <div>
  <DialogTitle className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
  <Receipt className="w-6 h-6 text-indigo-400" />
- Delivery & Checkout
+ {language === 'bn' ? 'ডেলিভারি ও চেকআউট' : 'Delivery & Checkout'}
  </DialogTitle>
  <DialogDescription className="text-gray-400 mt-1 text-sm">
- Customer: <span className="text-gray-100 font-semibold">{customer.name}</span> ({customer.phone})
+ {language === 'bn' ? 'কাস্টমার:' : 'Customer:'} <span className="text-gray-100 font-semibold">{customer.name}</span> ({customer.phone})
  </DialogDescription>
  </div>
  </div>
@@ -287,7 +289,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  <div className="bg-secondary/60 border border-gray-800/80 rounded-xl p-4 sm:p-5 flex flex-col h-full">
  <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
  <h4 className="text-sm font-semibold text-blue-400 flex items-center gap-2">
- <Wrench className="w-4 h-4" /> Parts Replacement
+ <Wrench className="w-4 h-4" /> {language === 'bn' ? 'ব্যবহৃত পার্টস রিপ্লেসমেন্ট' : 'Parts Replacement'}
  </h4>
  <Button
  type="button"
@@ -299,7 +301,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  className="h-7 px-2.5 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg flex items-center gap-1 shadow-sm transition-all"
  >
  {isQuickAddOpen ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
- <span>{isQuickAddOpen ? 'ফর্ম বন্ধ করুন' : '+ নতুন আইটেম যুক্ত করুন'}</span>
+ <span>{isQuickAddOpen ? (language === 'bn' ? 'ফর্ম বন্ধ করুন' : 'Close Form') : (language === 'bn' ? '+ নতুন আইটেম যুক্ত করুন' : '+ Quick Add Part')}</span>
  </Button>
  </div>
 
@@ -309,7 +311,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  <div className="flex items-center justify-between border-b border-gray-800 pb-2">
  <div className="flex items-center gap-2 text-indigo-400 font-semibold text-xs">
  <Package className="w-4 h-4" />
- <span>ইনভেন্টরিতে নতুন আইটেম যুক্ত করুন</span>
+ <span>{language === 'bn' ? 'ইনভেন্টরিতে নতুন আইটেম যুক্ত করুন' : 'Add New Item to Inventory'}</span>
  </div>
  <button
  type="button"
@@ -323,10 +325,12 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
  {/* Name */}
  <div className="sm:col-span-2 space-y-1">
- <label className="text-[11px] font-medium text-gray-300">পার্টসের নাম <span className="text-red-400">*</span></label>
+ <label className="text-[11px] font-medium text-gray-300">
+   {language === 'bn' ? 'পার্টসের নাম' : 'Part Name'} <span className="text-red-400">*</span>
+ </label>
  <Input
  type="text"
- placeholder="যেমন: Samsung 32 Backlight Bar"
+ placeholder={language === 'bn' ? 'যেমন: Samsung 32 Backlight Bar' : 'e.g. Samsung 32 Backlight Bar'}
  value={quickPartForm.name}
  onChange={(e) => setQuickPartForm(prev => ({ ...prev, name: e.target.value }))}
  className="h-8.5 text-xs bg-secondary/80 border-gray-700 text-gray-100"
@@ -336,7 +340,9 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
 
  {/* Category */}
  <div className="space-y-1">
- <label className="text-[11px] font-medium text-gray-300">ক্যাটাগরি</label>
+ <label className="text-[11px] font-medium text-gray-300">
+   {language === 'bn' ? 'ক্যাটাগরি' : 'Category'}
+ </label>
  <select
  value={quickPartForm.category}
  onChange={(e) => setQuickPartForm(prev => ({ ...prev, category: e.target.value }))}
@@ -351,7 +357,9 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
 
  {/* Stock Quantity */}
  <div className="space-y-1">
- <label className="text-[11px] font-medium text-gray-300">স্টক সংখ্যা (কত পিস কিনলেন?)</label>
+ <label className="text-[11px] font-medium text-gray-300">
+   {language === 'bn' ? 'স্টক সংখ্যা (কত পিস কিনলেন?)' : 'Stock Quantity'}
+ </label>
  <Input
  type="number"
  min="1"
@@ -364,7 +372,9 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
 
  {/* Purchase Price (Cost) */}
  <div className="space-y-1">
- <label className="text-[11px] font-medium text-gray-300">ক্রয়মূল্য / কেনা দাম (৳)</label>
+ <label className="text-[11px] font-medium text-gray-300">
+   {language === 'bn' ? 'ক্রয়মূল্য / কেনা দাম (৳)' : 'Purchase Price (৳)'}
+ </label>
  <Input
  type="number"
  min="0"
@@ -377,7 +387,9 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
 
  {/* Selling Price */}
  <div className="space-y-1">
- <label className="text-[11px] font-medium text-gray-300">কাস্টমার রেট / বিক্রয়মূল্য (৳) <span className="text-red-400">*</span></label>
+ <label className="text-[11px] font-medium text-gray-300">
+   {language === 'bn' ? 'কাস্টমার রেট / বিক্রয়মূল্য (৳)' : 'Selling Price (৳)'} <span className="text-red-400">*</span>
+ </label>
  <Input
  type="number"
  min="0"
@@ -392,7 +404,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  />
  {quickPartForm.purchasePrice > 0 && quickPartForm.sellingPrice > 0 && quickPartForm.sellingPrice < quickPartForm.purchasePrice && (
  <p className="text-[10px] text-red-400 flex items-center gap-1 mt-0.5">
- <AlertCircle className="w-3 h-3 shrink-0" /> কেনা দামের চেয়ে কম রেট দেওয়া যাবে না!
+ <AlertCircle className="w-3 h-3 shrink-0" /> {language === 'bn' ? 'কেনা দামের চেয়ে কম রেট দেওয়া যাবে না!' : 'Selling price cannot be less than cost!'}
  </p>
  )}
  </div>
@@ -406,7 +418,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  onClick={() => setIsQuickAddOpen(false)}
  className="h-7 text-xs text-gray-400 hover:text-white"
  >
- বাতিল
+ {t('common.cancel')}
  </Button>
  <Button
  type="button"
@@ -416,7 +428,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  className="h-7 px-3 text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg flex items-center gap-1.5 shadow-sm"
  >
  {isSavingQuickPart ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
- ইনভেন্টরিতে সেভ ও ব্যবহার করুন
+ {language === 'bn' ? 'ইনভেন্টরিতে সেভ ও ব্যবহার করুন' : 'Save & Attach to Job'}
  </Button>
  </div>
  </div>
@@ -427,7 +439,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
  <Input
  type="text"
- placeholder="Search replacement parts in inventory..."
+ placeholder={language === 'bn' ? 'ইনভেন্টরি থেকে পার্টস খুঁজুন...' : 'Search replacement parts in inventory...'}
  value={search}
  onChange={(e) => setSearch(e.target.value)}
  className="pl-9 h-10 bg-[#0d0f17]"
@@ -437,10 +449,16 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  {/* Available Parts List */}
  <div className="h-[140px] sm:h-[160px] overflow-y-auto space-y-1.5 pr-1 scrollbar-thin scrollbar-thumb-gray-800 border border-gray-800/40 rounded-lg p-2 bg-[#0d0f17]/50 mb-4">
  {loading ? (
- <div className="text-center py-6 text-gray-500 text-xs">Loading available inventory...</div>
+ <div className="text-center py-6 text-gray-500 text-xs">
+   {language === 'bn' ? 'ইনভেন্টরি লোড হচ্ছে...' : 'Loading available inventory...'}
+ </div>
  ) : filteredInventory.length === 0 ? (
  <div className="text-center py-5 text-gray-500 text-xs space-y-2">
- <p>{search ? `"${search}" ইনভেন্টরিতে পাওয়া যায়নি` : "ইনভেন্টরিতে কোনো পার্টস নেই"}</p>
+ <p>
+   {language === 'bn' 
+     ? (search ? `"${search}" ইনভেন্টরিতে পাওয়া যায়নি` : "ইনভেন্টরিতে কোনো পার্টস নেই")
+     : (search ? `"${search}" not found in inventory` : "No parts in inventory")}
+ </p>
  <Button
  type="button"
  size="sm"
@@ -450,7 +468,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  }}
  className="h-7 text-xs bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/30 border border-indigo-500/30 rounded-lg inline-flex items-center gap-1"
  >
- <Plus className="w-3.5 h-3.5" /> {search ? `"${search}" ইনভেন্টরিতে যোগ করুন` : "+ নতুন আইটেম যুক্ত করুন"}
+ <Plus className="w-3.5 h-3.5" /> {language === 'bn' ? (search ? `"${search}" ইনভেন্টরিতে যোগ করুন` : "+ নতুন আইটেম যুক্ত করুন") : (search ? `Add "${search}" to inventory` : "+ Quick Add Item")}
  </Button>
  </div>
  ) : (
@@ -459,7 +477,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  <div className="min-w-0 pr-2">
  <div className="font-medium text-xs text-gray-200 truncate">{item.name}</div>
  <div className="text-[11px] text-gray-500 flex items-center gap-2">
- <span>Stock: {item.stock}</span>
+ <span>{language === 'bn' ? 'স্টক:' : 'Stock:'} {item.stock}</span>
  <span>•</span>
  <span className="text-emerald-400 font-medium">{formatCurrency(item.sellingPrice || 0)}</span>
  </div>
@@ -469,7 +487,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  onClick={() => handleAddPart(item)}
  variant="secondary" size="sm" className="h-7 text-xs bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 border-none"
  >
- <Plus className="w-3.5 h-3.5" /> Add
+ <Plus className="w-3.5 h-3.5" /> {language === 'bn' ? 'যুক্ত করুন' : 'Add'}
  </Button>
  </div>
  ))
@@ -480,11 +498,11 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  <div className="pt-2 border-t border-gray-800/80">
  <div className="flex items-center justify-between mb-2">
  <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
- Parts Attached ({selectedParts.length})
+ {language === 'bn' ? 'সংযুক্ত পার্টস' : 'Parts Attached'} ({selectedParts.length})
  </span>
  {selectedParts.length > 0 && (
  <span className="text-xs font-medium text-emerald-400">
- Total: {formatCurrency(selectedParts.reduce((acc, p) => acc + (p.price * p.quantity), 0))}
+ {language === 'bn' ? 'মোট:' : 'Total:'} {formatCurrency(selectedParts.reduce((acc, p) => acc + (p.price * p.quantity), 0))}
  </span>
  )}
  </div>
@@ -493,14 +511,14 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  {selectedParts.length === 0 ? (
  <div className="h-full flex flex-col items-center justify-center text-gray-600 text-xs italic py-4">
  <Package className="w-5 h-5 mb-1 opacity-40" />
- No parts selected (Leave empty if no parts used)
+ {language === 'bn' ? 'কোনো পার্টস নির্বাচন করা হয়নি (পার্টস না লাগলে ফাঁকা রাখুন)' : 'No parts selected (Leave empty if no parts used)'}
  </div>
  ) : (
  selectedParts.map(part => (
  <div key={part.inventoryId} className="flex items-center justify-between bg-[#0d0f17] p-2 rounded-lg border border-gray-800/80">
  <div className="min-w-0 flex-1 pr-2">
  <div className="text-xs font-medium text-gray-200 truncate">{part.name}</div>
- <div className="text-[11px] text-gray-500">{formatCurrency(part.price)} each</div>
+ <div className="text-[11px] text-gray-500">{formatCurrency(part.price)} {language === 'bn' ? 'প্রতিটি' : 'each'}</div>
  </div>
  <div className="flex items-center gap-2 shrink-0">
  <div className="flex items-center bg-secondary rounded border border-gray-800">
@@ -542,13 +560,15 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  <div className="bg-secondary/60 border border-gray-800/80 rounded-xl p-4 sm:p-5 flex flex-col h-full justify-between">
  <div>
  <h4 className="text-sm font-semibold text-emerald-400 flex items-center gap-2 mb-3">
- <Coins className="w-4 h-4" /> Payment Settlement
+ <Coins className="w-4 h-4" /> {language === 'bn' ? 'পেমেন্ট ও বিল নিষ্পত্তি' : 'Payment Settlement'}
  </h4>
 
  {/* Bill Overview Cards */}
  <div className="grid grid-cols-2 gap-3 mb-4">
  <div className="bg-[#0d0f17] p-3 rounded-lg border border-gray-800/80 relative">
- <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wider block mb-1">Total Bill (Editable)</span>
+ <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wider block mb-1">
+   {language === 'bn' ? 'মোট বিল (সম্পাদনাযোগ্য)' : 'Total Bill (Editable)'}
+ </span>
  <Input 
    type="number" 
    value={editableTotalBill || ''} 
@@ -560,7 +580,9 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  />
  </div>
  <div className="bg-[#0d0f17] p-3 rounded-lg border border-gray-800/80">
- <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wider block">Already Paid</span>
+ <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wider block">
+   {language === 'bn' ? 'পূর্বের পরিশোধ' : 'Already Paid'}
+ </span>
  <span className="text-base sm:text-lg font-bold text-gray-400">{formatCurrency(customer.advance || 0)}</span>
  </div>
  </div>
@@ -575,12 +597,20 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
            onChange={(e) => setRedeemPoints(e.target.checked)}
            className="w-4 h-4 rounded border-gray-700 bg-gray-900 text-emerald-500 focus:ring-emerald-500 cursor-pointer"
          />
-         <span>Redeem {customerPoints} Points for {formatCurrency(pointsValueTk)} off!</span>
+         <span>
+           {language === 'bn' 
+             ? `${formatCurrency(pointsValueTk)} ছাড়ে ${customerPoints} পয়েন্ট রিডিম করুন!` 
+             : `Redeem ${customerPoints} Points for ${formatCurrency(pointsValueTk)} off!`}
+         </span>
        </label>
      ) : (
        <div className="flex items-center gap-2 text-xs text-amber-400/90 py-0.5">
          <Star className="w-4 h-4 text-amber-400 shrink-0 fill-amber-400/20" />
-         <span>কাস্টমারের <strong>{customerPoints}</strong> পয়েন্ট আছে (পয়েন্ট ভাঙাতে সর্বনিম্ন <strong>{minPointsRequired}</strong> পয়েন্ট প্রয়োজন)</span>
+         <span>
+           {language === 'bn' 
+             ? <>কাস্টমারের <strong>{customerPoints}</strong> পয়েন্ট আছে (পয়েন্ট ভাঙাতে সর্বনিম্ন <strong>{minPointsRequired}</strong> পয়েন্ট প্রয়োজন)</> 
+             : <>Customer has <strong>{customerPoints}</strong> points (Min <strong>{minPointsRequired}</strong> points needed to redeem)</>}
+         </span>
        </div>
      )}
    </div>
@@ -592,7 +622,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  <div>
  <div className="flex justify-between items-center mb-1">
  <label className="text-xs font-medium text-gray-300 flex items-center gap-1.5">
- <Coins className="w-3.5 h-3.5 text-emerald-400" /> Payment Received Now
+ <Coins className="w-3.5 h-3.5 text-emerald-400" /> {language === 'bn' ? 'এখন গৃহীত পেমেন্ট' : 'Payment Received Now'}
  </label>
  {currentDue > 0 && !isFullPayment && (
  <Button
@@ -600,7 +630,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  onClick={handlePayFull}
  variant="link" className="h-auto p-0 text-[11px] text-emerald-400 font-semibold flex items-center gap-1"
  >
- Pay Full ({formatCurrency(currentDue)})
+ {language === 'bn' ? 'সম্পূর্ণ পরিশোধ' : 'Pay Full'} ({formatCurrency(currentDue)})
  </Button>
  )}
  </div>
@@ -629,7 +659,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  {isFullPayment && (
  <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center gap-2 text-emerald-400 text-xs font-semibold">
  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
- Full payment received! No remaining due or discount required.
+ {language === 'bn' ? 'সম্পূর্ণ পেমেন্ট গৃহীত হয়েছে! কোনো বকেয়া অবশিষ্ট নেই।' : 'Full payment received! No remaining due or discount required.'}
  </div>
  )}
 
@@ -638,7 +668,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  <div className="space-y-3.5 pt-1 border-t border-gray-800/80 animate-in fade-in duration-200">
  {/* Remaining Unpaid Info */}
  <div className="flex justify-between items-center text-xs text-gray-400">
- <span>Unpaid Balance:</span>
+ <span>{language === 'bn' ? 'অবশিষ্ট বকেয়া:' : 'Unpaid Balance:'}</span>
  <span className="font-bold text-amber-400 text-sm">{formatCurrency(unpaidAfterPayment)}</span>
  </div>
 
@@ -651,7 +681,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  className="w-4 h-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500 focus:ring-offset-gray-900"
  />
  <span className="flex items-center gap-1.5 text-purple-300">
- <TagIcon className="w-3.5 h-3.5" /> Give Discount? (ডিসকাউন্ট দিয়ে হিসাব ক্লোজ করুন)
+ <TagIcon className="w-3.5 h-3.5" /> {language === 'bn' ? 'ছাড় দিবেন? (ডিসকাউন্ট দিয়ে হিসাব ক্লোজ করুন)' : 'Give Discount? (Waive remaining balance)'}
  </span>
  </label>
 
@@ -659,7 +689,9 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  {hasDiscount && (
  <div className="pt-2 border-t border-gray-800/60 animate-in fade-in duration-150">
  <p className="text-xs text-purple-300 font-medium">
- {formatCurrency(unpaidAfterPayment)} discount automatically applied. No due remains!
+ {language === 'bn' 
+   ? `${formatCurrency(unpaidAfterPayment)} ছাড় প্রযোজ্য হয়েছে। কোনো বকেয়া নেই!` 
+   : `${formatCurrency(unpaidAfterPayment)} discount automatically applied. No due remains!`}
  </p>
  </div>
  )}
@@ -669,7 +701,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  {finalDue > 0 ? (
  <div className="space-y-1.5 animate-in fade-in duration-200">
  <label className="text-xs font-semibold text-amber-400 flex items-center gap-1.5">
- <Calendar className="w-3.5 h-3.5" /> Next Due Date (বাকি টাকা দেয়ার তারিখ) <span className="text-red-400">*</span>
+ <Calendar className="w-3.5 h-3.5" /> {language === 'bn' ? 'বাকি টাকা পরিশোধের তারিখ' : 'Next Due Date'} <span className="text-red-400">*</span>
  </label>
  <input type="date"
  required
@@ -678,13 +710,15 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  className="h-10 bg-[#0d0f17] border-amber-500/40 focus-visible:ring-amber-500/50 focus-visible:border-amber-500/50 [color-scheme:dark]"
  />
  <p className="text-[11px] text-gray-500">
- Since {formatCurrency(finalDue)} remains due, specify when customer will clear it.
+ {language === 'bn' 
+   ? `যেহেতু ${formatCurrency(finalDue)} বাকি রয়েছে, কাস্টমার কবে পরিশোধ করবেন তা নির্ধারণ করুন।` 
+   : `Since ${formatCurrency(finalDue)} remains due, specify when customer will clear it.`}
  </p>
  </div>
  ) : (
  <div className="p-2.5 bg-purple-500/10 border border-purple-500/30 rounded-lg text-purple-300 text-xs font-medium flex items-center gap-2">
  <Check className="w-4 h-4 text-purple-400 shrink-0" />
- Remaining bill waived via discount. No Due Date required!
+ {language === 'bn' ? 'ডিসকাউন্টের মাধ্যমে অবশিষ্ট বিল মওকুফ করা হয়েছে। কোনো তাগাদার তারিখ প্রয়োজন নেই!' : 'Remaining bill waived via discount. No Due Date required!'}
  </div>
  )}
  </div>
@@ -698,7 +732,9 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  }`}>
  <div className="flex justify-between items-center">
  <div>
- <span className="text-xs uppercase tracking-wider text-gray-400 block font-medium">Final Remaining Due</span>
+ <span className="text-xs uppercase tracking-wider text-gray-400 block font-medium">
+   {language === 'bn' ? 'চূড়ান্ত অবশিষ্ট বকেয়া' : 'Final Remaining Due'}
+ </span>
  <span className={`text-xl font-bold ${finalDue > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
  {formatCurrency(finalDue)}
  </span>
@@ -706,14 +742,14 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  <div className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
  finalDue > 0 ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'
  }`}>
- {finalDue > 0 ? 'Has Due' : 'Fully Paid / Settled'}
+ {finalDue > 0 ? (language === 'bn' ? 'বকেয়া আছে' : 'Has Due') : (language === 'bn' ? 'পরিশোধিত / ক্লোজড' : 'Fully Paid / Settled')}
  </div>
  </div>
 
  {isOverpaid && (
  <div className="flex items-center gap-1.5 text-xs text-red-400 mt-2 font-medium">
  <AlertCircle className="w-3.5 h-3.5" />
- Payment & discount exceed current due!
+ {language === 'bn' ? 'পেমেন্ট ও ছাড়ের পরিমাণ বর্তমান বকেয়ার চেয়ে বেশি!' : 'Payment & discount exceed current due!'}
  </div>
  )}
  </div>
@@ -734,7 +770,9 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 shadow-blue-900/20 text-white font-semibold"
  >
  <CheckCircle2 className="w-4 h-4" />
- {pendingStatus === 'Delivered' ? 'Complete & Deliver' : 'Save Parts Checklist'}
+ {pendingStatus === 'Delivered' 
+   ? (language === 'bn' ? 'সম্পন্ন ও ডেলিভারি করুন' : 'Complete & Deliver') 
+   : (language === 'bn' ? 'পার্টস তালিকা সংরক্ষণ করুন' : 'Save Parts Checklist')}
  </Button>
  </div>
  </div>

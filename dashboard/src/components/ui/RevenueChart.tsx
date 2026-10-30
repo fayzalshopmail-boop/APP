@@ -5,10 +5,16 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { motion } from 'framer-motion';
 import { formatCurrency } from '@/lib/currency';
 import { useAppStore } from '@/store/useAppStore';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 const BENGALI_MONTHS = [
   'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
   'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
+];
+
+const ENGLISH_MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
 const BENGALI_MONTHS_SHORT = [
@@ -16,8 +22,17 @@ const BENGALI_MONTHS_SHORT = [
   'জুলাই', 'আগস্ট', 'সেপ্টে', 'অক্টো', 'নভে', 'ডিসে'
 ];
 
+const ENGLISH_MONTHS_SHORT = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+];
+
 const BENGALI_DAYS_SHORT = [
   'রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহঃ', 'শুক্র', 'শনি'
+];
+
+const ENGLISH_DAYS_SHORT = [
+  'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'
 ];
 
 interface RevenueChartProps {
@@ -25,6 +40,7 @@ interface RevenueChartProps {
 }
 
 export function RevenueChart({ timeFilter: propTimeFilter }: RevenueChartProps) {
+  const { isBangla } = useTranslation();
   const storeTimeFilter = useAppStore((state) => state.dashboardTimeFilter);
   const activeFilter = propTimeFilter || storeTimeFilter || 'This Week';
 
@@ -52,18 +68,18 @@ export function RevenueChart({ timeFilter: propTimeFilter }: RevenueChartProps) 
 
         if (activeFilter === 'Today') {
           startDate = startOfToday;
-          filterSubtitle = '(আজকের ঘণ্টার চিত্র)';
+          filterSubtitle = isBangla ? '(আজকের ঘণ্টার চিত্র)' : '(Hourly Breakdown)';
 
           // 2-hour interval slots for Today
           const slots = [
-            { name: '8 AM', start: 8, end: 10, label: 'সকাল ৮:০০ - ১০:০০' },
-            { name: '10 AM', start: 10, end: 12, label: 'সকাল ১০:০০ - ১২:০০' },
-            { name: '12 PM', start: 12, end: 14, label: 'দুপুর ১২:০০ - ২:০০' },
-            { name: '2 PM', start: 14, end: 16, label: 'দুপুর ২:০০ - বিকাল ৪:০০' },
-            { name: '4 PM', start: 16, end: 18, label: 'বিকাল ৪:০০ - সন্ধ্যা ৬:০০' },
-            { name: '6 PM', start: 18, end: 20, label: 'সন্ধ্যা ৬:০০ - রাত ৮:০০' },
-            { name: '8 PM', start: 20, end: 22, label: 'রাত ৮:০০ - রাত ১০:০০' },
-            { name: '10 PM+', start: 22, end: 24, label: 'রাত ১০:০০ এর পর' }
+            { name: '8 AM', start: 8, end: 10, label: isBangla ? 'সকাল ৮:০০ - ১০:০০' : '8:00 AM - 10:00 AM' },
+            { name: '10 AM', start: 10, end: 12, label: isBangla ? 'সকাল ১০:০০ - ১২:০০' : '10:00 AM - 12:00 PM' },
+            { name: '12 PM', start: 12, end: 14, label: isBangla ? 'দুপুর ১২:০০ - ২:০০' : '12:00 PM - 2:00 PM' },
+            { name: '2 PM', start: 14, end: 16, label: isBangla ? 'দুপুর ২:০০ - বিকাল ৪:০০' : '2:00 PM - 4:00 PM' },
+            { name: '4 PM', start: 16, end: 18, label: isBangla ? 'বিকাল ৪:০০ - সন্ধ্যা ৬:০০' : '4:00 PM - 6:00 PM' },
+            { name: '6 PM', start: 18, end: 20, label: isBangla ? 'সন্ধ্যা ৬:০০ - রাত ৮:০০' : '6:00 PM - 8:00 PM' },
+            { name: '8 PM', start: 20, end: 22, label: isBangla ? 'রাত ৮:০০ - রাত ১০:০০' : '8:00 PM - 10:00 PM' },
+            { name: '10 PM+', start: 22, end: 24, label: isBangla ? 'রাত ১০:০০ এর পর' : 'After 10:00 PM' }
           ];
 
           generatedBuckets = slots.map((s) => ({
@@ -80,17 +96,18 @@ export function RevenueChart({ timeFilter: propTimeFilter }: RevenueChartProps) 
           const diffToSat = (dayOfWeek + 1) % 7;
           startOfWeek.setDate(startOfWeek.getDate() - diffToSat);
           startDate = startOfWeek;
-          filterSubtitle = '(এই সপ্তাহের দৈনিক চিত্র)';
+          filterSubtitle = isBangla ? '(এই সপ্তাহের দৈনিক চিত্র)' : '(Weekly Breakdown)';
 
           const weekDays = [];
           for (let i = 0; i < 7; i++) {
             const d = new Date(startOfWeek);
             d.setDate(d.getDate() + i);
-            const dayName = BENGALI_DAYS_SHORT[d.getDay()];
+            const dayName = isBangla ? BENGALI_DAYS_SHORT[d.getDay()] : ENGLISH_DAYS_SHORT[d.getDay()];
             const dateNum = d.getDate();
+            const monthName = isBangla ? BENGALI_MONTHS[d.getMonth()] : ENGLISH_MONTHS_SHORT[d.getMonth()];
             weekDays.push({
               name: `${dayName} (${dateNum})`,
-              fullLabel: `${dayName}বার, ${dateNum} ${BENGALI_MONTHS[d.getMonth()]}`,
+              fullLabel: isBangla ? `${dayName}বার, ${dateNum} ${monthName}` : `${dayName}, ${monthName} ${dateNum}`,
               dateStr: d.toDateString(),
               revenue: 0,
               timestamp: d
@@ -99,14 +116,15 @@ export function RevenueChart({ timeFilter: propTimeFilter }: RevenueChartProps) 
           generatedBuckets = weekDays;
         } else if (activeFilter === 'This Month') {
           startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-          filterSubtitle = `(${BENGALI_MONTHS[now.getMonth()]} মাসের দৈনিক চিত্র)`;
+          const monthName = isBangla ? BENGALI_MONTHS[now.getMonth()] : ENGLISH_MONTHS[now.getMonth()];
+          filterSubtitle = isBangla ? `(${monthName} মাসের দৈনিক চিত্র)` : `(${monthName} Daily Breakdown)`;
 
           const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
           const monthDays = [];
           for (let i = 1; i <= daysInMonth; i++) {
             monthDays.push({
               name: `${i}`,
-              fullLabel: `${i} ${BENGALI_MONTHS[now.getMonth()]} ${now.getFullYear()}`,
+              fullLabel: isBangla ? `${i} ${monthName} ${now.getFullYear()}` : `${monthName} ${i}, ${now.getFullYear()}`,
               dayNum: i,
               revenue: 0
             });
@@ -114,13 +132,13 @@ export function RevenueChart({ timeFilter: propTimeFilter }: RevenueChartProps) 
           generatedBuckets = monthDays;
         } else if (activeFilter === 'This Year') {
           startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
-          filterSubtitle = `(${now.getFullYear()} সালের ১২ মাসের চিত্র)`;
+          filterSubtitle = isBangla ? `(${now.getFullYear()} সালের ১২ মাসের চিত্র)` : `(${now.getFullYear()} 12-Month Breakdown)`;
 
           const yearMonths = [];
           for (let m = 0; m < 12; m++) {
             yearMonths.push({
-              name: BENGALI_MONTHS_SHORT[m],
-              fullLabel: `${BENGALI_MONTHS[m]} ${now.getFullYear()}`,
+              name: isBangla ? BENGALI_MONTHS_SHORT[m] : ENGLISH_MONTHS_SHORT[m],
+              fullLabel: isBangla ? `${BENGALI_MONTHS[m]} ${now.getFullYear()}` : `${ENGLISH_MONTHS[m]} ${now.getFullYear()}`,
               monthIndex: m,
               revenue: 0
             });
@@ -128,15 +146,17 @@ export function RevenueChart({ timeFilter: propTimeFilter }: RevenueChartProps) 
           generatedBuckets = yearMonths;
         } else {
           // All Time -> past 12 rolling months
-          filterSubtitle = '(সার্বিক মাসিক রাজস্ব চিত্র)';
+          filterSubtitle = isBangla ? '(সার্বিক মাসিক রাজস্ব চিত্র)' : '(All-Time Monthly Revenue)';
           const rollingMonths = [];
           for (let i = 11; i >= 0; i--) {
             const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
             const m = d.getMonth();
             const y = d.getFullYear();
+            const monthLabel = isBangla ? BENGALI_MONTHS_SHORT[m] : ENGLISH_MONTHS_SHORT[m];
+            const fullMonth = isBangla ? BENGALI_MONTHS[m] : ENGLISH_MONTHS[m];
             rollingMonths.push({
-              name: `${BENGALI_MONTHS_SHORT[m]} '${y.toString().slice(2)}`,
-              fullLabel: `${BENGALI_MONTHS[m]} ${y}`,
+              name: `${monthLabel} '${y.toString().slice(2)}`,
+              fullLabel: `${fullMonth} ${y}`,
               year: y,
               monthIndex: m,
               revenue: 0
@@ -293,16 +313,16 @@ export function RevenueChart({ timeFilter: propTimeFilter }: RevenueChartProps) 
           </div>
           <div>
             <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-              রাজস্ব চিত্র <span className="text-gray-400 text-xs font-medium">{subtitle}</span>
+              {isBangla ? 'রাজস্ব চিত্র' : 'Revenue Trends'} <span className="text-gray-400 text-xs font-medium">{subtitle}</span>
             </h3>
             <p className="text-[10px] sm:text-[11px] text-gray-500">
-              নির্বাচিত সময়সীমার রাজস্ব ও সংগৃহীত নগদ প্রবাহ
+              {isBangla ? 'নির্বাচিত সময়সীমার রাজস্ব ও সংগৃহীত নগদ প্রবাহ' : 'Revenue and cash flow for selected timeframe'}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto bg-secondary/50 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl border border-gray-800/60">
-          <span className="text-[10px] text-gray-400 uppercase tracking-wider">মোট রাজস্ব:</span>
+          <span className="text-[10px] text-gray-400 uppercase tracking-wider">{isBangla ? 'মোট রাজস্ব:' : 'Total Revenue:'}</span>
           <span className="text-xs sm:text-sm font-bold text-indigo-400">
             {loading ? '...' : formatCurrency(totalRevenue)}
           </span>
@@ -312,7 +332,7 @@ export function RevenueChart({ timeFilter: propTimeFilter }: RevenueChartProps) 
       <div className="flex-1 min-h-[220px] w-full">
         {loading ? (
           <div className="w-full h-full flex items-center justify-center text-gray-500 text-sm">
-            চার্ট ডেটা লোড হচ্ছে...
+            {isBangla ? 'চার্ট ডেটা লোড হচ্ছে...' : 'Loading chart data...'}
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
@@ -347,7 +367,7 @@ export function RevenueChart({ timeFilter: propTimeFilter }: RevenueChartProps) 
                 }}
                 itemStyle={{ color: '#fff', fontWeight: 600 }}
                 labelStyle={{ color: '#9ca3af', marginBottom: '4px' }}
-                formatter={(value: any) => [formatCurrency(Number(value) || 0), 'সংগৃহীত রাজস্ব']}
+                formatter={(value: any) => [formatCurrency(Number(value) || 0), isBangla ? 'সংগৃহীত রাজস্ব' : 'Revenue']}
                 labelFormatter={(label, payload) => {
                   if (payload && payload[0]?.payload?.fullLabel) {
                     return payload[0].payload.fullLabel;

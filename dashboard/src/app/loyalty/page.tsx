@@ -11,9 +11,11 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { MobileDataCard } from '@/components/ui/MobileDataCard';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import toast from "react-hot-toast";
 
 export default function LoyaltyPage() {
+  const { t, language } = useTranslation();
   const [config, setConfig] = useState<LoyaltyConfig>({
     enabled: true,
     spendRequiredForOnePoint: 100,
@@ -38,7 +40,7 @@ export default function LoyaltyPage() {
       setCustomers(topCustomers);
     } catch (error) {
       console.error(error);
-      toast.error("Failed to load loyalty data.");
+      toast.error(language === 'bn' ? 'লয়্যালটি ডেটা লোড করতে ব্যর্থ হয়েছে।' : 'Failed to load loyalty data.');
     } finally {
       setLoading(false);
     }
@@ -51,18 +53,18 @@ export default function LoyaltyPage() {
   const handleSaveConfig = async (e: React.FormEvent) => {
     e.preventDefault();
     if (config.spendRequiredForOnePoint <= 0 || config.pointValueInTk <= 0) {
-      return toast.error("Values must be greater than zero.");
+      return toast.error(language === 'bn' ? 'মান শূন্যের বেশি হতে হবে।' : 'Values must be greater than zero.');
     }
     if ((config.minPointsToRedeem ?? 0) < 0) {
-      return toast.error("Minimum points cannot be negative.");
+      return toast.error(language === 'bn' ? 'সর্বনিম্ন পয়েন্ট ঋণাত্মক হতে পারে না।' : 'Minimum points cannot be negative.');
     }
     try {
       setSaving(true);
       await loyaltyConfigService.saveSettings(config);
-      toast.success("Loyalty settings updated!");
+      toast.success(language === 'bn' ? 'লয়্যালটি সেটিংস আপডেট করা হয়েছে!' : 'Loyalty settings updated!');
     } catch (error) {
       console.error(error);
-      toast.error("Failed to save settings.");
+      toast.error(language === 'bn' ? 'সেটিংস সংরক্ষণ করতে ব্যর্থ হয়েছে।' : 'Failed to save settings.');
     } finally {
       setSaving(false);
     }
@@ -89,7 +91,9 @@ export default function LoyaltyPage() {
         {/* Card 1: Total Points Distributed */}
         <div className="bg-card/90 rounded-xl sm:rounded-2xl p-3 sm:p-3.5 border border-gray-800/80 flex items-center justify-between">
           <div>
-            <p className="text-[11px] sm:text-xs font-semibold text-gray-400">মোট অর্জিত পয়েন্ট</p>
+            <p className="text-[11px] sm:text-xs font-semibold text-gray-400">
+              {language === 'bn' ? 'মোট অর্জিত পয়েন্ট' : 'Total Points Earned'}
+            </p>
             <p className="text-base sm:text-xl font-bold text-white tracking-tight mt-0.5">
               {totalPointsInMarket.toLocaleString()} <span className="text-xs font-medium text-yellow-500">pts</span>
             </p>
@@ -102,7 +106,9 @@ export default function LoyaltyPage() {
         {/* Card 2: Total Discount Value */}
         <div className="bg-card/90 rounded-xl sm:rounded-2xl p-3 sm:p-3.5 border border-gray-800/80 flex items-center justify-between">
           <div>
-            <p className="text-[11px] sm:text-xs font-semibold text-gray-400">সম্ভাব্য মোট ছাড়</p>
+            <p className="text-[11px] sm:text-xs font-semibold text-gray-400">
+              {language === 'bn' ? 'সম্ভাব্য মোট ছাড়' : 'Total Discount Value'}
+            </p>
             <p className="text-base sm:text-xl font-bold text-emerald-400 tracking-tight mt-0.5">
               {formatCurrency(totalPointsValueInTk)}
             </p>
@@ -115,9 +121,11 @@ export default function LoyaltyPage() {
         {/* Card 3: Loyal Members */}
         <div className="bg-card/90 rounded-xl sm:rounded-2xl p-3 sm:p-3.5 border border-gray-800/80 flex items-center justify-between">
           <div>
-            <p className="text-[11px] sm:text-xs font-semibold text-gray-400">পয়েন্ট প্রাপ্ত কাস্টমার</p>
+            <p className="text-[11px] sm:text-xs font-semibold text-gray-400">
+              {language === 'bn' ? 'পয়েন্ট প্রাপ্ত কাস্টমার' : 'Loyal Customers'}
+            </p>
             <p className="text-base sm:text-xl font-bold text-blue-400 tracking-tight mt-0.5">
-              {customers.length} <span className="text-xs font-medium text-gray-400">জন</span>
+              {customers.length} <span className="text-xs font-medium text-gray-400">{language === 'bn' ? 'জন' : 'customers'}</span>
             </p>
           </div>
           <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
@@ -138,15 +146,19 @@ export default function LoyaltyPage() {
                   <Settings className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <h2 className="text-xs sm:text-sm font-bold text-white leading-tight">Reward Rules</h2>
-                  <p className="text-[10px] sm:text-[11px] text-gray-400">পয়েন্ট ও ছাড়ের নিয়মাবলী</p>
+                  <h2 className="text-xs sm:text-sm font-bold text-white leading-tight">
+                    {language === 'bn' ? 'রিওয়ার্ড রুলস' : 'Reward Rules'}
+                  </h2>
+                  <p className="text-[10px] sm:text-[11px] text-gray-400">
+                    {language === 'bn' ? 'পয়েন্ট ও ছাড়ের নিয়মাবলী' : 'Points and discount rules'}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
                   config.enabled ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-gray-500/10 text-gray-400 border-gray-500/20'
                 }`}>
-                  {config.enabled ? 'সক্রিয়' : 'বন্ধ'}
+                  {config.enabled ? (language === 'bn' ? 'সক্রিয়' : 'Active') : (language === 'bn' ? 'বন্ধ' : 'Disabled')}
                 </span>
                 <Switch 
                   checked={config.enabled}
@@ -158,8 +170,12 @@ export default function LoyaltyPage() {
             <div className={`space-y-2.5 transition-opacity ${!config.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="text-[11px] sm:text-xs font-semibold text-gray-300">Spend for 1 Point (৳)</label>
-                  <span className="text-[10px] text-gray-500">প্রতি কত খরচে ১ পয়েন্ট</span>
+                  <label className="text-[11px] sm:text-xs font-semibold text-gray-300">
+                    {language === 'bn' ? 'প্রতি ১ পয়েন্টের জন্য খরচ (৳)' : 'Spend for 1 Point (৳)'}
+                  </label>
+                  <span className="text-[10px] text-gray-500">
+                    {language === 'bn' ? 'প্রতি কত খরচে ১ পয়েন্ট' : 'Spend amount per point'}
+                  </span>
                 </div>
                 <div className="relative">
                   <Input 
@@ -176,8 +192,12 @@ export default function LoyaltyPage() {
 
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="text-[11px] sm:text-xs font-semibold text-gray-300">Value of 1 Point (৳)</label>
-                  <span className="text-[10px] text-gray-500">১ পয়েন্টের মূল্য (ছাড়)</span>
+                  <label className="text-[11px] sm:text-xs font-semibold text-gray-300">
+                    {language === 'bn' ? '১ পয়েন্টের মূল্য (৳)' : 'Value of 1 Point (৳)'}
+                  </label>
+                  <span className="text-[10px] text-gray-500">
+                    {language === 'bn' ? '১ পয়েন্টের মূল্য (ছাড়)' : 'Discount value per point'}
+                  </span>
                 </div>
                 <div className="relative">
                   <Input 
@@ -194,8 +214,12 @@ export default function LoyaltyPage() {
 
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="text-[11px] sm:text-xs font-semibold text-gray-300">Minimum Points to Redeem</label>
-                  <span className="text-[10px] text-gray-500">সর্বনিম্ন রিডিম সীমা</span>
+                  <label className="text-[11px] sm:text-xs font-semibold text-gray-300">
+                    {language === 'bn' ? 'রিডিম করার সর্বনিম্ন পয়েন্ট' : 'Minimum Points to Redeem'}
+                  </label>
+                  <span className="text-[10px] text-gray-500">
+                    {language === 'bn' ? 'সর্বনিম্ন রিডিম সীমা' : 'Minimum redemption limit'}
+                  </span>
                 </div>
                 <div className="relative">
                   <Input 
@@ -217,7 +241,9 @@ export default function LoyaltyPage() {
               className="w-full mt-3.5 h-8.5 sm:h-9 text-xs font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl shadow-md shadow-blue-500/20 active:scale-[0.98] transition-all cursor-pointer"
             >
               <Save className="w-3.5 h-3.5 mr-1.5" />
-              {saving ? 'সংরক্ষণ হচ্ছে...' : 'সেভ রুলস (Save Rules)'}
+              {saving 
+                ? (language === 'bn' ? 'সংরক্ষণ হচ্ছে...' : 'Saving...') 
+                : (language === 'bn' ? 'সেভ রুলস' : 'Save Rules')}
             </Button>
           </form>
         </div>
@@ -231,14 +257,20 @@ export default function LoyaltyPage() {
                   <Award className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <h2 className="text-xs sm:text-sm font-bold text-white leading-tight">Top Loyal Customers</h2>
-                  <p className="text-[10px] sm:text-[11px] text-gray-400">{filteredCustomers.length} জন পয়েন্ট প্রাপ্ত কাস্টমার</p>
+                  <h2 className="text-xs sm:text-sm font-bold text-white leading-tight">
+                    {language === 'bn' ? 'সেরা বিশ্বস্ত কাস্টমার' : 'Top Loyal Customers'}
+                  </h2>
+                  <p className="text-[10px] sm:text-[11px] text-gray-400">
+                    {language === 'bn' 
+                      ? `${filteredCustomers.length} জন পয়েন্ট প্রাপ্ত কাস্টমার` 
+                      : `${filteredCustomers.length} customers with points`}
+                  </p>
                 </div>
               </div>
               <div className="relative w-full sm:w-48 lg:w-56">
                 <Search className="w-3.5 h-3.5 text-gray-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
                 <Input 
-                  placeholder="খুঁজুন (নাম বা ফোন)..."
+                  placeholder={language === 'bn' ? 'খুঁজুন (নাম বা ফোন)...' : 'Search (name or phone)...'}
                   value={searchTerm}
                   onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                   className="pl-8 h-8 text-xs bg-background/80 border-gray-800 rounded-lg focus:border-blue-500"
@@ -256,8 +288,14 @@ export default function LoyaltyPage() {
                   <div className="w-9 h-9 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center mx-auto mb-2 text-yellow-500">
                     <Star className="w-4 h-4 fill-yellow-500/30" />
                   </div>
-                  <h3 className="text-xs sm:text-sm font-semibold text-gray-300">কোন কাস্টমার পাওয়া যায়নি</h3>
-                  <p className="text-[11px] text-gray-500 mt-1 max-w-xs mx-auto">পয়েন্ট অর্জনকারী কাস্টমারদের তালিকা এখানে স্বয়ংক্রিয়ভাবে প্রদর্শিত হবে।</p>
+                  <h3 className="text-xs sm:text-sm font-semibold text-gray-300">
+                    {language === 'bn' ? 'কোনো কাস্টমার পাওয়া যায়নি' : 'No customers found'}
+                  </h3>
+                  <p className="text-[11px] text-gray-500 mt-1 max-w-xs mx-auto">
+                    {language === 'bn' 
+                      ? 'পয়েন্ট অর্জনকারী কাস্টমারদের তালিকা এখানে স্বয়ংক্রিয়ভাবে প্রদর্শিত হবে।' 
+                      : 'List of customers with points will be displayed here automatically.'}
+                  </p>
                 </div>
               ) : (
                 <>
@@ -266,10 +304,10 @@ export default function LoyaltyPage() {
                     <table className="w-full text-left border-collapse whitespace-nowrap text-xs">
                       <thead className="bg-background/80 sticky top-0 z-10 backdrop-blur-sm">
                         <tr className="text-[10px] sm:text-[11px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-800/60">
-                          <th className="px-4 py-2.5">Rank</th>
-                          <th className="px-4 py-2.5">Customer Info</th>
-                          <th className="px-4 py-2.5">Points Balance</th>
-                          <th className="px-4 py-2.5 text-right">Value (৳)</th>
+                          <th className="px-4 py-2.5">{language === 'bn' ? 'র‍্যাংক' : 'Rank'}</th>
+                          <th className="px-4 py-2.5">{language === 'bn' ? 'কাস্টমার তথ্য' : 'Customer Info'}</th>
+                          <th className="px-4 py-2.5">{language === 'bn' ? 'পয়েন্ট ব্যালেন্স' : 'Points Balance'}</th>
+                          <th className="px-4 py-2.5 text-right">{language === 'bn' ? 'মূল্য (৳)' : 'Value (৳)'}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-800/50">
@@ -328,14 +366,14 @@ export default function LoyaltyPage() {
                                 rank === 3 ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' :
                                 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                               }`}>
-                                #{rank} Rank
+                                #{rank} {language === 'bn' ? 'র‍্যাংক' : 'Rank'}
                               </span>
                             }
                           />
                           <MobileDataCard.FinancialStrip
                             items={[
-                              { label: 'পয়েন্ট ব্যালেন্স', value: `${(c.points || 0).toLocaleString()} pts` },
-                              { label: 'মূল্য (ছাড়)', value: formatCurrency((c.points || 0) * config.pointValueInTk), highlight: 'success' },
+                              { label: language === 'bn' ? 'পয়েন্ট ব্যালেন্স' : 'Points Balance', value: `${(c.points || 0).toLocaleString()} pts` },
+                              { label: language === 'bn' ? 'মূল্য (ছাড়)' : 'Value (Discount)', value: formatCurrency((c.points || 0) * config.pointValueInTk), highlight: 'success' },
                             ]}
                           />
                         </MobileDataCard>

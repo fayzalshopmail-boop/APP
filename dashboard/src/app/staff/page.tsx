@@ -35,10 +35,12 @@ import {
 } from '@/lib/services/attendanceSecurity';
 import { Button } from '@/components/ui/button';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import toast from 'react-hot-toast';
 
 export default function StaffAttendancePage() {
   const router = useRouter();
+  const { t, language } = useTranslation();
   const { user, shop, setUser, setUnlocked } = useAppStore();
 
   // If user is Owner or Manager, redirect to Settings > Staff
@@ -48,20 +50,20 @@ export default function StaffAttendancePage() {
     }
   }, [user, router]);
 
-  // Current Date Formatted in Bengali
+  // Current Date Formatted
   const [currentDateFormatted, setCurrentDateFormatted] = useState<string>('');
 
   useEffect(() => {
     const now = new Date();
     setCurrentDateFormatted(
-      now.toLocaleDateString('bn-BD', { 
+      now.toLocaleDateString(language === 'bn' ? 'bn-BD' : 'en-US', { 
         weekday: 'long', 
         day: 'numeric', 
         month: 'long', 
         year: 'numeric' 
       })
     );
-  }, []);
+  }, [language]);
 
   // Attendance Records State
   const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null);
@@ -94,6 +96,7 @@ export default function StaffAttendancePage() {
   // Helper formatters
   const formatBanglaHours = (hoursStr?: string) => {
     if (!hoursStr || hoursStr === 'N/A' || hoursStr === '--') return '--';
+    if (language === 'en') return hoursStr;
     return hoursStr
       .replace('h', ' ঘণ্টা')
       .replace('m', ' মিনিট');
@@ -103,7 +106,7 @@ export default function StaffAttendancePage() {
     try {
       const [y, m, d] = dateStr.split('-').map(Number);
       const date = new Date(y, m - 1, d);
-      return date.toLocaleDateString('bn-BD', {
+      return date.toLocaleDateString(language === 'bn' ? 'bn-BD' : 'en-US', {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
@@ -118,27 +121,27 @@ export default function StaffAttendancePage() {
     switch (status) {
       case 'Present':
         return { 
-          label: 'উপস্থিত', 
+          label: language === 'bn' ? 'উপস্থিত' : 'Present', 
           color: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' 
         };
       case 'Late':
         return { 
-          label: 'দেরিতে উপস্থিতি', 
+          label: language === 'bn' ? 'দেরিতে উপস্থিতি' : 'Late', 
           color: 'bg-amber-500/15 text-amber-400 border border-amber-500/30' 
         };
       case 'Half Day':
         return { 
-          label: 'হাফ ডে', 
+          label: language === 'bn' ? 'হাফ ডে' : 'Half Day', 
           color: 'bg-blue-500/15 text-blue-400 border border-blue-500/30' 
         };
       case 'Leave':
         return { 
-          label: 'ছুটি', 
+          label: language === 'bn' ? 'ছুটি' : 'Leave', 
           color: 'bg-purple-500/15 text-purple-400 border border-purple-500/30' 
         };
       case 'Absent':
         return { 
-          label: 'অনুপস্থিত', 
+          label: language === 'bn' ? 'অনুপস্থিত' : 'Absent', 
           color: 'bg-rose-500/15 text-rose-400 border border-rose-500/30' 
         };
       default:
@@ -168,7 +171,7 @@ export default function StaffAttendancePage() {
       setHistoryRecords(historyList);
     } catch (e) {
       console.error('Error loading staff attendance:', e);
-      toast.error('হাজিরার তথ্য লোড করতে সমস্যা হয়েছে।');
+      toast.error(language === 'bn' ? 'হাজিরার তথ্য লোড করতে সমস্যা হয়েছে।' : 'Failed to load attendance data.');
     } finally {
       setLoading(false);
     }
@@ -264,12 +267,12 @@ export default function StaffAttendancePage() {
     calculateElapsed();
     const interval = setInterval(calculateElapsed, 30000); // Update every 30s
     return () => clearInterval(interval);
-  }, [todayRecord]);
+  }, [todayRecord, language]);
 
   // Check In Handler with GPS & Wi-Fi Lock Verification
   const handleCheckIn = async () => {
     if (!user?.email || !user?.name) {
-      toast.error('ইউজার সেশন পাওয়া যায়নি। পুনরায় লগইন করুন।');
+      toast.error(language === 'bn' ? 'ইউজার সেশন পাওয়া যায়নি। পুনরায় লগইন করুন।' : 'User session not found. Please log in again.');
       return;
     }
 
@@ -280,7 +283,7 @@ export default function StaffAttendancePage() {
       const verification = await attendanceSecurityService.verifyAttendanceAccess('Technician', false);
       
       if (!verification.allowed) {
-        toast.error(verification.error || 'হাজিরা লক সক্রিয়: আপনি দোকানের বাইরে আছেন।', { duration: 6000 });
+        toast.error(verification.error || (language === 'bn' ? 'হাজিরা লক সক্রিয়: আপনি দোকানের বাইরে আছেন।' : 'Attendance lock active: You are outside the shop boundary.'), { duration: 6000 });
         checkLiveSecurity();
         return;
       }
@@ -303,14 +306,14 @@ export default function StaffAttendancePage() {
       setTodayRecord(newRecord);
       setNoteInput('');
       setShowNoteInput(false);
-      toast.success('🎉 শুভ সকাল! আজকের হাজিরা গ্রহণ করা হয়েছে।', { duration: 4000 });
+      toast.success(language === 'bn' ? '🎉 শুভ সকাল! আজকের হাজিরা গ্রহণ করা হয়েছে।' : '🎉 Good morning! Checked in successfully.', { duration: 4000 });
       
       // Reload history
       const historyList = await attendanceService.getStaffHistory(user.email);
       setHistoryRecords(historyList);
     } catch (err: any) {
       console.error('Check in failed:', err);
-      toast.error(err.message || 'হাজিরা গ্রহণে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+      toast.error(err.message || (language === 'bn' ? 'হাজিরা গ্রহণে সমস্যা হয়েছে। আবার চেষ্টা করুন।' : 'Failed to record attendance. Please try again.'));
     } finally {
       setActionLoading(false);
     }
@@ -327,7 +330,7 @@ export default function StaffAttendancePage() {
     try {
       setActionLoading(true);
       await attendanceService.checkOut(user.email, noteInput.trim() || undefined);
-      toast.success('👋 আজকের মতো ছুটি সম্পন্ন হয়েছে। শুভ বিদায়!', { duration: 4000 });
+      toast.success(language === 'bn' ? '👋 আজকের মতো ছুটি সম্পন্ন হয়েছে। শুভ বিদায়!' : '👋 Checked out successfully. Have a great day!', { duration: 4000 });
       
       // Reload data
       await loadAttendanceData();
@@ -336,7 +339,7 @@ export default function StaffAttendancePage() {
       setShowCheckOutConfirm(false);
     } catch (err: any) {
       console.error('Check out failed:', err);
-      toast.error(err.message || 'চেক-আউটে সমস্যা হয়েছে।');
+      toast.error(err.message || (language === 'bn' ? 'চেক-আউটে সমস্যা হয়েছে।' : 'Failed to check out.'));
     } finally {
       setActionLoading(false);
     }
@@ -390,9 +393,11 @@ export default function StaffAttendancePage() {
       totalDays,
       presentDays,
       lateDays,
-      totalWorkingHours: `${totalHours} ঘণ্টা ${totalRemainingMinutes} মি`
+      totalWorkingHours: language === 'bn' 
+        ? `${totalHours} ঘণ্টা ${totalRemainingMinutes} মি` 
+        : `${totalHours}h ${totalRemainingMinutes}m`
     };
-  }, [historyRecords]);
+  }, [historyRecords, language]);
 
   // Is security ready to check in?
   const isSecurityReady = useMemo(() => {
@@ -412,7 +417,9 @@ export default function StaffAttendancePage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] w-full gap-3 text-gray-400">
         <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-        <p className="text-sm">সেটিংস কর্মী ব্যবস্থাপনায় রিডাইরেক্ট করা হচ্ছে...</p>
+        <p className="text-sm">
+          {language === 'bn' ? 'সেটিংস কর্মী ব্যবস্থাপনায় রিডাইরেক্ট করা হচ্ছে...' : 'Redirecting to staff management...'}
+        </p>
       </div>
     );
   }
@@ -424,11 +431,12 @@ export default function StaffAttendancePage() {
       <div className="flex items-center justify-between py-1 px-1">
         <div>
           <h1 className="text-lg sm:text-xl font-extrabold text-white">
-            আসসালামু আলাইকুম, <span className="text-blue-400">{user?.name || 'সহকর্মী'}</span>! 👋
+            {language === 'bn' ? 'আসসালামু আলাইকুম' : 'Hello'},{' '}
+            <span className="text-blue-400">{user?.name || (language === 'bn' ? 'সহকর্মী' : 'Colleague')}</span>! 👋
           </h1>
           <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5 text-blue-400" />
-            <span>{currentDateFormatted || 'আজকের দিন'}</span>
+            <span>{currentDateFormatted || (language === 'bn' ? 'আজকের দিন' : 'Today')}</span>
           </p>
         </div>
       </div>
@@ -438,14 +446,20 @@ export default function StaffAttendancePage() {
         {loading ? (
           <div className="py-10 flex flex-col items-center justify-center gap-2.5 text-gray-400">
             <Loader2 className="w-7 h-7 animate-spin text-blue-500" />
-            <p className="text-xs font-medium">হাজিরা লোড হচ্ছে...</p>
+            <p className="text-xs font-medium">
+              {language === 'bn' ? 'হাজিরা লোড হচ্ছে...' : 'Loading attendance...'}
+            </p>
           </div>
         ) : !todayRecord ? (
           /* STATE A: NOT CHECKED IN YET */
           <div className="space-y-4 text-center sm:text-left">
             <div>
-              <h2 className="text-lg sm:text-xl font-bold text-white">আজকের হাজিরা শুরু করুন</h2>
-              <p className="text-xs text-gray-400 mt-0.5">দোকানে পৌঁছানোর পর নিচের বাটনে চাপ দিন।</p>
+              <h2 className="text-lg sm:text-xl font-bold text-white">
+                {language === 'bn' ? 'আজকের হাজিরা শুরু করুন' : 'Start Today\'s Attendance'}
+              </h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {language === 'bn' ? 'দোকানে পৌঁছানোর পর নিচের বাটনে চাপ দিন।' : 'Click the button below after arriving at the shop.'}
+              </p>
             </div>
 
             {/* Big Punch-In Button */}
@@ -457,12 +471,12 @@ export default function StaffAttendancePage() {
               {actionLoading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>যাচাই ও হাজিরা গ্রহণ হচ্ছে...</span>
+                  <span>{language === 'bn' ? 'যাচাই ও হাজিরা গ্রহণ হচ্ছে...' : 'Verifying and checking in...'}</span>
                 </>
               ) : (
                 <>
                   <LogIn className="w-5 h-5" />
-                  <span>হাজিরা দিন (Check In)</span>
+                  <span>{language === 'bn' ? 'হাজিরা দিন (Check In)' : 'Check In'}</span>
                 </>
               )}
             </Button>
@@ -473,12 +487,12 @@ export default function StaffAttendancePage() {
                 {isSecurityReady ? (
                   <span className="inline-flex items-center gap-1 text-emerald-400 font-medium">
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    দোকানের ভেতরে আছেন (প্রস্তুত)
+                    {language === 'bn' ? 'দোকানের ভেতরে আছেন (প্রস্তুত)' : 'Inside shop area (Ready)'}
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 text-amber-400 font-medium">
                     <AlertTriangle className="w-3.5 h-3.5" />
-                    দোকানের Wi-Fi বা লোকেশন চালু করুন
+                    {language === 'bn' ? 'দোকানের Wi-Fi বা লোকেশন চালু করুন' : 'Turn on shop Wi-Fi or GPS location'}
                   </span>
                 )}
               </div>
@@ -492,7 +506,7 @@ export default function StaffAttendancePage() {
                   onClick={() => setShowNoteInput(true)}
                   className="text-[11px] text-gray-400 hover:text-blue-400 underline underline-offset-2 transition-colors"
                 >
-                  + মন্তব্য বা কাজের বিবরণ লিখুন (ঐচ্ছিক)
+                  {language === 'bn' ? '+ মন্তব্য বা কাজের বিবরণ লিখুন (ঐচ্ছিক)' : '+ Add note or work description (Optional)'}
                 </button>
               ) : (
                 <div className="space-y-1.5 pt-1">
@@ -500,7 +514,7 @@ export default function StaffAttendancePage() {
                     type="text"
                     value={noteInput}
                     onChange={(e) => setNoteInput(e.target.value)}
-                    placeholder="মন্তব্য লিখুন (যেমন: সকালের শিফট)..."
+                    placeholder={language === 'bn' ? 'মন্তব্য লিখুন (যেমন: সকালের শিফট)...' : 'Write a note (e.g. morning shift)...'}
                     className="w-full bg-[#181d2e] border border-gray-700/80 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-blue-500 transition-colors"
                   />
                   <button
@@ -508,7 +522,7 @@ export default function StaffAttendancePage() {
                     onClick={() => { setShowNoteInput(false); setNoteInput(''); }}
                     className="text-[10px] text-gray-500 hover:text-gray-400"
                   >
-                    বাদ দিন
+                    {language === 'bn' ? 'বাদ দিন' : 'Cancel'}
                   </button>
                 </div>
               )}
@@ -520,7 +534,7 @@ export default function StaffAttendancePage() {
             <div className="flex items-center justify-between">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                ডিউটি চলছে
+                {language === 'bn' ? 'ডিউটি চলছে' : 'On Duty'}
               </span>
               <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${getStatusBadge(todayRecord.status).color}`}>
                 {getStatusBadge(todayRecord.status).label}
@@ -530,13 +544,17 @@ export default function StaffAttendancePage() {
             {/* Live Timer Display */}
             <div className="bg-[#181d2e] p-4 rounded-xl border border-gray-800 flex items-center justify-between">
               <div>
-                <div className="text-[11px] text-gray-400 font-semibold uppercase">চলমান কাজের সময়</div>
+                <div className="text-[11px] text-gray-400 font-semibold uppercase">
+                  {language === 'bn' ? 'চলমান কাজের সময়' : 'Working Time'}
+                </div>
                 <div className="text-xl sm:text-2xl font-bold text-emerald-400 font-mono mt-0.5">
-                  {elapsedWorkingTime || 'গণনা হচ্ছে...'}
+                  {elapsedWorkingTime || (language === 'bn' ? 'গণনা হচ্ছে...' : 'Calculating...')}
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-[11px] text-gray-400 font-semibold uppercase">প্রবেশের সময়</div>
+                <div className="text-[11px] text-gray-400 font-semibold uppercase">
+                  {language === 'bn' ? 'প্রবেশের সময়' : 'Check-In Time'}
+                </div>
                 <div className="text-sm sm:text-base font-bold text-white font-mono mt-0.5">
                   {todayRecord.checkInTime}
                 </div>
@@ -553,12 +571,12 @@ export default function StaffAttendancePage() {
               {actionLoading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>ছুটি সম্পন্ন হচ্ছে...</span>
+                  <span>{language === 'bn' ? 'ছুটি সম্পন্ন হচ্ছে...' : 'Checking out...'}</span>
                 </>
               ) : (
                 <>
                   <LogOut className="w-5 h-5" />
-                  <span>ছুটি নিন (Check Out)</span>
+                  <span>{language === 'bn' ? 'ছুটি নিন (Check Out)' : 'Check Out'}</span>
                 </>
               )}
             </Button>
@@ -571,7 +589,7 @@ export default function StaffAttendancePage() {
                   onClick={() => setShowNoteInput(true)}
                   className="text-[11px] text-gray-400 hover:text-rose-400 underline underline-offset-2 transition-colors"
                 >
-                  + প্রস্থান নোট লিখুন (ঐচ্ছিক)
+                  {language === 'bn' ? '+ প্রস্থান নোট লিখুন (ঐচ্ছিক)' : '+ Add checkout note (Optional)'}
                 </button>
               ) : (
                 <div className="space-y-1.5 pt-1">
@@ -579,7 +597,7 @@ export default function StaffAttendancePage() {
                     type="text"
                     value={noteInput}
                     onChange={(e) => setNoteInput(e.target.value)}
-                    placeholder="প্রস্থান নোট লিখুন..."
+                    placeholder={language === 'bn' ? 'প্রস্থান নোট লিখুন...' : 'Write checkout note...'}
                     className="w-full bg-[#181d2e] border border-gray-700/80 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-rose-500 transition-colors"
                   />
                   <button
@@ -587,7 +605,7 @@ export default function StaffAttendancePage() {
                     onClick={() => { setShowNoteInput(false); setNoteInput(''); }}
                     className="text-[10px] text-gray-500 hover:text-gray-400"
                   >
-                    বাদ দিন
+                    {language === 'bn' ? 'বাদ দিন' : 'Cancel'}
                   </button>
                 </div>
               )}
@@ -599,7 +617,7 @@ export default function StaffAttendancePage() {
             <div className="flex items-center justify-between">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
                 <Check className="w-3.5 h-3.5" />
-                আজকের ডিউটি সমাপ্ত
+                {language === 'bn' ? 'আজকের ডিউটি সমাপ্ত' : 'Duty Completed Today'}
               </span>
               <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${getStatusBadge(todayRecord.status).color}`}>
                 {getStatusBadge(todayRecord.status).label}
@@ -609,21 +627,29 @@ export default function StaffAttendancePage() {
             {/* 3 Metric Pills */}
             <div className="grid grid-cols-3 gap-2 bg-[#181d2e] p-3 rounded-xl border border-gray-800 text-center">
               <div>
-                <div className="text-[10px] text-gray-400 font-semibold uppercase">প্রবেশ</div>
+                <div className="text-[10px] text-gray-400 font-semibold uppercase">
+                  {language === 'bn' ? 'প্রবেশ' : 'In'}
+                </div>
                 <div className="text-sm font-bold text-white font-mono mt-0.5">{todayRecord.checkInTime}</div>
               </div>
               <div>
-                <div className="text-[10px] text-gray-400 font-semibold uppercase">প্রস্থান</div>
+                <div className="text-[10px] text-gray-400 font-semibold uppercase">
+                  {language === 'bn' ? 'প্রস্থান' : 'Out'}
+                </div>
                 <div className="text-sm font-bold text-rose-300 font-mono mt-0.5">{todayRecord.checkOutTime}</div>
               </div>
               <div>
-                <div className="text-[10px] text-gray-400 font-semibold uppercase">মোট সময়</div>
+                <div className="text-[10px] text-gray-400 font-semibold uppercase">
+                  {language === 'bn' ? 'মোট সময়' : 'Total Time'}
+                </div>
                 <div className="text-sm font-bold text-emerald-400 font-mono mt-0.5">{formatBanglaHours(todayRecord.workingHours)}</div>
               </div>
             </div>
 
             <p className="text-xs text-gray-400 pt-0.5">
-              ✅ আজকের হাজিরা সফলভাবে সম্পন্ন হয়েছে। কাল আবার দেখা হবে!
+              {language === 'bn' 
+                ? '✅ আজকের হাজিরা সফলভাবে সম্পন্ন হয়েছে। কাল আবার দেখা হবে!' 
+                : '✅ Today\'s attendance completed successfully. See you tomorrow!'}
             </p>
           </div>
         )}
@@ -632,24 +658,30 @@ export default function StaffAttendancePage() {
       {/* 3. Monthly Summary at a Glance (4 Compact Badges) */}
       <div className="bg-[#131724] border border-gray-800 rounded-2xl p-4 shadow-md space-y-2">
         <div className="text-xs font-bold text-gray-300 flex items-center justify-between">
-          <span>চলতি মাসের হিসাব</span>
-          <span className="text-[11px] text-gray-400 font-normal">এই মাস</span>
+          <span>{language === 'bn' ? 'চলতি মাসের হিসাব' : 'This Month Summary'}</span>
+          <span className="text-[11px] text-gray-400 font-normal">{language === 'bn' ? 'এই মাস' : 'This Month'}</span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
           <div className="bg-[#0e111a] p-2.5 rounded-xl border border-gray-800/80">
-            <div className="text-[10px] text-gray-400">উপস্থিত</div>
-            <div className="text-base sm:text-lg font-bold text-emerald-400 font-mono mt-0.5">{monthlyStats.presentDays} দিন</div>
+            <div className="text-[10px] text-gray-400">{language === 'bn' ? 'উপস্থিত' : 'Present'}</div>
+            <div className="text-base sm:text-lg font-bold text-emerald-400 font-mono mt-0.5">
+              {monthlyStats.presentDays} {language === 'bn' ? 'দিন' : 'days'}
+            </div>
           </div>
           <div className="bg-[#0e111a] p-2.5 rounded-xl border border-gray-800/80">
-            <div className="text-[10px] text-gray-400">দেরি</div>
-            <div className="text-base sm:text-lg font-bold text-amber-400 font-mono mt-0.5">{monthlyStats.lateDays} দিন</div>
+            <div className="text-[10px] text-gray-400">{language === 'bn' ? 'দেরি' : 'Late'}</div>
+            <div className="text-base sm:text-lg font-bold text-amber-400 font-mono mt-0.5">
+              {monthlyStats.lateDays} {language === 'bn' ? 'দিন' : 'days'}
+            </div>
           </div>
           <div className="bg-[#0e111a] p-2.5 rounded-xl border border-gray-800/80">
-            <div className="text-[10px] text-gray-400">মোট দিন</div>
-            <div className="text-base sm:text-lg font-bold text-blue-400 font-mono mt-0.5">{monthlyStats.totalDays} দিন</div>
+            <div className="text-[10px] text-gray-400">{language === 'bn' ? 'মোট দিন' : 'Total Days'}</div>
+            <div className="text-base sm:text-lg font-bold text-blue-400 font-mono mt-0.5">
+              {monthlyStats.totalDays} {language === 'bn' ? 'দিন' : 'days'}
+            </div>
           </div>
           <div className="bg-[#0e111a] p-2.5 rounded-xl border border-gray-800/80">
-            <div className="text-[10px] text-gray-400">মোট সময়</div>
+            <div className="text-[10px] text-gray-400">{language === 'bn' ? 'মোট সময়' : 'Total Hours'}</div>
             <div className="text-xs sm:text-sm font-bold text-purple-300 font-mono mt-1 truncate">{monthlyStats.totalWorkingHours}</div>
           </div>
         </div>
@@ -660,14 +692,20 @@ export default function StaffAttendancePage() {
         <div className="p-3.5 px-4 border-b border-gray-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <History className="w-4 h-4 text-blue-400" />
-            <h3 className="font-bold text-white text-xs sm:text-sm">পূর্ববর্তী হাজিরার ইতিহাস</h3>
+            <h3 className="font-bold text-white text-xs sm:text-sm">
+              {language === 'bn' ? 'পূর্ববর্তী হাজিরার ইতিহাস' : 'Recent Attendance History'}
+            </h3>
           </div>
-          <span className="text-[11px] text-gray-400">সর্বশেষ {Math.min(historyRecords.length, 10)} দিন</span>
+          <span className="text-[11px] text-gray-400">
+            {language === 'bn' 
+              ? `সর্বশেষ ${Math.min(historyRecords.length, 10)} দিন` 
+              : `Last ${Math.min(historyRecords.length, 10)} days`}
+          </span>
         </div>
 
         {historyRecords.length === 0 ? (
           <div className="p-6 text-center text-gray-500 text-xs">
-            এখনও কোনো হাজিরার রেকর্ড নেই।
+            {language === 'bn' ? 'এখনও কোনো হাজিরার রেকর্ড নেই।' : 'No attendance records yet.'}
           </div>
         ) : (
           <div className="divide-y divide-gray-800/60">
@@ -693,9 +731,9 @@ export default function StaffAttendancePage() {
       {/* 5. Dedicated Profile Information Section (Dokaner Nam, Email & Log Out) - Placed at the very bottom */}
       <div className="bg-[#131724] border border-gray-800 rounded-2xl p-4 sm:p-5 shadow-md space-y-3">
         <div className="text-xs font-bold text-gray-300 flex items-center justify-between">
-          <span>আমার প্রোফাইল ও অ্যাকাউন্ট</span>
+          <span>{language === 'bn' ? 'আমার প্রোফাইল ও অ্যাকাউন্ট' : 'My Profile & Account'}</span>
           <span className="text-[10px] font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 rounded-full">
-            {user?.role || 'টেকনিশিয়ান'}
+            {user?.role ? (language === 'bn' && user.role === 'Technician' ? 'টেকনিশিয়ান' : user.role) : (language === 'bn' ? 'টেকনিশিয়ান' : 'Technician')}
           </span>
         </div>
 
@@ -706,7 +744,9 @@ export default function StaffAttendancePage() {
               <Store className="w-4 h-4" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] text-gray-400 font-semibold uppercase">দোকানের নাম</div>
+              <div className="text-[10px] text-gray-400 font-semibold uppercase">
+                {language === 'bn' ? 'দোকানের নাম' : 'Shop Name'}
+              </div>
               <div className="text-xs sm:text-sm font-bold text-white truncate">{shop?.shopName || 'Shop Name'}</div>
             </div>
           </div>
@@ -717,7 +757,9 @@ export default function StaffAttendancePage() {
               <Mail className="w-4 h-4" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] text-gray-400 font-semibold uppercase">ইমেইল অ্যাকাউন্ট</div>
+              <div className="text-[10px] text-gray-400 font-semibold uppercase">
+                {language === 'bn' ? 'ইমেইল অ্যাকাউন্ট' : 'Email Account'}
+              </div>
               <div className="text-xs sm:text-sm font-medium text-gray-200 truncate">{user?.email || 'N/A'}</div>
             </div>
           </div>
@@ -731,7 +773,11 @@ export default function StaffAttendancePage() {
           className="w-full h-11 bg-red-600/15 hover:bg-red-600/25 text-red-400 hover:text-red-300 border border-red-500/30 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.99] mt-1"
         >
           <LogOut className="w-4 h-4" />
-          <span>{loggingOut ? 'লগআউট হচ্ছে...' : 'অ্যাকাউন্ট থেকে লগআউট (Log Out)'}</span>
+          <span>
+            {loggingOut 
+              ? (language === 'bn' ? 'লগআউট হচ্ছে...' : 'Logging out...') 
+              : (language === 'bn' ? 'অ্যাকাউন্ট থেকে লগআউট (Log Out)' : 'Log Out from Account')}
+          </span>
         </Button>
       </div>
 
@@ -740,10 +786,10 @@ export default function StaffAttendancePage() {
         isOpen={showLogoutConfirm}
         onClose={() => setShowLogoutConfirm(false)}
         onConfirm={handleConfirmLogout}
-        title="লগআউট নিশ্চিত করুন"
-        message="আপনি কি নিশ্চিত যে আপনার অ্যাকাউন্ট থেকে লগআউট করতে চান?"
-        confirmText="লগআউট করুন"
-        cancelText="বাতিল"
+        title={language === 'bn' ? 'লগআউট নিশ্চিত করুন' : 'Confirm Logout'}
+        message={language === 'bn' ? 'আপনি কি নিশ্চিত যে আপনার অ্যাকাউন্ট থেকে লগআউট করতে চান?' : 'Are you sure you want to log out from your account?'}
+        confirmText={language === 'bn' ? 'লগআউট করুন' : 'Log Out'}
+        cancelText={language === 'bn' ? 'বাতিল' : 'Cancel'}
         variant="warning"
       />
 
@@ -752,10 +798,10 @@ export default function StaffAttendancePage() {
         isOpen={showCheckOutConfirm}
         onClose={() => setShowCheckOutConfirm(false)}
         onConfirm={handleConfirmCheckOut}
-        title="ছুটি (Check Out) নিশ্চিত করুন"
-        message="আপনি কি আজকের মতো কাজ শেষ করে প্রস্থান (Check Out) করতে চান?"
-        confirmText="হ্যাঁ, প্রস্থান করব"
-        cancelText="না, কাজ বাকি আছে"
+        title={language === 'bn' ? 'ছুটি (Check Out) নিশ্চিত করুন' : 'Confirm Check Out'}
+        message={language === 'bn' ? 'আপনি কি আজকের মতো কাজ শেষ করে প্রস্থান (Check Out) করতে চান?' : 'Are you sure you want to finish work and check out for today?'}
+        confirmText={language === 'bn' ? 'হ্যাঁ, প্রস্থান করব' : 'Yes, Check Out'}
+        cancelText={language === 'bn' ? 'না, কাজ বাকি আছে' : 'No, Keep Working'}
         variant="warning"
       />
 

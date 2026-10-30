@@ -6,15 +6,17 @@ import { AlertCircle, Coins, CheckCircle, Truck } from 'lucide-react';
 import { collection, query, where, getCountFromServer, getDocs, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatCurrency } from '@/lib/currency';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import Link from 'next/link';
 
 export function QuickAlerts() {
+  const { t, isBangla } = useTranslation();
   const lastFetchTimeRef = useRef<number>(0);
   const [alerts, setAlerts] = useState<any[]>([
     {
       id: 1,
-      title: 'কম স্টক সতর্কতা',
-      desc: 'লোড হচ্ছে...',
+      title: isBangla ? 'কম স্টক সতর্কতা' : 'Low Stock Warning',
+      desc: isBangla ? 'লোড হচ্ছে...' : 'Loading...',
       icon: AlertCircle,
       count: 0,
       color: 'text-gray-400',
@@ -24,8 +26,8 @@ export function QuickAlerts() {
     },
     {
       id: 2,
-      title: 'গ্রাহকদের বকেয়া',
-      desc: 'লোড হচ্ছে...',
+      title: isBangla ? 'গ্রাহকদের বকেয়া' : 'Customer Dues',
+      desc: isBangla ? 'লোড হচ্ছে...' : 'Loading...',
       icon: Coins,
       count: 0,
       color: 'text-gray-400',
@@ -35,8 +37,8 @@ export function QuickAlerts() {
     },
     {
       id: 3,
-      title: 'ডেলিভারি প্রস্তুত',
-      desc: 'লোড হচ্ছে...',
+      title: isBangla ? 'ডেলিভারি প্রস্তুত' : 'Ready for Delivery',
+      desc: isBangla ? 'লোড হচ্ছে...' : 'Loading...',
       icon: CheckCircle,
       count: 0,
       color: 'text-gray-400',
@@ -129,8 +131,10 @@ export function QuickAlerts() {
         const alertList: any[] = [
           {
             id: 1,
-            title: 'কম স্টক সতর্কতা',
-            desc: lowStockCount > 0 ? `${lowStockCount}টি পার্টসের স্টক কমে গেছে` : 'স্টক সন্তোষজনক',
+            title: isBangla ? 'কম স্টক সতর্কতা' : 'Low Stock Warning',
+            desc: lowStockCount > 0 
+              ? (isBangla ? `${lowStockCount}টি পার্টসের স্টক কমে গেছে` : `${lowStockCount} parts running low in stock`) 
+              : (isBangla ? 'স্টক সন্তোষজনক' : 'Stock level healthy'),
             icon: AlertCircle,
             count: lowStockCount,
             color: lowStockCount > 0 ? 'text-red-500' : 'text-gray-400',
@@ -140,17 +144,17 @@ export function QuickAlerts() {
           },
           {
             id: 2,
-            title: 'গ্রাহকদের বকেয়া',
+            title: isBangla ? 'গ্রাহকদের বকেয়া' : 'Customer Dues',
             desc: dueCount > 0 ? (
                 <span>
-                  {dueCount} জনের কাছে বকেয়া 
+                  {dueCount} {isBangla ? 'জনের কাছে বকেয়া' : 'customers with dues'} 
                   {closeDueDateCount > 0 && (
                     <span className="text-red-400 font-semibold ml-1">
-                      ({closeDueDateCount} জনের মেয়াদ শেষ)
+                      ({closeDueDateCount} {isBangla ? 'জনের মেয়াদ শেষ' : 'overdue'})
                     </span>
                   )}
                 </span>
-              ) : 'কোনো বকেয়া নেই',
+              ) : (isBangla ? 'কোনো বকেয়া নেই' : 'No pending dues'),
             icon: Coins,
             count: dueCount,
             color: dueCount > 0 ? 'text-orange-500' : 'text-gray-400',
@@ -160,8 +164,10 @@ export function QuickAlerts() {
           },
           {
             id: 3,
-            title: 'ডেলিভারি প্রস্তুত',
-            desc: readyCount > 0 ? `${readyCount}টি ডিভাইস ডেলিভারির জন্য প্রস্তুত` : 'কোনো ডিভাইস ডেলিভারি বাকি নেই',
+            title: isBangla ? 'ডেলিভারি প্রস্তুত' : 'Ready for Delivery',
+            desc: readyCount > 0 
+              ? (isBangla ? `${readyCount}টি ডিভাইস ডেলিভারির জন্য প্রস্তুত` : `${readyCount} devices ready for delivery`) 
+              : (isBangla ? 'কোনো ডিভাইস ডেলিভারি বাকি নেই' : 'No devices pending delivery'),
             icon: CheckCircle,
             count: readyCount,
             color: readyCount > 0 ? 'text-emerald-400' : 'text-gray-400',
@@ -174,8 +180,8 @@ export function QuickAlerts() {
         if (supplierDueCount > 0) {
           alertList.push({
             id: 4,
-            title: 'মহাজন/সাপ্লায়ার দেনা',
-            desc: `${supplierDueCount} জন মহাজনের মোট ${formatCurrency(supplierTotalDue)} দেনা`,
+            title: isBangla ? 'মহাজন/সাপ্লায়ার দেনা' : 'Supplier Payable Dues',
+            desc: isBangla ? `${supplierDueCount} জন মহাজনের মোট ${formatCurrency(supplierTotalDue)} দেনা` : `${supplierDueCount} suppliers payable (${formatCurrency(supplierTotalDue)})`,
             icon: Truck,
             count: supplierDueCount,
             color: 'text-amber-400',
@@ -228,10 +234,10 @@ export function QuickAlerts() {
             <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
               <AlertCircle className="w-4 h-4 text-orange-500" />
             </div>
-            <span>জরুরি নোটিফিকেশন</span>
+            <span>{isBangla ? 'জরুরি নোটিফিকেশন' : 'Alert Center'}</span>
           </h3>
           <Link href="/reports" className="text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1">
-            <span>সকল রিপোর্ট</span>
+            <span>{t('nav.reports')}</span>
             <span className="text-[10px]">→</span>
           </Link>
         </div>

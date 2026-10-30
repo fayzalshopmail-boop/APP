@@ -10,6 +10,7 @@ import {
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 interface ConfirmModalProps {
  isOpen: boolean;
@@ -29,17 +30,23 @@ export function ConfirmModal({
  isOpen, 
  onClose, 
  onConfirm, 
- title = "Are you sure?", 
- message = "This action cannot be undone. Do you want to proceed?", 
- confirmText = "Confirm", 
- cancelText = "Cancel",
+ title, 
+ message, 
+ confirmText, 
+ cancelText,
  variant = 'danger',
  requireMatchString,
  requireMatchPlaceholder,
  children
 }: ConfirmModalProps) {
+ const { t, language } = useTranslation();
  const [isLoading, setIsLoading] = useState(false);
  const [matchInput, setMatchInput] = useState('');
+
+ const displayTitle = title || (language === 'bn' ? 'আপনি কি নিশ্চিত?' : 'Are you sure?');
+ const displayMessage = message || (language === 'bn' ? 'এই কাজটি স্থায়ী এবং এটি ফেরানো যাবে না। আপনি কি এগিয়ে যেতে চান?' : 'This action cannot be undone. Do you want to proceed?');
+ const displayConfirmText = confirmText || (language === 'bn' ? 'নিশ্চিত করুন' : 'Confirm');
+ const displayCancelText = cancelText || t('common.cancel');
 
  useEffect(() => {
    if (isOpen) {
@@ -76,9 +83,9 @@ export function ConfirmModal({
  </div>
  
  <div className="space-y-2">
- <DialogTitle className="text-xl font-bold tracking-tight m-0">{title}</DialogTitle>
+ <DialogTitle className="text-xl font-bold tracking-tight m-0">{displayTitle}</DialogTitle>
  <DialogDescription className="text-gray-400 text-sm leading-relaxed">
- {message}
+ {displayMessage}
  </DialogDescription>
  </div>
  </div>
@@ -92,13 +99,15 @@ export function ConfirmModal({
  {requireMatchString && (
    <div className="space-y-2 text-left w-full mt-4 bg-background/50 p-3 rounded-xl border border-gray-800">
      <label className="text-xs text-gray-400 block">
-       নিশ্চিত করতে নিচে <span className="font-mono font-bold text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/20">{requireMatchString}</span> লিখুন:
+       {language === 'bn' 
+         ? <>নিশ্চিত করতে নিচে <span className="font-mono font-bold text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/20">{requireMatchString}</span> লিখুন:</>
+         : <>To confirm, type <span className="font-mono font-bold text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/20">{requireMatchString}</span> below:</>}
      </label>
      <Input
        type="text"
        value={matchInput}
        onChange={(e) => setMatchInput(e.target.value)}
-       placeholder={requireMatchPlaceholder || `Type "${requireMatchString}" here`}
+       placeholder={requireMatchPlaceholder || (language === 'bn' ? `এখানে "${requireMatchString}" লিখুন` : `Type "${requireMatchString}" here`)}
        className="bg-card border-gray-800 text-white font-mono text-center tracking-wider focus:border-red-500/50"
        autoFocus
      />
@@ -107,7 +116,7 @@ export function ConfirmModal({
 
  <div className="flex items-center gap-3 mt-6">
  <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading} className="flex-1">
- {cancelText}
+ {displayCancelText}
  </Button>
  <Button 
  onClick={handleConfirm}
@@ -119,7 +128,7 @@ export function ConfirmModal({
  }`}
  >
  {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
- {isLoading ? 'Processing...' : confirmText}
+ {isLoading ? (language === 'bn' ? 'প্রক্রিয়াধীন...' : 'Processing...') : displayConfirmText}
  </Button>
  </div>
  </div>

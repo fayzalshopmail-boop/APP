@@ -16,12 +16,14 @@ import { CustomSelect } from "@/components/ui/CustomSelect";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { getLocalDateString } from '@/lib/utils';
 import { useAppStore } from '@/store/useAppStore';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import toast from "react-hot-toast";
 
 type FilterType = 'all' | 'pending' | 'paid' | 'given' | 'taken';
 
 export default function LoansPage() {
   const { user } = useAppStore();
+  const { t, language } = useTranslation();
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -76,7 +78,7 @@ export default function LoansPage() {
       setLoans(data);
     } catch (err) {
       console.error(err);
-      toast.error("Failed to load loan records.");
+      toast.error(language === 'bn' ? 'ঋণ ও হাওলাত লোড করতে ব্যর্থ হয়েছে।' : 'Failed to load loan records.');
     } finally {
       setLoading(false);
     }
@@ -130,14 +132,14 @@ export default function LoansPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.personName.trim() || formData.amount <= 0) {
-      return toast.error("Please fill required fields properly.");
+      return toast.error(language === 'bn' ? 'অনুগ্রহ করে প্রয়োজনীয় তথ্য সঠিকভাবে পূরণ করুন।' : 'Please fill required fields properly.');
     }
 
     try {
       if (editingLoan) {
         await loanService.update(editingLoan.id, formData);
         setLoans(prev => prev.map(l => l.id === editingLoan.id ? { ...l, ...formData } as Loan : l));
-        toast.success("Loan updated!");
+        toast.success(language === 'bn' ? 'রেকর্ড আপডেট করা হয়েছে!' : 'Loan updated!');
       } else {
         const newId = await loanService.add(formData);
         const newLoan: Loan = { 
@@ -148,17 +150,17 @@ export default function LoansPage() {
             amount: formData.amount,
             date: new Date().toISOString(),
             type: formData.type,
-            note: 'Initial entry'
+            note: language === 'bn' ? 'প্রাথমিক এন্ট্রি' : 'Initial entry'
           }],
           createdAt: new Date() 
         };
         setLoans(prev => [newLoan, ...prev]);
-        toast.success("Loan recorded!");
+        toast.success(language === 'bn' ? 'নতুন রেকর্ড সংরক্ষিত হয়েছে!' : 'Loan recorded!');
       }
       closeLoanModal();
     } catch (error) {
       console.error(error);
-      toast.error("Failed to save loan.");
+      toast.error(language === 'bn' ? 'রেকর্ড সংরক্ষণ করতে সমস্যা হয়েছে।' : 'Failed to save loan.');
     }
   };
 
@@ -166,20 +168,20 @@ export default function LoansPage() {
     try {
       await loanService.delete(id);
       setLoans(prev => prev.filter(l => l.id !== id));
-      toast.success("Loan deleted!");
+      toast.success(language === 'bn' ? 'রেকর্ড মুছে ফেলা হয়েছে!' : 'Loan deleted!');
       setDeleteId(null);
     } catch (error) {
       console.error(error);
-      toast.error("Failed to delete loan.");
+      toast.error(language === 'bn' ? 'রেকর্ড মুছতে সমস্যা হয়েছে।' : 'Failed to delete loan.');
     }
   };
 
   const handleAddPayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!paymentModalData || paymentAmount <= 0) return toast.error("Enter a valid amount");
+    if (!paymentModalData || paymentAmount <= 0) return toast.error(language === 'bn' ? 'সঠিক টাকার পরিমাণ লিখুন।' : 'Enter a valid amount');
     
     const remaining = paymentModalData.amount - (paymentModalData.paidAmount || 0);
-    if (paymentAmount > remaining) return toast.error(`Amount cannot exceed the remaining due (${remaining})`);
+    if (paymentAmount > remaining) return toast.error(language === 'bn' ? `টাকার পরিমাণ বাকি পাওনার (${remaining}৳) চেয়ে বেশি হতে পারে না` : `Amount cannot exceed the remaining due (${remaining})`);
 
     try {
       const { newPaid, status } = await loanService.addPayment(
@@ -205,16 +207,16 @@ export default function LoansPage() {
             amount: paymentAmount,
             date: new Date().toISOString(),
             type: 'Payment',
-            note: paymentNote.trim() || (paymentModalData.type === 'Taken' ? 'দেনা পরিশোধ করা হয়েছে' : 'পাওনা টাকা আদায় হয়েছে')
+            note: paymentNote.trim() || (paymentModalData.type === 'Taken' ? (language === 'bn' ? 'দেনা পরিশোধ করা হয়েছে' : 'Debt repaid') : (language === 'bn' ? 'পাওনা টাকা আদায় হয়েছে' : 'Due collected'))
           }
         ]
       } : l));
       
-      toast.success("Payment recorded!");
+      toast.success(language === 'bn' ? 'পেমেন্ট সফলভাবে সংরক্ষিত হয়েছে!' : 'Payment recorded!');
       closePaymentModal();
     } catch (error) {
       console.error(error);
-      toast.error("Failed to add payment.");
+      toast.error(language === 'bn' ? 'পেমেন্ট যোগ করতে ব্যর্থ হয়েছে।' : 'Failed to add payment.');
     }
   };
 
@@ -228,7 +230,7 @@ export default function LoansPage() {
       
       const smsSettings = await smsConfigService.getSettings();
       if (!smsSettings.enabled || !smsSettings.apiKey || !smsSettings.senderId) {
-        toast.error("SMS is disabled or not configured.");
+        toast.error(language === 'bn' ? 'এসএমএস কনফিগার করা নেই অথবা নিষ্ক্রিয় রয়েছে।' : 'SMS is disabled or not configured.');
         return;
       }
       
@@ -240,9 +242,9 @@ export default function LoansPage() {
       }
       
       if (!phone || phone.length < 11) {
-        const manualPhone = window.prompt(`Enter mobile number for ${loan.personName} to send SMS:`, loan.phone || "");
+        const manualPhone = window.prompt(language === 'bn' ? `${loan.personName}-কে এসএমএস পাঠাতে মোবাইল নম্বর লিখুন:` : `Enter mobile number for ${loan.personName} to send SMS:`, loan.phone || "");
         if (!manualPhone || manualPhone.replace(/\D/g, '').length < 10) {
-          toast.error("Valid phone number required.");
+          toast.error(language === 'bn' ? 'সঠিক মোবাইল নম্বর আবশ্যক।' : 'Valid phone number required.');
           return;
         }
         let clean = manualPhone.replace(/\D/g, '');
@@ -267,13 +269,13 @@ export default function LoansPage() {
       
       const result = await sendSMS([phone], msg, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
       if (result.success) {
-        toast.success("SMS Reminder sent!");
+        toast.success(language === 'bn' ? 'এসএমএস তাগাদা পাঠানো হয়েছে!' : 'SMS Reminder sent!');
       } else {
-        toast.error("Failed to send SMS.");
+        toast.error(language === 'bn' ? 'এসএমএস পাঠাতে ব্যর্থ হয়েছে।' : 'Failed to send SMS.');
       }
     } catch (e) {
       console.error(e);
-      toast.error("Error sending SMS.");
+      toast.error(language === 'bn' ? 'এসএমএস পাঠানোর সময় ত্রুটি হয়েছে।' : 'Error sending SMS.');
     } finally {
       setSendingSmsId(null);
     }
@@ -372,25 +374,29 @@ export default function LoansPage() {
         {/* Total Money Given (পাবো) */}
         <div className="bg-[#1a1d2d]/60 border border-orange-500/25 rounded-xl sm:rounded-2xl p-3 sm:p-6 relative overflow-hidden group">
           <div className="flex items-center justify-between mb-1 sm:mb-4">
-            <p className="text-[11px] sm:text-sm font-medium text-gray-400 truncate">পাবো (Given)</p>
+            <p className="text-[11px] sm:text-sm font-medium text-gray-400 truncate">{language === 'bn' ? 'পাবো (Given)' : 'Money Given'}</p>
             <div className="p-1 sm:p-2 bg-orange-500/10 rounded-lg shrink-0">
               <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-400" />
             </div>
           </div>
           <h3 className="text-base sm:text-3xl font-bold text-orange-400 truncate">{formatCurrency(pendingGiven)}</h3>
-          <p className="text-[10px] sm:text-xs text-gray-500 mt-1 hidden sm:block">অন্যদের কাছে মোট বাকি পাওনা</p>
+          <p className="text-[10px] sm:text-xs text-gray-500 mt-1 hidden sm:block">
+            {language === 'bn' ? 'অন্যদের কাছে মোট বাকি পাওনা' : 'Total receivables from others'}
+          </p>
         </div>
 
         {/* Total Money Taken (দিতে হবে) */}
         <div className="bg-[#1a1d2d]/60 border border-red-500/25 rounded-xl sm:rounded-2xl p-3 sm:p-6 relative overflow-hidden group">
           <div className="flex items-center justify-between mb-1 sm:mb-4">
-            <p className="text-[11px] sm:text-sm font-medium text-gray-400 truncate">দিতে হবে (Taken)</p>
+            <p className="text-[11px] sm:text-sm font-medium text-gray-400 truncate">{language === 'bn' ? 'দিতে হবে (Taken)' : 'Money Taken'}</p>
             <div className="p-1 sm:p-2 bg-red-500/10 rounded-lg shrink-0">
               <ArrowDownRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-400" />
             </div>
           </div>
           <h3 className="text-base sm:text-3xl font-bold text-red-400 truncate">{formatCurrency(pendingTaken)}</h3>
-          <p className="text-[10px] sm:text-xs text-gray-500 mt-1 hidden sm:block">অন্যদের কাছে মোট বাকি দেনা</p>
+          <p className="text-[10px] sm:text-xs text-gray-500 mt-1 hidden sm:block">
+            {language === 'bn' ? 'অন্যদের কাছে মোট বাকি দেনা' : 'Total payables to others'}
+          </p>
         </div>
       </div>
 
@@ -399,7 +405,7 @@ export default function LoansPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-4">
           <div className="flex items-center gap-2 min-w-0">
             <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 shrink-0" />
-            <h2 className="text-sm sm:text-lg font-semibold text-gray-200 truncate">সকল খতিয়ান</h2>
+            <h2 className="text-sm sm:text-lg font-semibold text-gray-200 truncate">{language === 'bn' ? 'সকল খতিয়ান' : 'All Loans & Debts'}</h2>
             <span className="text-[10px] sm:text-xs text-gray-400 bg-secondary px-2 py-0.5 rounded-full border border-gray-800 shrink-0">
               {filteredLoans.length}
             </span>
@@ -411,7 +417,7 @@ export default function LoansPage() {
               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <Input
                 type="text"
-                placeholder="নাম, ফোন বা নোট খুঁজুন..."
+                placeholder={language === 'bn' ? 'নাম, ফোন বা নোট খুঁজুন...' : 'Search name, phone or notes...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-8 h-8 sm:h-9 bg-secondary/80 border-gray-800 text-white rounded-lg sm:rounded-xl text-xs sm:text-sm focus:border-blue-500 w-full"
@@ -431,7 +437,7 @@ export default function LoansPage() {
                   activeFilter === 'all' ? 'bg-gray-800 text-white shadow' : 'text-gray-400 hover:text-white'
                 }`}
               >
-                All
+                {language === 'bn' ? 'সব' : 'All'}
               </button>
               <button
                 onClick={() => setActiveFilter('pending')}
@@ -439,7 +445,7 @@ export default function LoansPage() {
                   activeFilter === 'pending' ? 'bg-amber-500/20 text-amber-300 font-semibold' : 'text-gray-400 hover:text-white'
                 }`}
               >
-                বাকি
+                {language === 'bn' ? 'বাকি' : 'Pending'}
               </button>
               <button
                 onClick={() => setActiveFilter('paid')}
@@ -447,7 +453,7 @@ export default function LoansPage() {
                   activeFilter === 'paid' ? 'bg-emerald-500/20 text-emerald-300 font-semibold' : 'text-gray-400 hover:text-white'
                 }`}
               >
-                পরিশোধিত
+                {language === 'bn' ? 'পরিশোধিত' : 'Settled'}
               </button>
               <button
                 onClick={() => setActiveFilter('given')}
@@ -455,7 +461,7 @@ export default function LoansPage() {
                   activeFilter === 'given' ? 'bg-orange-500/20 text-orange-400 font-semibold' : 'text-gray-400 hover:text-white'
                 }`}
               >
-                পাবো
+                {language === 'bn' ? 'পাবো' : 'Given'}
               </button>
               <button
                 onClick={() => setActiveFilter('taken')}
@@ -463,7 +469,7 @@ export default function LoansPage() {
                   activeFilter === 'taken' ? 'bg-red-500/20 text-red-400 font-semibold' : 'text-gray-400 hover:text-white'
                 }`}
               >
-                দিতে হবে
+                {language === 'bn' ? 'দিতে হবে' : 'Taken'}
               </button>
             </div>
           </div>
@@ -475,12 +481,12 @@ export default function LoansPage() {
         {loading ? (
           <div className="bg-card rounded-xl border border-gray-800 p-8 text-center text-gray-500 text-xs">
             <div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-2" />
-            <p>রেকর্ড লোড হচ্ছে...</p>
+            <p>{language === 'bn' ? 'রেকর্ড লোড হচ্ছে...' : 'Loading records...'}</p>
           </div>
         ) : filteredLoans.length === 0 ? (
           <div className="bg-card rounded-xl border border-gray-800 p-8 text-center text-gray-500 text-xs">
             <CreditCard className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            <p>কোনো রেকর্ড পাওয়া যায়নি।</p>
+            <p>{language === 'bn' ? 'কোনো রেকর্ড পাওয়া যায়নি।' : 'No records found.'}</p>
           </div>
         ) : (
           <>
@@ -502,11 +508,11 @@ export default function LoansPage() {
                         <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border shrink-0 ${
                           isGiven ? 'bg-orange-500/10 text-orange-400 border-orange-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'
                         }`}>
-                          {isGiven ? 'পাবো' : 'দিতে হবে'}
+                          {isGiven ? (language === 'bn' ? 'পাবো' : 'Given') : (language === 'bn' ? 'দিতে হবে' : 'Taken')}
                         </span>
                         {isPaid && (
                           <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            পরিশোধিত
+                            {language === 'bn' ? 'পরিশোধিত' : 'Paid'}
                           </span>
                         )}
                       </div>
@@ -534,7 +540,7 @@ export default function LoansPage() {
                       {!isPaid && l.nextPaymentDate && (
                         <span className="text-[10px] text-blue-400 font-medium flex items-center gap-1 shrink-0 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20">
                           <CalendarClock className="w-3 h-3" />
-                          তাগাদা: {l.nextPaymentDate}
+                          {language === 'bn' ? 'তাগাদা:' : 'Reminder:'} {l.nextPaymentDate}
                         </span>
                       )}
                     </div>
@@ -544,24 +550,24 @@ export default function LoansPage() {
                   <div className="flex items-center justify-between bg-secondary/40 rounded-lg px-2.5 py-1.5 text-xs border border-gray-800/50">
                     <div className="flex items-center gap-2.5 text-[11px]">
                       <span className="text-gray-400">
-                        মোট: <strong className="font-semibold text-gray-200">{formatCurrency(l.amount)}</strong>
+                        {language === 'bn' ? 'মোট:' : 'Total:'} <strong className="font-semibold text-gray-200">{formatCurrency(l.amount)}</strong>
                       </span>
                       {(l.paidAmount || 0) > 0 && (
                         <span className="text-gray-400">
-                          পরিশোধ: <strong className="font-medium text-emerald-400">{formatCurrency(l.paidAmount || 0)}</strong>
+                          {language === 'bn' ? 'পরিশোধ:' : 'Paid:'} <strong className="font-medium text-emerald-400">{formatCurrency(l.paidAmount || 0)}</strong>
                         </span>
                       )}
                     </div>
                     <div className="shrink-0 text-right">
                       {isPaid ? (
                         <span className="inline-flex items-center gap-0.5 font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full text-[10px]">
-                          পরিশোধিত ✓
+                          {language === 'bn' ? 'পরিশোধিত ✓' : 'Settled ✓'}
                         </span>
                       ) : (
                         <span className={`inline-flex items-center gap-1 font-bold ${
                           isGiven ? 'text-orange-400 bg-orange-500/10 border-orange-500/20' : 'text-red-400 bg-red-500/10 border-red-500/20'
                         } px-2 py-0.5 rounded-full text-[11px]`}>
-                          বাকি: {formatCurrency(remainingDue)}
+                          {language === 'bn' ? 'বাকি:' : 'Due:'} {formatCurrency(remainingDue)}
                         </span>
                       )}
                     </div>
@@ -577,11 +583,11 @@ export default function LoansPage() {
                           className="h-7 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm flex items-center gap-1"
                         >
                           <Coins className="w-3.5 h-3.5" />
-                          <span>পরিশোধ</span>
+                          <span>{language === 'bn' ? 'পরিশোধ' : 'Pay'}</span>
                         </Button>
                       ) : (
                         <span className="text-[11px] font-medium text-emerald-400 flex items-center gap-1">
-                          <CheckCircle className="w-3.5 h-3.5" /> পরিশোধিত
+                          <CheckCircle className="w-3.5 h-3.5" /> {language === 'bn' ? 'পরিশোধিত' : 'Paid'}
                         </span>
                       )}
                     </div>
@@ -594,7 +600,7 @@ export default function LoansPage() {
                           onClick={() => handleSendSms(l)}
                           disabled={sendingSmsId === l.id}
                           className="h-7 w-7 p-0 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg"
-                          title="SMS পাঠান"
+                          title={language === 'bn' ? 'SMS পাঠান' : 'Send SMS'}
                         >
                           <MessageSquare className="w-3.5 h-3.5" />
                         </Button>
@@ -604,7 +610,7 @@ export default function LoansPage() {
                         variant="ghost"
                         onClick={() => setHistoryModalData(l)}
                         className="h-7 w-7 p-0 text-emerald-400 hover:bg-emerald-500/10 rounded-lg"
-                        title="হিস্ট্রি"
+                        title={language === 'bn' ? 'হিস্ট্রি' : 'History'}
                       >
                         <History className="w-3.5 h-3.5" />
                       </Button>
@@ -613,7 +619,7 @@ export default function LoansPage() {
                         variant="ghost"
                         onClick={() => handleOpenModal(l)}
                         className="h-7 w-7 p-0 text-gray-400 hover:text-white rounded-lg"
-                        title="এডিট"
+                        title={language === 'bn' ? 'এডিট' : 'Edit'}
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </Button>
@@ -622,7 +628,7 @@ export default function LoansPage() {
                         variant="ghost"
                         onClick={() => setDeleteId(l.id)}
                         className="h-7 w-7 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg"
-                        title="ডিলিট"
+                        title={language === 'bn' ? 'ডিলিট' : 'Delete'}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
@@ -636,8 +642,14 @@ export default function LoansPage() {
             {totalPages > 1 && (
               <div className="flex flex-col items-center gap-2 pt-3 pb-3 px-3 bg-card border border-gray-800/80 rounded-xl shadow-sm">
                 <div className="text-[11px] text-gray-400">
-                  দেখাচ্ছে <span className="font-semibold text-white">{startIndex + 1}</span> - <span className="font-semibold text-white">{Math.min(endIndex, filteredLoans.length)}</span> / মোট <span className="font-semibold text-white">{filteredLoans.length}</span> টি
-                  <span className="text-gray-500 ml-1">({currentPage}/{totalPages} পৃষ্ঠা)</span>
+                  {language === 'bn' ? (
+                    <>দেখাচ্ছে <span className="font-semibold text-white">{startIndex + 1}</span> - <span className="font-semibold text-white">{Math.min(endIndex, filteredLoans.length)}</span> / মোট <span className="font-semibold text-white">{filteredLoans.length}</span> টি</>
+                  ) : (
+                    <>Showing <span className="font-semibold text-white">{startIndex + 1}</span> - <span className="font-semibold text-white">{Math.min(endIndex, filteredLoans.length)}</span> of <span className="font-semibold text-white">{filteredLoans.length}</span></>
+                  )}
+                  <span className="text-gray-500 ml-1">
+                    ({language === 'bn' ? `${currentPage}/${totalPages} পৃষ্ঠা` : `Page ${currentPage} of ${totalPages}`})
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-1 flex-wrap justify-center">
@@ -647,7 +659,7 @@ export default function LoansPage() {
                     onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
                     className="h-7 w-7 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-md p-0"
-                    title="Previous Page"
+                    title={language === 'bn' ? 'পূর্ববর্তী পৃষ্ঠা' : 'Previous Page'}
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </Button>
@@ -683,7 +695,7 @@ export default function LoansPage() {
                     onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
                     className="h-7 w-7 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-md p-0"
-                    title="Next Page"
+                    title={language === 'bn' ? 'পরবর্তী পৃষ্ঠা' : 'Next Page'}
                   >
                     <ChevronRight className="w-3.5 h-3.5" />
                   </Button>
@@ -699,12 +711,12 @@ export default function LoansPage() {
         {loading ? (
           <div className="text-center py-12 text-gray-500">
             <div className="w-7 h-7 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-2" />
-            <p className="text-xs">রেকর্ড লোড হচ্ছে...</p>
+            <p className="text-xs">{language === 'bn' ? 'রেকর্ড লোড হচ্ছে...' : 'Loading records...'}</p>
           </div>
         ) : filteredLoans.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
             <CreditCard className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            <p className="text-xs">কোনো রেকর্ড পাওয়া যায়নি।</p>
+            <p className="text-xs">{language === 'bn' ? 'কোনো রেকর্ড পাওয়া যায়নি।' : 'No records found.'}</p>
           </div>
         ) : (
           <>
@@ -712,12 +724,12 @@ export default function LoansPage() {
               <table className="w-full whitespace-nowrap">
                 <thead className="bg-background/50">
                   <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-800/50">
-                    <th className="px-6 py-4">Person/Entity</th>
-                    <th className="px-6 py-4">Type</th>
-                    <th className="px-6 py-4">Total Amount</th>
-                    <th className="px-6 py-4">Remaining Due</th>
-                    <th className="px-6 py-4">Date</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
+                    <th className="px-6 py-4">{language === 'bn' ? 'ব্যক্তি / প্রতিষ্ঠান' : 'Person / Entity'}</th>
+                    <th className="px-6 py-4">{language === 'bn' ? 'ধরন' : 'Type'}</th>
+                    <th className="px-6 py-4">{language === 'bn' ? 'মোট টাকা' : 'Total Amount'}</th>
+                    <th className="px-6 py-4">{language === 'bn' ? 'অবশিষ্ট বাকি' : 'Remaining Due'}</th>
+                    <th className="px-6 py-4">{language === 'bn' ? 'তারিখ' : 'Date'}</th>
+                    <th className="px-6 py-4 text-right">{language === 'bn' ? 'অ্যাকশন' : 'Actions'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800/50">
@@ -742,7 +754,7 @@ export default function LoansPage() {
                           <span className={`text-xs font-medium px-2.5 py-1 rounded ${
                             isGiven ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
                           }`}>
-                            {isGiven ? 'Given (পাবো)' : 'Taken (দিতে হবে)'}
+                            {isGiven ? (language === 'bn' ? 'পাবো (Given)' : 'Given') : (language === 'bn' ? 'দিতে হবে (Taken)' : 'Taken')}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm font-bold text-gray-200">{formatCurrency(l.amount)}</td>
@@ -753,7 +765,7 @@ export default function LoansPage() {
                           {!isPaid && l.nextPaymentDate && (
                             <div className="flex items-center gap-1 text-xs text-blue-400 mt-1">
                               <CalendarClock className="w-3 h-3" />
-                              Next: {l.nextPaymentDate}
+                              {language === 'bn' ? 'পরবর্তী:' : 'Next:'} {l.nextPaymentDate}
                             </div>
                           )}
                         </td>
@@ -761,7 +773,7 @@ export default function LoansPage() {
                           {l.date}
                           {isPaid && (
                             <span className="block mt-1 text-xs font-medium px-2 py-0.5 rounded w-fit bg-emerald-500/10 text-emerald-400">
-                              Paid
+                              {language === 'bn' ? 'পরিশোধিত' : 'Paid'}
                             </span>
                           )}
                         </td>
@@ -774,7 +786,7 @@ export default function LoansPage() {
                                   size="icon" 
                                   onClick={() => { setPaymentModalData(l); setNextDate(''); setPaymentNote(''); }} 
                                   className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10" 
-                                  title="Add Payment (পরিশোধ)"
+                                  title={language === 'bn' ? 'পরিশোধ যোগ করুন' : 'Add Payment'}
                                 >
                                   <Coins className="w-4 h-4" />
                                 </Button>
@@ -784,7 +796,7 @@ export default function LoansPage() {
                                   onClick={() => handleSendSms(l)} 
                                   disabled={sendingSmsId === l.id} 
                                   className="h-8 w-8 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-400/10" 
-                                  title="Send SMS Reminder"
+                                  title={language === 'bn' ? 'SMS রিমাইন্ডার পাঠান' : 'Send SMS Reminder'}
                                 >
                                   <MessageSquare className="w-4 h-4" />
                                 </Button>
@@ -795,7 +807,7 @@ export default function LoansPage() {
                               size="icon" 
                               onClick={() => setHistoryModalData(l)} 
                               className="h-8 w-8 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-400/10" 
-                              title="View History"
+                              title={language === 'bn' ? 'হিস্ট্রি দেখুন' : 'View History'}
                             >
                               <History className="w-4 h-4" />
                             </Button>
@@ -804,7 +816,7 @@ export default function LoansPage() {
                               size="icon" 
                               onClick={() => handleOpenModal(l)} 
                               className="h-8 w-8 text-gray-400 hover:text-white" 
-                              title="Edit"
+                              title={language === 'bn' ? 'এডিট করুন' : 'Edit'}
                             >
                               <Edit2 className="w-4 h-4" />
                             </Button>
@@ -813,7 +825,7 @@ export default function LoansPage() {
                               size="icon" 
                               onClick={() => setDeleteId(l.id)} 
                               className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-400/10" 
-                              title="Delete"
+                              title={language === 'bn' ? 'ডিলিট করুন' : 'Delete'}
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -830,8 +842,14 @@ export default function LoansPage() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-5 py-3.5 border-t border-gray-800/80 bg-secondary/20">
                 <div className="text-xs text-gray-400">
-                  Showing <span className="font-semibold text-white">{startIndex + 1}</span> to <span className="font-semibold text-white">{Math.min(endIndex, filteredLoans.length)}</span> of <span className="font-semibold text-white">{filteredLoans.length}</span> records
-                  <span className="text-gray-500 ml-1.5">(Page {currentPage} of {totalPages})</span>
+                  {language === 'bn' ? (
+                    <>দেখাচ্ছে <span className="font-semibold text-white">{startIndex + 1}</span> থেকে <span className="font-semibold text-white">{Math.min(endIndex, filteredLoans.length)}</span> / মোট <span className="font-semibold text-white">{filteredLoans.length}</span> টি রেকর্ড</>
+                  ) : (
+                    <>Showing <span className="font-semibold text-white">{startIndex + 1}</span> to <span className="font-semibold text-white">{Math.min(endIndex, filteredLoans.length)}</span> of <span className="font-semibold text-white">{filteredLoans.length}</span> records</>
+                  )}
+                  <span className="text-gray-500 ml-1.5">
+                    ({language === 'bn' ? `পৃষ্ঠা ${currentPage} / ${totalPages}` : `Page ${currentPage} of ${totalPages}`})
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-1.5">
@@ -841,7 +859,7 @@ export default function LoansPage() {
                     onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
                     className="h-8 w-8 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
-                    title="Previous Page"
+                    title={language === 'bn' ? 'পূর্ববর্তী পৃষ্ঠা' : 'Previous Page'}
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
@@ -877,7 +895,7 @@ export default function LoansPage() {
                     onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
                     className="h-8 w-8 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
-                    title="Next Page"
+                    title={language === 'bn' ? 'পরবর্তী পৃষ্ঠা' : 'Next Page'}
                   >
                     <ChevronRight className="w-4 h-4" />
                   </Button>
@@ -892,36 +910,40 @@ export default function LoansPage() {
       <Dialog open={!!paymentModalData} onOpenChange={(open) => !open && closePaymentModal()}>
         <DialogContent className="w-[95vw] sm:max-w-[400px] max-h-[90vh] overflow-y-auto bg-popover border-border rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-white">Add Payment (পরিশোধ)</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-white">
+              {language === 'bn' ? 'পরিশোধ গ্রহণ / প্রদান' : 'Add Payment'}
+            </DialogTitle>
             <DialogDescription className="text-gray-400">
-              {paymentModalData?.personName} ({paymentModalData?.type === 'Given' ? 'পাবো' : 'দিতে হবে'})
+              {paymentModalData?.personName} ({paymentModalData?.type === 'Given' ? (language === 'bn' ? 'পাবো' : 'Given') : (language === 'bn' ? 'দিতে হবে' : 'Taken')})
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAddPayment} className="space-y-4 pt-4">
             <div className="bg-gray-800/50 p-4 rounded-lg flex justify-between items-center mb-4 border border-gray-700">
-              <span className="text-sm text-gray-400">Remaining Due:</span>
+              <span className="text-sm text-gray-400">{language === 'bn' ? 'অবশিষ্ট বাকি:' : 'Remaining Due:'}</span>
               <span className="text-lg font-bold text-yellow-500">
                 {paymentModalData ? formatCurrency(paymentModalData.amount - (paymentModalData.paidAmount || 0)) : 0}
               </span>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-gray-400">Payment Amount <span className="text-red-400">*</span></label>
+              <label className="text-xs font-medium text-gray-400">
+                {language === 'bn' ? 'পরিশোধের পরিমাণ' : 'Payment Amount'} <span className="text-red-400">*</span>
+              </label>
               <Input 
                 type="number"
                 required min="1"
                 max={paymentModalData ? (paymentModalData.amount - (paymentModalData.paidAmount || 0)) : undefined}
                 value={paymentAmount || ''}
                 onChange={(e) => setPaymentAmount(parseInt(e.target.value) || 0)}
-                placeholder="Amount..."
+                placeholder={language === 'bn' ? 'টাকার পরিমাণ...' : 'Amount...'}
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-gray-400">Note (Optional)</label>
+              <label className="text-xs font-medium text-gray-400">{language === 'bn' ? 'নোট (ঐচ্ছিক)' : 'Note (Optional)'}</label>
               <Input 
                 value={paymentNote}
                 onChange={(e) => setPaymentNote(e.target.value)}
-                placeholder="Cash / bKash / remarks..."
+                placeholder={language === 'bn' ? 'ক্যাশ / বিকাশ / মন্তব্য...' : 'Cash / bKash / remarks...'}
               />
             </div>
             
@@ -933,7 +955,7 @@ export default function LoansPage() {
                 className="space-y-1.5 pt-2"
               >
                 <label className="text-xs font-medium text-blue-400 flex items-center gap-1">
-                  <CalendarClock className="w-3 h-3" /> Next Payment Date (পরবর্তী তারিখ)
+                  <CalendarClock className="w-3 h-3" /> {language === 'bn' ? 'পরবর্তী পরিশোধের তারিখ' : 'Next Payment Date'}
                 </label>
                 <Input 
                   type="date"
@@ -945,8 +967,12 @@ export default function LoansPage() {
             )}
 
             <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={closePaymentModal}>Cancel</Button>
-              <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white">Save Payment</Button>
+              <Button type="button" variant="outline" onClick={closePaymentModal}>
+                {language === 'bn' ? 'বাতিল' : 'Cancel'}
+              </Button>
+              <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                {language === 'bn' ? 'সংরক্ষণ করুন' : 'Save Payment'}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -957,26 +983,32 @@ export default function LoansPage() {
         <DialogContent className="w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto bg-popover border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">
-              {editingLoan ? 'Edit Record' : 'Add New Record'}
+              {editingLoan 
+                ? (language === 'bn' ? 'রেকর্ড এডিট করুন' : 'Edit Record') 
+                : (language === 'bn' ? 'নতুন রেকর্ড যোগ করুন' : 'Add New Record')}
             </DialogTitle>
             <DialogDescription className="text-gray-400">
-              Track money given or taken.
+              {language === 'bn' ? 'হাওলাত দেওয়া বা নেওয়ার হিসাব রাখুন।' : 'Track money given or taken.'}
             </DialogDescription>
           </DialogHeader>
           
           <form onSubmit={handleSave} className="space-y-4 mt-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-gray-400">Person / Entity Name <span className="text-red-400">*</span></label>
+              <label className="text-xs font-medium text-gray-400">
+                {language === 'bn' ? 'ব্যক্তি / প্রতিষ্ঠানের নাম' : 'Person / Entity Name'} <span className="text-red-400">*</span>
+              </label>
               <Input 
                 required
                 value={formData.personName}
                 onChange={(e) => setFormData({...formData, personName: e.target.value})}
-                placeholder="Name..."
+                placeholder={language === 'bn' ? 'নাম...' : 'Name...'}
               />
             </div>
             
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Phone Number (Optional)</label>
+              <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                {language === 'bn' ? 'মোবাইল নম্বর (ঐচ্ছিক)' : 'Phone Number (Optional)'}
+              </label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <span className="absolute left-9 top-1/2 -translate-y-1/2 font-medium text-gray-300 pointer-events-none text-xs">+880</span>
@@ -1013,15 +1045,20 @@ export default function LoansPage() {
           
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-400">Type</label>
+                <label className="text-xs font-medium text-gray-400">{language === 'bn' ? 'ধরন' : 'Type'}</label>
                 <CustomSelect
                   value={formData.type}
                   onChange={(val) => setFormData({...formData, type: val as any})}
-                  options={['Given', 'Taken']}
+                  options={[
+                    { label: language === 'bn' ? 'পাবো (Given)' : 'Given', value: 'Given' },
+                    { label: language === 'bn' ? 'দিতে হবে (Taken)' : 'Taken', value: 'Taken' }
+                  ]}
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-400">Total Amount <span className="text-red-400">*</span></label>
+                <label className="text-xs font-medium text-gray-400">
+                  {language === 'bn' ? 'মোট টাকা' : 'Total Amount'} <span className="text-red-400">*</span>
+                </label>
                 <Input 
                   type="number"
                   required min="1"
@@ -1033,7 +1070,7 @@ export default function LoansPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-400">Date</label>
+                <label className="text-xs font-medium text-gray-400">{language === 'bn' ? 'তারিখ' : 'Date'}</label>
                 <Input 
                   type="date"
                   required
@@ -1043,17 +1080,22 @@ export default function LoansPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-400">Status</label>
+                <label className="text-xs font-medium text-gray-400">{language === 'bn' ? 'স্ট্যাটাস' : 'Status'}</label>
                 <CustomSelect
                   value={formData.status}
                   onChange={(val) => setFormData({...formData, status: val as any})}
-                  options={['Pending', 'Paid']}
+                  options={[
+                    { label: language === 'bn' ? 'বাকি (Pending)' : 'Pending', value: 'Pending' },
+                    { label: language === 'bn' ? 'পরিশোধিত (Paid)' : 'Paid', value: 'Paid' }
+                  ]}
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-gray-400">Next Payment Date (Optional)</label>
+              <label className="text-xs font-medium text-gray-400">
+                {language === 'bn' ? 'পরবর্তী তারিখ (ঐচ্ছিক)' : 'Next Payment Date (Optional)'}
+              </label>
               <Input 
                 type="date"
                 value={formData.nextPaymentDate || ''}
@@ -1063,18 +1105,22 @@ export default function LoansPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-gray-400">Notes (Optional)</label>
+              <label className="text-xs font-medium text-gray-400">{language === 'bn' ? 'নোট (ঐচ্ছিক)' : 'Notes (Optional)'}</label>
               <Input 
                 value={formData.notes}
                 onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                placeholder="Reason or details..."
+                placeholder={language === 'bn' ? 'কারণ বা বিবরণ...' : 'Reason or details...'}
               />
             </div>
 
             <div className="pt-4 flex justify-end gap-3">
-              <Button type="button" variant="outline" onClick={closeLoanModal}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={closeLoanModal}>
+                {language === 'bn' ? 'বাতিল' : 'Cancel'}
+              </Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">
-                {editingLoan ? 'Update Record' : 'Save Record'}
+                {editingLoan 
+                  ? (language === 'bn' ? 'আপডেট করুন' : 'Update Record') 
+                  : (language === 'bn' ? 'সংরক্ষণ করুন' : 'Save Record')}
               </Button>
             </div>
           </form>
@@ -1086,17 +1132,21 @@ export default function LoansPage() {
         isOpen={!!deleteId}
         onClose={() => setDeleteId(null)}
         onConfirm={() => { if (deleteId) handleDelete(deleteId); }}
-        title="Delete Record"
-        message="Are you sure you want to delete this loan record? This cannot be undone."
+        title={language === 'bn' ? 'রেকর্ড ডিলিট করুন' : 'Delete Record'}
+        message={language === 'bn' ? 'আপনি কি নিশ্চিতভাবে এই ঋণ/হাওলাত রেকর্ডটি মুছে ফেলতে চান? এটি পুনরুদ্ধার করা যাবে না।' : 'Are you sure you want to delete this loan record? This cannot be undone.'}
       />
     
       {/* History Modal */}
       <Dialog open={!!historyModalData} onOpenChange={(open) => !open && closeHistoryModal()}>
         <DialogContent className="sm:max-w-[500px] bg-popover border-border max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-white">Loan History</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-white">
+              {language === 'bn' ? 'লেনদেনের হিস্ট্রি' : 'Loan History'}
+            </DialogTitle>
             <DialogDescription className="text-gray-400">
-              Transaction history for {historyModalData?.personName}
+              {language === 'bn' 
+                ? `${historyModalData?.personName}-এর লেনদেন হিস্ট্রি` 
+                : `Transaction history for ${historyModalData?.personName}`}
             </DialogDescription>
           </DialogHeader>
           <div className="mt-4 space-y-4">
@@ -1106,9 +1156,11 @@ export default function LoansPage() {
                   <div key={i} className="flex justify-between items-center p-3 rounded-lg bg-background border border-gray-800">
                     <div>
                       <p className="text-sm font-medium text-gray-200">
-                        {h.note || (h.type === 'Payment' ? 'Partial Payment' : 'Initial Entry')}
+                        {h.note || (h.type === 'Payment' 
+                          ? (language === 'bn' ? 'আংশিক পরিশোধ' : 'Partial Payment') 
+                          : (language === 'bn' ? 'শুরুর রেকর্ড' : 'Initial Entry'))}
                       </p>
-                      <p className="text-xs text-gray-500">{new Date(h.date).toLocaleString()}</p>
+                      <p className="text-xs text-gray-500">{new Date(h.date).toLocaleString(language === 'bn' ? 'bn-BD' : 'en-US')}</p>
                     </div>
                     <div className={`font-bold ${h.type === 'Payment' ? 'text-emerald-400' : 'text-orange-400'}`}>
                       {h.type === 'Payment' ? '+' : ''}{formatCurrency(h.amount)}
@@ -1116,14 +1168,16 @@ export default function LoansPage() {
                   </div>
                 ))}
                 <div className="flex justify-between items-center p-3 rounded-lg bg-gray-800/50 mt-4 border border-gray-700">
-                  <span className="text-sm font-bold text-white">Total Due</span>
+                  <span className="text-sm font-bold text-white">{language === 'bn' ? 'মোট বাকি' : 'Total Due'}</span>
                   <span className="text-lg font-bold text-red-400">
                     {formatCurrency((historyModalData.amount || 0) - (historyModalData.paidAmount || 0))}
                   </span>
                 </div>
               </div>
             ) : (
-              <div className="text-center py-6 text-gray-500 text-sm">No detailed history found for this record.</div>
+              <div className="text-center py-6 text-gray-500 text-sm">
+                {language === 'bn' ? 'এই রেকর্ডের জন্য কোনো বিস্তারিত হিস্ট্রি পাওয়া যায়নি।' : 'No detailed history found for this record.'}
+              </div>
             )}
           </div>
         </DialogContent>

@@ -23,10 +23,12 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import { auth } from '@/lib/firebase';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 export function OwnerBottomNav() {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
   const { user, setUser, setUnlocked, shop, isMoreMenuOpen, setIsMoreMenuOpen } = useAppStore();
@@ -110,28 +112,28 @@ export function OwnerBottomNav() {
   const primaryTabs = [
     {
       id: 'dashboard',
-      name: 'ড্যাশবোর্ড',
+      name: t('nav.dashboard'),
       href: '/',
       icon: Home,
       isActive: pathname === '/'
     },
     {
       id: 'customers',
-      name: 'কাস্টমার',
+      name: t('nav.customers'),
       href: '/customers',
       icon: Users,
       isActive: pathname.startsWith('/customers')
     },
     {
       id: 'inventory',
-      name: 'ইনভেন্টরি',
+      name: t('nav.inventory'),
       href: '/inventory',
       icon: Box,
       isActive: pathname.startsWith('/inventory')
     },
     {
       id: 'due',
-      name: 'বাকি খাতা',
+      name: t('nav.due'),
       href: '/due',
       icon: Clock,
       isActive: pathname.startsWith('/due')
@@ -207,7 +209,7 @@ export function OwnerBottomNav() {
               <LayoutGrid className="w-5 h-5" />
             </div>
             <span className="text-[10px] mt-0.5 leading-none tracking-tight">
-              মেনু
+              {t('nav.menu')}
             </span>
             {isMoreActive && (
               <span className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-0.5 shadow-[0_0_6px_rgba(59,130,246,0.8)]" />
@@ -290,8 +292,7 @@ export function OwnerBottomNav() {
                 <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-1.5">
                   <CreditCard className="w-4 h-4" />
                 </div>
-                <span className="text-xs font-semibold">ঋণ (Loans)</span>
-                <span className="text-[9px] text-gray-500 mt-0.5">লেনদেন ও হিসাব</span>
+                <span className="text-xs font-semibold">{t('nav.loans')}</span>
               </Link>
 
               <Link
@@ -306,8 +307,7 @@ export function OwnerBottomNav() {
                 <div className="w-9 h-9 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-400 mb-1.5">
                   <Receipt className="w-4 h-4" />
                 </div>
-                <span className="text-xs font-semibold">খরচ (Expenses)</span>
-                <span className="text-[9px] text-gray-500 mt-0.5">দৈনিক ব্যয়</span>
+                <span className="text-xs font-semibold">{t('nav.expenses')}</span>
               </Link>
 
               <Link
@@ -322,8 +322,7 @@ export function OwnerBottomNav() {
                 <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-1.5">
                   <BarChart2 className="w-4 h-4" />
                 </div>
-                <span className="text-xs font-semibold">রিপোর্ট (Reports)</span>
-                <span className="text-[9px] text-gray-500 mt-0.5">লাভ-ক্ষতি ও সেলস</span>
+                <span className="text-xs font-semibold">{t('nav.reports')}</span>
               </Link>
             </div>
           </div>
@@ -332,7 +331,7 @@ export function OwnerBottomNav() {
           <div>
             <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
               <Truck className="w-3.5 h-3.5 text-amber-400" />
-              সাপ্লায়ার ও পার্টনার
+              {t('nav.suppliers')} & {t('nav.mechanics')}
             </h4>
             <div className="grid grid-cols-3 gap-2.5">
               <Link
@@ -347,8 +346,7 @@ export function OwnerBottomNav() {
                 <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-1.5">
                   <Truck className="w-4 h-4" />
                 </div>
-                <span className="text-xs font-semibold">সাপ্লায়ার্স</span>
-                <span className="text-[9px] text-gray-500 mt-0.5">পার্টস ও ডিলার</span>
+                <span className="text-xs font-semibold">{t('nav.suppliers')}</span>
               </Link>
 
               <Link
@@ -363,8 +361,7 @@ export function OwnerBottomNav() {
                 <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 mb-1.5">
                   <Wrench className="w-4 h-4" />
                 </div>
-                <span className="text-xs font-semibold">মেকানিক্স (B2B)</span>
-                <span className="text-[9px] text-gray-500 mt-0.5">বাহিরের কাজ</span>
+                <span className="text-xs font-semibold">{t('nav.mechanics')}</span>
               </Link>
 
               <Link
@@ -379,8 +376,7 @@ export function OwnerBottomNav() {
                 <div className="w-9 h-9 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 mb-1.5">
                   <Star className="w-4 h-4" />
                 </div>
-                <span className="text-xs font-semibold">লয়ালটি (Loyalty)</span>
-                <span className="text-[9px] text-gray-500 mt-0.5">কাস্টমার পয়েন্ট</span>
+                <span className="text-xs font-semibold">{t('nav.loyalty')}</span>
               </Link>
             </div>
           </div>
@@ -389,7 +385,7 @@ export function OwnerBottomNav() {
           <div>
             <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
               <Settings className="w-3.5 h-3.5 text-purple-400" />
-              কনফিগারেশন ও সেটিংস
+              {t('nav.settings')}
             </h4>
             <div className="grid grid-cols-2 gap-2.5">
               <Link
@@ -405,8 +401,7 @@ export function OwnerBottomNav() {
                   <Settings className="w-4 h-4" />
                 </div>
                 <div className="overflow-hidden">
-                  <div className="text-xs font-semibold truncate">শপ সেটিংস</div>
-                  <div className="text-[9px] text-gray-500 truncate">দোকানের নাম, ঠিকানা ও প্রিন্ট</div>
+                  <div className="text-xs font-semibold truncate">{t('nav.settings')}</div>
                 </div>
               </Link>
 
@@ -423,8 +418,7 @@ export function OwnerBottomNav() {
                   <MessageSquare className="w-4 h-4" />
                 </div>
                 <div className="overflow-hidden">
-                  <div className="text-xs font-semibold truncate">এসএমএস সেটিংস</div>
-                  <div className="text-[9px] text-gray-500 truncate">ব্যালেন্স ও অটো মেসেজ</div>
+                  <div className="text-xs font-semibold truncate">{t('nav.sms')}</div>
                 </div>
               </Link>
             </div>
@@ -453,7 +447,7 @@ export function OwnerBottomNav() {
               className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-semibold transition-colors cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
-              <span>লগআউট (Logout)</span>
+              <span>{t('nav.logout')}</span>
             </button>
           </div>
 
@@ -465,9 +459,9 @@ export function OwnerBottomNav() {
         isOpen={showLogoutConfirm}
         onClose={() => setShowLogoutConfirm(false)}
         onConfirm={handleConfirmLogout}
-        title="লগআউট নিশ্চিত করুন"
-        message="আপনি কি নিশ্চিত যে আপনার অ্যাকাউন্ট থেকে লগআউট করতে চান?"
-        confirmText="লগআউট করুন"
+        title={t('nav.logoutConfirmTitle')}
+        message={t('nav.logoutConfirmMessage')}
+        confirmText={t('nav.logoutButton')}
       />
     </>
   );

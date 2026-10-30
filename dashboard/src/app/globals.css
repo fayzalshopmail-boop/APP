@@ -112,9 +112,11 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans), 'Hind Siliguri', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'SolaimanLipi', 'Kalpurush', 'Noto Sans Bengali', sans-serif;
   }
   html {
     @apply font-sans;
+    font-family: var(--font-sans), 'Hind Siliguri', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'SolaimanLipi', 'Kalpurush', 'Noto Sans Bengali', sans-serif;
   }
 }
 

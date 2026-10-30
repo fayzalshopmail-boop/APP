@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, Shield, UserPlus, Lock, CheckCircle, Trash2, Mail, Loader2, UserX, Store, Building, Phone, Image as ImageIcon, Save, MapPin, Settings, Download, Upload, Database, FileText, ArrowUpRight, Clock, CreditCard, Award } from 'lucide-react';
+import { AlertTriangle, Shield, UserPlus, Lock, CheckCircle, Trash2, Mail, Loader2, UserX, Store, Building, Phone, Image as ImageIcon, Save, MapPin, Settings, Download, Upload, Database, FileText, ArrowUpRight, Clock, CreditCard, Award, Globe, Check } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import { AppUser, UserRole, userService } from '@/lib/services/user';
 import { ShopSettings, shopSettingsService, defaultShopSettings } from '@/lib/services/shopSettings';
 import { CustomSelect } from '@/components/ui/CustomSelect';
@@ -14,7 +15,23 @@ import toast from 'react-hot-toast';
 
 export default function SettingsPage() {
   const { user: currentUser, shop: globalShop, setShop: setGlobalShop } = useAppStore();
-    const handleConfirmAction = async () => {
+  const { t, language, setLanguage } = useTranslation();
+
+  const handleLanguageChange = async (newLang: 'bn' | 'en') => {
+    if (newLang === language) return;
+    setLanguage(newLang);
+    const updated = { ...shopForm, language: newLang };
+    setShopForm(updated);
+    setGlobalShop(updated);
+    try {
+      await shopSettingsService.saveSettings(updated);
+    } catch (e) {
+      console.error("Failed to sync language to Firestore:", e);
+    }
+    toast.success(newLang === 'bn' ? 'ভাষা সফলভাবে বাংলায় পরিবর্তন করা হয়েছে' : 'Language updated to English successfully');
+  };
+
+  const handleConfirmAction = async () => {
     const { actionType, payload } = confirmModal;
     if (!actionType) return;
     try {
@@ -334,7 +351,7 @@ export default function SettingsPage() {
           }`}
         >
           <Store className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-          <span className="truncate">Shop Profile</span>
+          <span className="truncate">{t('settings.tabs.shop')}</span>
         </button>
         <button
           onClick={() => setActiveTab('staff')}
@@ -345,8 +362,7 @@ export default function SettingsPage() {
           }`}
         >
           <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-          <span className="truncate">Staff</span>
-          <span className="hidden xs:inline sm:inline">Management</span>
+          <span className="truncate">{t('settings.tabs.staff')}</span>
         </button>
         <button
           onClick={() => setActiveTab('data')}
@@ -357,7 +373,7 @@ export default function SettingsPage() {
           }`}
         >
           <Database className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-          <span className="truncate">Data Backup</span>
+          <span className="truncate">{t('settings.tabs.data')}</span>
         </button>
       </div>
 
@@ -384,168 +400,240 @@ export default function SettingsPage() {
       )}
 
       {activeTab === 'shop' && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-gray-800 rounded-2xl p-6 lg:p-8">
-          <div className="flex items-center gap-3 mb-6 border-b border-gray-800 pb-4">
-            <Building className="w-5 h-5 text-gray-400" />
-            <h2 className="text-lg font-semibold text-white">Shop Information</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Shop Name (Short)</label>
-              <div className="relative">
-                <Store className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                <input 
-                  type="text" 
-                  name="shop-short-name"
-                  id="shop-short-name"
-                  autoComplete="off"
-                  data-lpignore="true"
-                  data-1p-ignore="true"
-                  data-form-type="other"
-                  value={shopForm.shopName}
-                  onChange={(e) => setShopForm({ ...shopForm, shopName: e.target.value })}
-                  className="w-full bg-popover border border-gray-800 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50" 
-                  placeholder="e.g. Shop Name"
-                />
+        <div className="space-y-6">
+          {/* Language Selection Card */}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-gray-800 rounded-2xl p-6 lg:p-8">
+            <div className="flex items-center gap-3 mb-6 border-b border-gray-800 pb-4">
+              <Globe className="w-5 h-5 text-blue-400" />
+              <div>
+                <h2 className="text-lg font-semibold text-white">{t('settings.languageCard.title')}</h2>
+                <p className="text-xs text-gray-400 mt-0.5">{t('settings.languageCard.description')}</p>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Shop Title (Full)</label>
-              <div className="relative">
-                <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                <input 
-                  type="text" 
-                  name="shop-full-title"
-                  id="shop-full-title"
-                  autoComplete="off"
-                  data-lpignore="true"
-                  data-1p-ignore="true"
-                  data-form-type="other"
-                  value={shopForm.shopTitle}
-                  onChange={(e) => setShopForm({ ...shopForm, shopTitle: e.target.value })}
-                  className="w-full bg-popover border border-gray-800 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50" 
-                  placeholder="e.g. Electronics Servicing Center"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Shop Logo (PNG/JPG)</label>
-              <div className="flex items-center gap-4">
-                {shopForm.logoUrl ? (
-                  <div className="relative group">
-                    <img src={shopForm.logoUrl} alt="Logo Preview" className="w-12 h-12 rounded-xl object-contain " />
-                    <button 
-                      onClick={() => setShopForm({ ...shopForm, logoUrl: '' })}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                      title="Remove Logo"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Bangla Option */}
+              <button
+                type="button"
+                onClick={() => handleLanguageChange('bn')}
+                className={`relative flex items-center justify-between p-4 rounded-xl border text-left transition-all ${
+                  language === 'bn'
+                    ? 'bg-blue-600/15 border-blue-500 shadow-md shadow-blue-500/10'
+                    : 'bg-popover border-gray-800 hover:border-gray-700 text-gray-300'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
+                    language === 'bn' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400'
+                  }`}>
+                    বাং
                   </div>
-                ) : (
-                  <div className="w-12 h-12 rounded-xl bg-popover border border-gray-800 flex items-center justify-center">
-                    <ImageIcon className="w-5 h-5 text-gray-500" />
+                  <div>
+                    <h3 className="font-semibold text-white text-sm">{t('settings.languageCard.bangla')}</h3>
+                    <p className="text-xs text-gray-400 mt-0.5">{t('settings.languageCard.banglaSub')}</p>
+                  </div>
+                </div>
+                {language === 'bn' && (
+                  <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center shrink-0">
+                    <Check className="w-3.5 h-3.5" />
                   </div>
                 )}
-                <div className="flex-1 relative">
-                  <input 
-                    type="file" 
-                    accept="image/png, image/jpeg"
-                    onChange={handleLogoUpload}
-                    className="w-full bg-popover border border-gray-800 text-white rounded-xl px-4 py-2.5 text-sm file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-500/10 file:text-blue-500 hover:file:bg-blue-500/20 cursor-pointer focus:outline-none focus:border-blue-500/50" 
-                  />
+              </button>
+
+              {/* English Option */}
+              <button
+                type="button"
+                onClick={() => handleLanguageChange('en')}
+                className={`relative flex items-center justify-between p-4 rounded-xl border text-left transition-all ${
+                  language === 'en'
+                    ? 'bg-blue-600/15 border-blue-500 shadow-md shadow-blue-500/10'
+                    : 'bg-popover border-gray-800 hover:border-gray-700 text-gray-300'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
+                    language === 'en' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400'
+                  }`}>
+                    EN
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-white text-sm">{t('settings.languageCard.english')}</h3>
+                    <p className="text-xs text-gray-400 mt-0.5">{t('settings.languageCard.englishSub')}</p>
+                  </div>
                 </div>
-              </div>
+                {language === 'en' && (
+                  <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center shrink-0">
+                    <Check className="w-3.5 h-3.5" />
+                  </div>
+                )}
+              </button>
+            </div>
+          </motion.div>
+
+          {/* Shop Information Card */}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-gray-800 rounded-2xl p-6 lg:p-8">
+            <div className="flex items-center gap-3 mb-6 border-b border-gray-800 pb-4">
+              <Building className="w-5 h-5 text-gray-400" />
+              <h2 className="text-lg font-semibold text-white">{t('settings.shopInfo.title')}</h2>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Contact Phone</label>
-              <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                  <span className="absolute left-10 top-1/2 -translate-y-1/2 font-medium text-gray-300 pointer-events-none">+880</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('settings.shopInfo.shortName')}</label>
+                <div className="relative">
+                  <Store className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                   <input 
-                    type="tel"
-                    maxLength={11}
-                    name="shop-contact-telephone"
-                    id="shop-contact-telephone"
+                    type="text" 
+                    name="shop-short-name"
+                    id="shop-short-name"
                     autoComplete="off"
                     data-lpignore="true"
                     data-1p-ignore="true"
                     data-form-type="other"
-                    value={shopForm.phone ? shopForm.phone.replace(/^\+880/, '') : ''}
-                    onChange={(e) => {
-                      let digits = e.target.value.replace(/\D/g, ''); 
-                      if (digits.startsWith('0')) digits = digits.substring(1);
-                      if (digits.length > 10) digits = digits.substring(0, 10);
-                      setShopForm({ ...shopForm, phone: '+880' + digits });
-                    }}
-                    className="w-full bg-popover border border-gray-800 text-white rounded-xl pl-[76px] pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50" 
-                    placeholder="1711000000"
+                    value={shopForm.shopName}
+                    onChange={(e) => setShopForm({ ...shopForm, shopName: e.target.value })}
+                    className="w-full bg-popover border border-gray-800 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50" 
+                    placeholder="e.g. Shop Name"
                   />
                 </div>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Owner Name</label>
-              <div className="relative">
-                <UserX className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                <input 
-                  type="text" 
-                  name="shop-owner-fullname"
-                  id="shop-owner-fullname"
-                  autoComplete="off"
-                  data-lpignore="true"
-                  data-1p-ignore="true"
-                  data-form-type="other"
-                  value={shopForm.ownerName}
-                  onChange={(e) => setShopForm({ ...shopForm, ownerName: e.target.value })}
-                  className="w-full bg-popover border border-gray-800 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50" 
-                  placeholder="Owner's Name"
-                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('settings.shopInfo.fullTitle')}</label>
+                <div className="relative">
+                  <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  <input 
+                    type="text" 
+                    name="shop-full-title"
+                    id="shop-full-title"
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-form-type="other"
+                    value={shopForm.shopTitle}
+                    onChange={(e) => setShopForm({ ...shopForm, shopTitle: e.target.value })}
+                    className="w-full bg-popover border border-gray-800 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50" 
+                    placeholder="e.g. Electronics Servicing Center"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('settings.shopInfo.logo')}</label>
+                <div className="flex items-center gap-4">
+                  {shopForm.logoUrl ? (
+                    <div className="relative group">
+                      <img src={shopForm.logoUrl} alt="Logo Preview" className="w-12 h-12 rounded-xl object-contain " />
+                      <button 
+                        onClick={() => setShopForm({ ...shopForm, logoUrl: '' })}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                        title="Remove Logo"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-12 h-12 rounded-xl bg-popover border border-gray-800 flex items-center justify-center">
+                      <ImageIcon className="w-5 h-5 text-gray-500" />
+                    </div>
+                  )}
+                  <div className="flex-1 relative">
+                    <input 
+                      type="file" 
+                      accept="image/png, image/jpeg"
+                      onChange={handleLogoUpload}
+                      className="w-full bg-popover border border-gray-800 text-white rounded-xl px-4 py-2.5 text-sm file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-500/10 file:text-blue-500 hover:file:bg-blue-500/20 cursor-pointer focus:outline-none focus:border-blue-500/50" 
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('settings.shopInfo.phone')}</label>
+                <div className="relative">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <span className="absolute left-10 top-1/2 -translate-y-1/2 font-medium text-gray-300 pointer-events-none">+880</span>
+                    <input 
+                      type="tel"
+                      maxLength={11}
+                      name="shop-contact-telephone"
+                      id="shop-contact-telephone"
+                      autoComplete="off"
+                      data-lpignore="true"
+                      data-1p-ignore="true"
+                      data-form-type="other"
+                      value={shopForm.phone ? shopForm.phone.replace(/^\+880/, '') : ''}
+                      onChange={(e) => {
+                        let digits = e.target.value.replace(/\D/g, ''); 
+                        if (digits.startsWith('0')) digits = digits.substring(1);
+                        if (digits.length > 10) digits = digits.substring(0, 10);
+                        setShopForm({ ...shopForm, phone: '+880' + digits });
+                      }}
+                      className="w-full bg-popover border border-gray-800 text-white rounded-xl pl-[76px] pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50" 
+                      placeholder="1711000000"
+                    />
+                  </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('settings.shopInfo.ownerName')}</label>
+                <div className="relative">
+                  <UserX className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  <input 
+                    type="text" 
+                    name="shop-owner-fullname"
+                    id="shop-owner-fullname"
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-form-type="other"
+                    value={shopForm.ownerName}
+                    onChange={(e) => setShopForm({ ...shopForm, ownerName: e.target.value })}
+                    className="w-full bg-popover border border-gray-800 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50" 
+                    placeholder="Owner's Name"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('settings.shopInfo.address')}</label>
+                <div className="relative">
+                  <MapPin className="absolute left-4 top-4 w-4 h-4 text-gray-500" />
+                  <textarea 
+                    name="shop-full-physical-address"
+                    id="shop-full-physical-address"
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-form-type="other"
+                    value={shopForm.address}
+                    onChange={(e) => setShopForm({ ...shopForm, address: e.target.value })}
+                    className="w-full bg-popover border border-gray-800 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50 h-24 resize-none" 
+                    placeholder="Full shop address..."
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="space-y-2 md:col-span-2">
-              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Shop Address</label>
-              <div className="relative">
-                <MapPin className="absolute left-4 top-4 w-4 h-4 text-gray-500" />
-                <textarea 
-                  name="shop-full-physical-address"
-                  id="shop-full-physical-address"
-                  autoComplete="off"
-                  data-lpignore="true"
-                  data-1p-ignore="true"
-                  data-form-type="other"
-                  value={shopForm.address}
-                  onChange={(e) => setShopForm({ ...shopForm, address: e.target.value })}
-                  className="w-full bg-popover border border-gray-800 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50 h-24 resize-none" 
-                  placeholder="Full shop address..."
-                />
-              </div>
+            <div className="mt-8 flex items-center justify-end border-t border-gray-800 pt-6">
+              <button
+                onClick={handleSaveShop}
+                disabled={savingShop}
+                className="w-full md:w-auto justify-center bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl text-sm font-medium transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2 disabled:opacity-70"
+              >
+                {savingShop ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {t('settings.shopInfo.saveButton')}
+              </button>
             </div>
-          </div>
-
-          <div className="mt-8 flex items-center justify-end border-t border-gray-800 pt-6">
-            <button
-              onClick={handleSaveShop}
-              disabled={savingShop}
-              className="w-full md:w-auto justify-center bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl text-sm font-medium transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2 disabled:opacity-70"
-            >
-              {savingShop ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Save Shop Profile
-            </button>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
       )}
 
       {activeTab === 'data' && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-gray-800 rounded-2xl p-6 lg:p-8">
           <div className="flex items-center gap-3 mb-6 border-b border-gray-800 pb-4">
             <Database className="w-5 h-5 text-gray-400" />
-            <h2 className="text-lg font-semibold text-white">Data Backup & Restore</h2>
+            <h2 className="text-lg font-semibold text-white">{t('settings.dataBackup.title')}</h2>
           </div>
 
           {error && <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-sm">{error}</div>}
@@ -557,8 +645,8 @@ export default function SettingsPage() {
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-blue-500/10 text-blue-400 rounded-lg"><Download className="w-5 h-5" /></div>
                 <div>
-                  <h3 className="font-semibold text-gray-200">Full System Backup</h3>
-                  <p className="text-xs text-gray-500">Download a complete JSON backup of all data</p>
+                  <h3 className="font-semibold text-gray-200">{t('settings.dataBackup.fullBackup')}</h3>
+                  <p className="text-xs text-gray-500">{t('settings.dataBackup.fullBackupDesc')}</p>
                 </div>
               </div>
               <button 
@@ -567,7 +655,7 @@ export default function SettingsPage() {
                 className="w-full py-2.5 bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 border border-blue-500/30 rounded-lg text-sm font-medium transition-colors flex justify-center items-center gap-2"
               >
                 {backupLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                Export Full Backup (JSON)
+                {t('settings.dataBackup.fullBackup')} (JSON)
               </button>
             </div>
 
@@ -575,8 +663,8 @@ export default function SettingsPage() {
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-green-500/10 text-green-400 rounded-lg"><FileText className="w-5 h-5" /></div>
                 <div>
-                  <h3 className="font-semibold text-gray-200">Customer Contacts</h3>
-                  <p className="text-xs text-gray-500">Export only customer names and numbers</p>
+                  <h3 className="font-semibold text-gray-200">{t('settings.dataBackup.contacts')}</h3>
+                  <p className="text-xs text-gray-500">{t('settings.dataBackup.contactsDesc')}</p>
                 </div>
               </div>
               <button 
@@ -585,7 +673,7 @@ export default function SettingsPage() {
                 className="w-full py-2.5 bg-green-600/20 text-green-400 hover:bg-green-600/30 border border-green-500/30 rounded-lg text-sm font-medium transition-colors flex justify-center items-center gap-2"
               >
                 {backupLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-                Export Contacts (CSV)
+                {t('settings.dataBackup.contacts')} (CSV)
               </button>
             </div>
 
@@ -593,8 +681,8 @@ export default function SettingsPage() {
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-orange-500/10 text-orange-400 rounded-lg"><Upload className="w-5 h-5" /></div>
                 <div>
-                  <h3 className="font-semibold text-gray-200">Restore System Data</h3>
-                  <p className="text-xs text-gray-500">Upload a JSON backup file to restore data. Note: This will merge with existing data.</p>
+                  <h3 className="font-semibold text-gray-200">{t('settings.dataBackup.restore')}</h3>
+                  <p className="text-xs text-gray-500">{t('settings.dataBackup.restoreDesc')}</p>
                 </div>
               </div>
               

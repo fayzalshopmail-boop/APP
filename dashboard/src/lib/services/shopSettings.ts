@@ -9,6 +9,7 @@ export interface ShopSettings {
   address: string;
   ownerName: string;
   lastAutoBackupDate?: number;
+  language?: 'bn' | 'en';
 }
 
 export const defaultShopSettings: ShopSettings = {
@@ -18,6 +19,7 @@ export const defaultShopSettings: ShopSettings = {
   phone: '',
   address: '',
   ownerName: 'Owner',
+  language: 'bn',
 };
 
 export const shopSettingsService = {

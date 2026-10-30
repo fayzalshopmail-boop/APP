@@ -13,9 +13,11 @@ import { PaymentModal } from '@/components/ui/PaymentModal';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { FilterChipBar } from '@/components/ui/FilterChipBar';
 import toast from 'react-hot-toast';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export default function DuePage() {
   const { user } = useAppStore();
+  const { t, language } = useTranslation();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -59,10 +61,10 @@ export default function DuePage() {
       }).filter(c => c.due > 0));
       
       setPaymentModalCustomer(null);
-      toast.success('পেমেন্ট সফলভাবে সম্পন্ন হয়েছে!');
+      toast.success(language === 'bn' ? 'পেমেন্ট সফলভাবে সম্পন্ন হয়েছে!' : 'Payment received successfully!');
     } catch (err: any) {
       console.error("Payment error", err);
-      toast.error(err.message || 'পেমেন্ট সম্পন্ন করতে সমস্যা হয়েছে');
+      toast.error(err.message || (language === 'bn' ? 'পেমেন্ট সম্পন্ন করতে সমস্যা হয়েছে' : 'Failed to process payment'));
     }
   };
 
@@ -130,9 +132,11 @@ export default function DuePage() {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
             <Coins className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
-            Due Collection (বাকি খাতা)
+            {language === 'bn' ? 'বাকি খাতা (Due Collection)' : 'Due Collection'}
           </h1>
-          <p className="text-xs sm:text-sm text-gray-400 mt-0.5 sm:mt-1">কাস্টমারদের বকেয়া টাকা আদায় ও পরবর্তী তাগাদার হিসাব</p>
+          <p className="text-xs sm:text-sm text-gray-400 mt-0.5 sm:mt-1">
+            {language === 'bn' ? 'কাস্টমারদের বকেয়া টাকা আদায় ও পরবর্তী তাগাদার হিসাব' : 'Collect customer dues and manage payment schedules'}
+          </p>
         </div>
       </div>
 
@@ -141,7 +145,7 @@ export default function DuePage() {
         {/* Total Due */}
         <div className="bg-card/90 border border-orange-500/20 hover:border-orange-500/40 rounded-xl sm:rounded-2xl p-2.5 sm:p-5 relative overflow-hidden group shadow-sm transition-all flex flex-col justify-between">
           <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2">
-            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">মোট বকেয়া</span>
+            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">{language === 'bn' ? 'মোট বকেয়া' : 'Total Due'}</span>
             <div className="w-6 h-6 sm:w-9 sm:h-9 bg-orange-500/10 rounded-lg sm:rounded-xl flex items-center justify-center border border-orange-500/20 text-orange-400 shrink-0">
               <Coins className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
             </div>
@@ -151,7 +155,7 @@ export default function DuePage() {
               {formatCurrency(totalDues)}
             </div>
             <p className="text-[9px] sm:text-[11px] text-gray-500 mt-0.5 truncate hidden sm:block">
-              সর্বমোট বাজার বাকি
+              {language === 'bn' ? 'সর্বমোট বাজার বাকি' : 'Total market due'}
             </p>
           </div>
         </div>
@@ -159,17 +163,17 @@ export default function DuePage() {
         {/* Due Customers Count */}
         <div className="bg-card/90 border border-purple-500/20 hover:border-purple-500/40 rounded-xl sm:rounded-2xl p-2.5 sm:p-5 relative overflow-hidden group shadow-sm transition-all flex flex-col justify-between">
           <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2">
-            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">বাকি কাস্টমার</span>
+            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">{language === 'bn' ? 'বাকি কাস্টমার' : 'Due Customers'}</span>
             <div className="w-6 h-6 sm:w-9 sm:h-9 bg-purple-500/10 rounded-lg sm:rounded-xl flex items-center justify-center border border-purple-500/20 text-purple-400 shrink-0">
               <Phone className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
             </div>
           </div>
           <div>
             <div className="text-sm sm:text-2xl font-bold text-white tracking-tight leading-tight truncate">
-              {customers.length} জন
+              {customers.length} {language === 'bn' ? 'জন' : ''}
             </div>
             <p className="text-[9px] sm:text-[11px] text-gray-500 mt-0.5 truncate hidden sm:block">
-              {highDueCount} জনের ৫০০৳+ বাকি
+              {highDueCount} {language === 'bn' ? 'জনের ৫০০৳+ বাকি' : 'with ≥ 500৳ due'}
             </p>
           </div>
         </div>
@@ -177,17 +181,17 @@ export default function DuePage() {
         {/* Overdue Count */}
         <div className="bg-card/90 border border-red-500/20 hover:border-red-500/40 rounded-xl sm:rounded-2xl p-2.5 sm:p-5 relative overflow-hidden group shadow-sm transition-all flex flex-col justify-between">
           <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2">
-            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">মেয়াদোত্তীর্ণ</span>
+            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">{language === 'bn' ? 'মেয়াদোত্তীর্ণ' : 'Overdue'}</span>
             <div className="w-6 h-6 sm:w-9 sm:h-9 bg-red-500/10 rounded-lg sm:rounded-xl flex items-center justify-center border border-red-500/20 text-red-400 shrink-0">
               <AlertCircle className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
             </div>
           </div>
           <div>
             <div className="text-sm sm:text-2xl font-bold text-red-400 tracking-tight leading-tight truncate">
-              {overdueCount} জন
+              {overdueCount} {language === 'bn' ? 'জন' : ''}
             </div>
             <p className="text-[9px] sm:text-[11px] text-gray-500 mt-0.5 truncate hidden sm:block">
-              তাগাদার তারিখ পার হয়েছে
+              {language === 'bn' ? 'তাগাদার তারিখ পার হয়েছে' : 'Payment date passed'}
             </p>
           </div>
         </div>
@@ -200,7 +204,7 @@ export default function DuePage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             <Input 
               type="text" 
-              placeholder="কাস্টমারের নাম বা ফোন নম্বর..." 
+              placeholder={language === 'bn' ? 'কাস্টমারের নাম বা ফোন নম্বর...' : 'Customer name or phone number...'} 
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-9 bg-popover/80 border-gray-800 h-9 sm:h-10 text-xs sm:text-sm rounded-xl focus:border-blue-500"
@@ -208,9 +212,9 @@ export default function DuePage() {
           </div>
           <FilterChipBar
             filters={[
-              { id: 'all', label: 'সকল বাকি', count: customers.length },
-              { id: 'overdue', label: 'মেয়াদোত্তীর্ণ', count: overdueCount },
-              { id: 'high', label: '≥ ৫০০৳ বাকি', count: highDueCount },
+              { id: 'all', label: language === 'bn' ? 'সকল বাকি' : 'All Dues', count: customers.length },
+              { id: 'overdue', label: language === 'bn' ? 'মেয়াদোত্তীর্ণ' : 'Overdue', count: overdueCount },
+              { id: 'high', label: language === 'bn' ? '≥ ৫০০৳ বাকি' : '≥ 500৳ Due', count: highDueCount },
             ]}
             activeFilter={filterTab}
             onFilterChange={handleFilterChange}
@@ -223,8 +227,12 @@ export default function DuePage() {
           <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mb-4">
             <Coins className="w-8 h-8 text-emerald-400" />
           </div>
-          <h3 className="text-lg font-semibold text-white mb-2">কোন বাকি পাওয়া যায়নি!</h3>
-          <p className="text-gray-400 text-sm">সকল কাস্টমার তাদের বকেয়া পরিশোধ করেছেন অথবা সার্চ ফিল্টারে কোন তথ্য মেলেনি।</p>
+          <h3 className="text-lg font-semibold text-white mb-2">
+            {language === 'bn' ? 'কোন বাকি পাওয়া যায়নি!' : 'No dues found!'}
+          </h3>
+          <p className="text-gray-400 text-sm">
+            {language === 'bn' ? 'সকল কাস্টমার তাদের বকেয়া পরিশোধ করেছেন অথবা সার্চ ফিল্টারে কোন তথ্য মেলেনি।' : 'All customers have cleared their dues or no matches found.'}
+          </p>
         </div>
       ) : (
         <>
@@ -234,10 +242,10 @@ export default function DuePage() {
               <table className="w-full text-sm text-left whitespace-nowrap">
                 <thead className="text-xs text-gray-400 uppercase bg-secondary/50 border-b border-border">
                   <tr>
-                    <th className="px-6 py-4 font-semibold">Customer</th>
-                    <th className="px-6 py-4 font-semibold">Due Amount</th>
-                    <th className="px-6 py-4 font-semibold">Due Date</th>
-                    <th className="px-6 py-4 font-semibold text-right">Action</th>
+                    <th className="px-6 py-4 font-semibold">{language === 'bn' ? 'কাস্টমার' : 'Customer'}</th>
+                    <th className="px-6 py-4 font-semibold">{language === 'bn' ? 'বকেয়ার পরিমাণ' : 'Due Amount'}</th>
+                    <th className="px-6 py-4 font-semibold">{language === 'bn' ? 'তাগাদার তারিখ' : 'Due Date'}</th>
+                    <th className="px-6 py-4 font-semibold text-right">{language === 'bn' ? 'অ্যাকশন' : 'Action'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
@@ -266,13 +274,13 @@ export default function DuePage() {
                             isOverdue(c.dueDate) ? 'text-red-400' : 'text-gray-300'
                           }`}>
                             <Calendar className="w-3.5 h-3.5" />
-                            {new Date(c.dueDate).toLocaleDateString()}
+                            {new Date(c.dueDate).toLocaleDateString(language === 'bn' ? 'bn-BD' : 'en-US')}
                             {isOverdue(c.dueDate) && (
-                              <span title="Overdue!"><AlertCircle className="w-3.5 h-3.5 ml-1 text-red-500" /></span>
+                              <span title={language === 'bn' ? 'মেয়াদোত্তীর্ণ!' : 'Overdue!'}><AlertCircle className="w-3.5 h-3.5 ml-1 text-red-500" /></span>
                             )}
                           </div>
                         ) : (
-                          <span className="text-gray-500 text-xs">Not specified</span>
+                          <span className="text-gray-500 text-xs">{language === 'bn' ? 'নির্ধারিত নেই' : 'Not specified'}</span>
                         )}
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -281,7 +289,7 @@ export default function DuePage() {
                           className="bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20"
                         >
                           <ArrowUpRight className="w-4 h-4 mr-1" />
-                          Collect
+                          {language === 'bn' ? 'জমা নিন' : 'Collect'}
                         </Button>
                       </td>
                     </motion.tr>
@@ -323,26 +331,26 @@ export default function DuePage() {
                         ? 'bg-red-500/10 text-red-400 border-red-500/25' 
                         : 'bg-orange-500/10 text-orange-400 border-orange-500/25'
                     }`}>
-                      {isOverdueItem ? 'মেয়াদোত্তীর্ণ' : 'বাকি আছে'}
+                      {isOverdueItem ? (language === 'bn' ? 'মেয়াদোত্তীর্ণ' : 'Overdue') : (language === 'bn' ? 'বাকি আছে' : 'Due')}
                     </span>
                   </div>
 
                   {/* Middle Info Strip: Due Amount & Due Date */}
                   <div className="flex items-center justify-between bg-[#121523]/80 px-2.5 py-1.5 rounded-lg border border-gray-800/60 text-xs">
                     <div>
-                      <span className="text-[10px] text-gray-400 block">বকেয়া টাকা:</span>
+                      <span className="text-[10px] text-gray-400 block">{language === 'bn' ? 'বকেয়া টাকা:' : 'Due Amount:'}</span>
                       <span className="text-sm font-bold text-orange-400">
                         {formatCurrency(c.due)}
                       </span>
                     </div>
 
                     <div className="text-right">
-                      <span className="text-[10px] text-gray-400 block">তাগাদার তারিখ:</span>
+                      <span className="text-[10px] text-gray-400 block">{language === 'bn' ? 'তাগাদার তারিখ:' : 'Due Date:'}</span>
                       <span className={`text-[11px] font-medium flex items-center justify-end gap-1 ${
                         isOverdueItem ? 'text-red-400 font-bold' : 'text-gray-300'
                       }`}>
                         <Calendar className="w-3 h-3" />
-                        {c.dueDate ? new Date(c.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'নির্ধারিত নেই'}
+                        {c.dueDate ? new Date(c.dueDate).toLocaleDateString(language === 'bn' ? 'bn-BD' : 'en-US', { day: 'numeric', month: 'short' }) : (language === 'bn' ? 'নির্ধারিত নেই' : 'Not set')}
                       </span>
                     </div>
                   </div>
@@ -354,14 +362,14 @@ export default function DuePage() {
                       onClick={() => setPaymentModalCustomer(c)} 
                       className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs h-7.5 rounded-lg shadow-sm font-medium"
                     >
-                      <ArrowUpRight className="w-3.5 h-3.5 mr-1" /> জমা নিন
+                      <ArrowUpRight className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'জমা নিন' : 'Collect'}
                     </Button>
                     <a 
                       href={`tel:${c.phone}`} 
                       className="inline-flex items-center justify-center px-3.5 h-7.5 rounded-lg border border-gray-700 bg-secondary/60 hover:bg-gray-800 text-gray-200 text-xs font-medium transition-colors"
-                      title="কল করুন"
+                      title={language === 'bn' ? 'কল করুন' : 'Call'}
                     >
-                      <Phone className="w-3.5 h-3.5 mr-1 text-blue-400" /> কল
+                      <Phone className="w-3.5 h-3.5 mr-1 text-blue-400" /> {language === 'bn' ? 'কল' : 'Call'}
                     </a>
                   </div>
                 </div>

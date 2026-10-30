@@ -8,6 +8,7 @@ import { Search, Edit, Trash2, MessageCircle, Download, FileText, Phone, PhoneCa
 import { motion } from 'framer-motion';
 import { formatCurrency } from '@/lib/currency';
 import { useAppStore } from '@/store/useAppStore';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import dynamic from 'next/dynamic';
 import type { PartsConfirmData } from '@/components/ui/PartsUsedModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -35,6 +36,7 @@ import { smsConfigService } from '@/lib/services/smsConfig';
 import toast from 'react-hot-toast';
 
 export default function CustomersPage() {
+  const { t, isBangla } = useTranslation();
   const { user, highlightCustomerId, highlightCustomerSearch, setHighlightCustomerId, setHighlightCustomerSearch } = useAppStore();
   const hasFullAccess = user?.role === 'Owner' || user?.role === 'Manager';
   const [search, setSearch] = useState('');
@@ -715,15 +717,19 @@ export default function CustomersPage() {
           <span>
             {filteredCustomers.length > 0 ? (
               <>
-                Showing <strong className="font-semibold text-white">{startIndex + 1}-{Math.min(endIndex, filteredCustomers.length)}</strong> of <strong className="font-semibold text-white">{filteredCustomers.length}</strong> {filteredCustomers.length === 1 ? 'customer' : 'customers'}
+                {isBangla ? (
+                  <>মোট <strong className="font-semibold text-white">{filteredCustomers.length}</strong> জনের মধ্যে <strong className="font-semibold text-white">{startIndex + 1}-{Math.min(endIndex, filteredCustomers.length)}</strong> জন প্রদর্শিত</>
+                ) : (
+                  <>Showing <strong className="font-semibold text-white">{startIndex + 1}-{Math.min(endIndex, filteredCustomers.length)}</strong> of <strong className="font-semibold text-white">{filteredCustomers.length}</strong> customers</>
+                )}
               </>
             ) : (
-              <>Showing <strong className="font-semibold text-white">0</strong> customers</>
+              <>{isBangla ? 'কোনো কাস্টমার পাওয়া যায়নি' : 'Showing 0 customers'}</>
             )}
           </span>
           {statusFilter !== 'All' && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
-              {statusFilter}
+              {statusFilter === 'Pending' ? (isBangla ? 'পেন্ডিং কাজ' : 'Pending') : statusFilter}
               <button onClick={() => setStatusFilter('All')} className="hover:text-white" title="Clear filter">
                 <X className="w-3 h-3" />
               </button>
@@ -740,7 +746,7 @@ export default function CustomersPage() {
               <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <Input 
                 type="text" 
-                placeholder="Search customers..." 
+                placeholder={t('customers.searchPlaceholder')} 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="!h-10 sm:!h-10 !bg-card dark:!bg-card border border-gray-800 hover:border-gray-700 text-gray-200 text-xs sm:text-sm !rounded-xl pl-9 pr-8 focus:outline-none focus:!border-blue-500 focus:!ring-1 focus:!ring-blue-500/50 transition-all w-full placeholder:text-gray-500 shadow-sm"
@@ -761,18 +767,18 @@ export default function CustomersPage() {
               <SelectTrigger className="!h-10 sm:!h-10 w-28 sm:w-36 !bg-card dark:!bg-card border border-gray-800 hover:border-gray-700 text-gray-200 text-xs sm:text-sm !rounded-xl px-2.5 sm:px-3 focus:outline-none focus:!border-blue-500 focus:!ring-1 focus:!ring-blue-500/50 transition-all shadow-sm shrink-0 flex items-center justify-between">
                 <span className="flex items-center gap-1.5 sm:gap-2 truncate">
                   <Filter className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 transition-colors ${statusFilter !== 'All' ? 'text-blue-400' : 'text-gray-400'}`} />
-                  <SelectValue placeholder="All Statuses" />
+                  <SelectValue placeholder={t('customers.allStatus')} />
                 </span>
               </SelectTrigger>
               <SelectContent className="bg-popover border-gray-800 text-gray-200 rounded-xl shadow-xl">
-                <SelectItem value="All">All Statuses</SelectItem>
-                <SelectItem value="Pending">পেন্ডিং কাজ (Active)</SelectItem>
-                <SelectItem value="Received">Received</SelectItem>
-                <SelectItem value="In Progress">In Progress</SelectItem>
-                <SelectItem value="Waiting for Parts">Waiting for Parts</SelectItem>
-                <SelectItem value="Ready for Delivery">Ready for Delivery</SelectItem>
-                <SelectItem value="Delivered">Delivered</SelectItem>
-                <SelectItem value="Returned (Unrepaired)">Returned</SelectItem>
+                <SelectItem value="All">{t('customers.filters.all')}</SelectItem>
+                <SelectItem value="Pending">{isBangla ? 'পেন্ডিং কাজ (চলমান)' : 'Pending Repairs'}</SelectItem>
+                <SelectItem value="Received">{t('status.received')}</SelectItem>
+                <SelectItem value="In Progress">{t('status.inProgress')}</SelectItem>
+                <SelectItem value="Waiting for Parts">{t('status.waitingForParts')}</SelectItem>
+                <SelectItem value="Ready for Delivery">{t('status.readyForDelivery')}</SelectItem>
+                <SelectItem value="Delivered">{t('status.delivered')}</SelectItem>
+                <SelectItem value="Returned (Unrepaired)">{t('status.returned')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -783,7 +789,7 @@ export default function CustomersPage() {
               className="items-center gap-2 bg-secondary hover:bg-gray-800 text-gray-300 border border-gray-800 px-3.5 h-10 rounded-xl text-xs sm:text-sm font-medium transition-all"
             >
               <Download className="w-4 h-4" />
-              Export CSV
+              {t('common.export')} CSV
             </Button>
           </div>
         </div>
@@ -801,12 +807,12 @@ export default function CustomersPage() {
             <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-secondary/80 sticky top-0 z-10 shadow-sm">
                 <tr className="text-gray-400 uppercase tracking-wider text-xs border-b border-gray-800">
-                  <th className="px-4 py-3.5 font-medium text-left min-w-[170px]">Customer Info</th>
-                  <th className="px-4 py-3.5 font-medium text-left min-w-[130px]">Contact</th>
-                  <th className="px-4 py-3.5 font-medium text-left min-w-[180px]">Appliance Info</th>
-                  <th className="px-4 py-3.5 font-medium text-left min-w-[130px]">Delivery</th>
-                  <th className="px-4 py-3.5 font-medium text-left min-w-[160px]">Status</th>
-                  <th className="px-4 py-3.5 font-medium text-right min-w-[120px]">Actions</th>
+                  <th className="px-4 py-3.5 font-medium text-left min-w-[170px]">{t('customers.table.customer')}</th>
+                  <th className="px-4 py-3.5 font-medium text-left min-w-[130px]">{t('customers.table.phone')}</th>
+                  <th className="px-4 py-3.5 font-medium text-left min-w-[180px]">{t('customers.table.device')}</th>
+                  <th className="px-4 py-3.5 font-medium text-left min-w-[130px]">{t('customers.table.deliveryDate')}</th>
+                  <th className="px-4 py-3.5 font-medium text-left min-w-[160px]">{t('customers.table.status')}</th>
+                  <th className="px-4 py-3.5 font-medium text-right min-w-[120px]">{t('customers.table.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800/50">
@@ -1362,12 +1368,12 @@ export default function CustomersPage() {
         isOpen={confirmModal.isOpen}
         onClose={closeConfirmModal}
         onConfirm={handleConfirmAction}
-        title={confirmModal.actionType === 'return' ? "কাজ বাতিল বা ফেরত নিশ্চিতকরণ" : "Delete Customer?"}
+        title={confirmModal.actionType === 'return' ? (isBangla ? "কাজ বাতিল বা ফেরত নিশ্চিতকরণ" : "Cancel & Return Device?") : t('customers.deleteConfirmTitle')}
         message={confirmModal.actionType === 'return' 
-          ? "আপনি কি নিশ্চিতভাবে এই কাস্টমারের কাজ বাতিল/ফেরত (Returned) করতে চান? কোনো অগ্রিম টাকা জমা থাকলে তা রিফান্ড হিসেবে রেকর্ড হবে এবং ব্যবহৃত পার্টস পুনরায় স্টকে যুক্ত হবে।" 
-          : "Are you sure you want to delete this customer? This action cannot be undone and all data will be permanently lost."}
-        confirmText={confirmModal.actionType === 'return' ? "হ্যাঁ, ফেরত দিন" : "Delete Customer"}
-        cancelText="বাতিল"
+          ? (isBangla ? "আপনি কি নিশ্চিতভাবে এই কাস্টমারের কাজ বাতিল/ফেরত (Returned) করতে চান? কোনো অগ্রিম টাকা জমা থাকলে তা রিফান্ড হিসেবে রেকর্ড হবে এবং ব্যবহৃত পার্টস পুনরায় স্টকে যুক্ত হবে।" : "Are you sure you want to mark this repair as returned? Any advance payment will be recorded as refund and parts returned to stock.") 
+          : t('customers.deleteConfirmMessage')}
+        confirmText={confirmModal.actionType === 'return' ? (isBangla ? "হ্যাঁ, ফেরত দিন" : "Yes, Return") : t('common.delete')}
+        cancelText={t('common.cancel')}
       >
         {confirmModal.actionType === 'delete' && (
           <div className="p-3.5 rounded-xl bg-secondary/60 border border-gray-800 text-left space-y-2 mt-2">
@@ -1380,10 +1386,10 @@ export default function CustomersPage() {
               />
               <div className="text-xs">
                 <span className="font-semibold text-gray-200 block">
-                  এই কাস্টমারের লেনদেন হিস্ট্রিও মুছে ফেলুন
+                  {isBangla ? "এই কাস্টমারের লেনদেন হিস্ট্রিও মুছে ফেলুন" : "Also delete financial transaction records"}
                 </span>
                 <span className="text-gray-400 text-[11px] block mt-0.5 leading-snug">
-                  টিক দেওয়া থাকলে রিপোর্ট ও খতিয়ান থেকে এই কাস্টমারের সব পেমেন্ট/অ্যাডভান্স রেকর্ড স্থায়ীভাবে মুছে যাবে।
+                  {isBangla ? "টিক দেওয়া থাকলে রিপোর্ট ও খতিয়ান থেকে এই কাস্টমারের সব পেমেন্ট/অ্যাডভান্স রেকর্ড স্থায়ীভাবে মুছে যাবে।" : "If checked, all related payment records will be permanently removed from reports."}
                 </span>
               </div>
             </label>
@@ -1396,8 +1402,8 @@ export default function CustomersPage() {
         type="button"
         onClick={openAddModal}
         className="sm:hidden fixed bottom-24 right-4 z-40 w-13 h-13 bg-gradient-to-tr from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 active:scale-90 text-white rounded-full flex items-center justify-center shadow-2xl shadow-blue-600/50 border border-blue-400/30 transition-all focus:outline-none"
-        title="নতুন কাস্টমার যোগ করুন"
-        aria-label="নতুন কাস্টমার যোগ করুন"
+        title={t('topbar.addCustomer')}
+        aria-label={t('topbar.addCustomer')}
       >
         <Plus className="w-6 h-6 stroke-[2.5]" />
       </button>

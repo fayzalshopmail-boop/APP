@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Loader2, Coins } from 'lucide-react';
 import { Customer } from '@/lib/services/customer';
 import { formatCurrency } from '@/lib/currency';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 interface PaymentModalProps {
  isOpen: boolean;
@@ -16,6 +17,7 @@ interface PaymentModalProps {
 }
 
 export function PaymentModal({ isOpen, onClose, customer, onSave }: PaymentModalProps) {
+ const { t, language } = useTranslation();
  const [amount, setAmount] = useState<string>('');
  const [nextDueDate, setNextDueDate] = useState<string>('');
  const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,15 +48,21 @@ export function PaymentModal({ isOpen, onClose, customer, onSave }: PaymentModal
  
  <div className="p-6">
  <DialogHeader className="mb-6">
- <DialogTitle className="text-xl font-bold tracking-tight">Receive Payment</DialogTitle>
+ <DialogTitle className="text-xl font-bold tracking-tight">
+   {language === 'bn' ? 'বকেয়া টাকা গ্রহণ' : 'Receive Payment'}
+ </DialogTitle>
  <DialogDescription className="text-gray-400 mt-1.5">
- Collect due amount for <span className="text-gray-200 font-medium">{customer.name}</span>.
+   {language === 'bn' 
+     ? <><span className="text-gray-200 font-medium">{customer.name}</span> এর বকেয়া টাকা আদায় করুন।</> 
+     : <>Collect due amount for <span className="text-gray-200 font-medium">{customer.name}</span>.</>}
  </DialogDescription>
  </DialogHeader>
 
  <div className="bg-secondary rounded-xl p-4 mb-6 border border-gray-800 flex justify-between items-center">
  <div className="space-y-1">
- <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Current Due</p>
+ <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">
+   {language === 'bn' ? 'বর্তমান বকেয়া' : 'Current Due'}
+ </p>
  <p className="text-2xl font-bold text-red-400">{formatCurrency(customer.due)}</p>
  </div>
  <div className="h-10 w-10 bg-red-500/10 rounded-full flex items-center justify-center">
@@ -64,7 +72,9 @@ export function PaymentModal({ isOpen, onClose, customer, onSave }: PaymentModal
 
  <form onSubmit={handleSubmit} className="space-y-6">
  <div className="space-y-2">
- <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Payment Amount</label>
+ <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+   {language === 'bn' ? 'পরিশোধের পরিমাণ' : 'Payment Amount'}
+ </label>
  <div className="relative">
  <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-emerald-500">৳</span>
  <Input 
@@ -86,13 +96,15 @@ export function PaymentModal({ isOpen, onClose, customer, onSave }: PaymentModal
  
  {Number(amount) > 0 && (
  <p className="text-xs text-gray-400 text-right mt-2 mb-4">
- Remaining Due will be: <span className="text-emerald-400 font-medium">{formatCurrency(customer.due - Number(amount))}</span>
+ {language === 'bn' ? 'অবশিষ্ট বকেয়া থাকবে: ' : 'Remaining Due will be: '}<span className="text-emerald-400 font-medium">{formatCurrency(customer.due - Number(amount))}</span>
  </p>
  )}
 
  {Number(amount) > 0 && Number(amount) < customer.due && (
   <div className="space-y-2 animate-in slide-in-from-top-2 duration-300 mb-6">
-    <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Next Due Date (For Remaining Amount)</label>
+    <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+      {language === 'bn' ? 'পরবর্তী বকেয়া পরিশোধের তারিখ' : 'Next Due Date (For Remaining Amount)'}
+    </label>
     <Input 
       type="date"
       required
@@ -111,14 +123,14 @@ export function PaymentModal({ isOpen, onClose, customer, onSave }: PaymentModal
  onClick={onClose}
  variant="ghost" className="flex-1 h-12"
  >
- Cancel
+ {t('common.cancel')}
  </Button>
  <Button 
  type="submit" 
  disabled={isSubmitting || !amount || Number(amount) <= 0 || Number(amount) > customer.due}
  className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 shadow-emerald-900/20 text-white"
  >
- {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm Payment'}
+ {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (language === 'bn' ? 'পেমেন্ট নিশ্চিত করুন' : 'Confirm Payment')}
  </Button>
  </div>
  </form>

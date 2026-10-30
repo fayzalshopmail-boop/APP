@@ -16,6 +16,7 @@ import {
 import { Customer, normalizePhone } from '@/lib/services/customer';
 import { User, Phone, MapPin, Loader2, Tv, Wrench, Tag, FileText, Settings2, Camera, CheckCircle, X, RotateCcw } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import { ManageOptionsModal } from './ManageOptionsModal';
 import dynamic from 'next/dynamic';
 import { CustomSelect } from './CustomSelect';
@@ -35,6 +36,7 @@ interface CustomerModalProps {
 }
 
 export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAddresses = [], existingCustomers = [] }: CustomerModalProps) {
+ const { t, language } = useTranslation();
  const { deviceBrands: storeBrands, deviceTypes, deviceProblems: storeProblems, user } = useAppStore();
  
  const [instantDelivery, setInstantDelivery] = useState(false);
@@ -207,7 +209,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
    setChinaSubBrand('');
    setFormData(getBlankFormData());
    setMatchedCustomer(null);
-   toast.success('ড্রাফট মুছে নতুন ফর্ম তৈরি করা হয়েছে');
+   toast.success(language === 'bn' ? 'ড্রাফট মুছে নতুন ফর্ম তৈরি করা হয়েছে' : 'Draft cleared. New form created.');
  };
 
  const handlePhoneInput = (rawInput: string) => {
@@ -246,7 +248,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  if (localDigits.startsWith('0')) localDigits = localDigits.slice(1);
 
  if (!/^1[3-9]\d{8}$/.test(localDigits)) {
-   toast.error('সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)');
+   toast.error(language === 'bn' ? 'সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)' : 'Please enter a valid 11-digit mobile number (e.g. 017XXXXXXXX)');
    return;
  }
 
@@ -290,10 +292,14 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  <div className="p-3 sm:p-6 overflow-y-auto custom-scrollbar flex-1">
  <DialogHeader className="mb-4 sm:mb-6 text-left">
  <DialogTitle className="text-lg sm:text-xl font-bold tracking-tight">
- {initialData ? 'Edit Customer Details' : 'Add New Customer'}
+ {initialData 
+   ? (language === 'bn' ? 'কাস্টমারের তথ্য সম্পাদনা' : 'Edit Customer Details') 
+   : (language === 'bn' ? 'নতুন কাস্টমার যুক্ত করুন' : 'Add New Customer')}
  </DialogTitle>
  <DialogDescription className="text-gray-400 mt-1 text-xs sm:text-sm">
- {initialData ? 'Update the details below to save changes.' : 'Enter the customer details to add them to your POS system.'}
+ {initialData 
+   ? (language === 'bn' ? 'পরিবর্তন সংরক্ষণ করতে নিচের তথ্য আপডেট করুন।' : 'Update the details below to save changes.') 
+   : (language === 'bn' ? 'সিস্টেমে যুক্ত করতে কাস্টমারের বিবরণ লিখুন।' : 'Enter the customer details to add them to your POS system.')}
  </DialogDescription>
  </DialogHeader>
 
@@ -301,14 +307,14 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
    <div className="mb-4 flex items-center justify-between p-2.5 sm:p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs sm:text-sm text-amber-400">
      <div className="flex items-center gap-2">
        <RotateCcw className="w-4 h-4 shrink-0 text-amber-400" />
-       <span>পূর্বের অসম্পূর্ণ ড্রাফট তথ্য উদ্ধার করা হয়েছে।</span>
+       <span>{language === 'bn' ? 'পূর্বের অসম্পূর্ণ ড্রাফট তথ্য উদ্ধার করা হয়েছে।' : 'Incomplete draft information restored.'}</span>
      </div>
      <button
        type="button"
        onClick={handleClearDraft}
        className="underline hover:text-amber-300 font-semibold ml-2 whitespace-nowrap"
      >
-       নতুন করে লিখুন
+       {language === 'bn' ? 'নতুন করে লিখুন' : 'Start Fresh'}
      </button>
    </div>
  )}
@@ -317,12 +323,14 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  {/* 1. Customer Info */}
  <div className="bg-[#1a1d2d]/30 p-3.5 sm:p-5 rounded-xl border border-gray-800/60 space-y-3.5 sm:space-y-4">
  <h4 className="text-xs sm:text-sm font-semibold text-blue-400 flex items-center gap-2 mb-1">
- <User className="w-4 h-4" /> Customer Information
+ <User className="w-4 h-4" /> {language === 'bn' ? 'কাস্টমার তথ্য' : 'Customer Information'}
  </h4>
  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
  {/* Phone */}
  <div className="space-y-1.5">
- <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Phone Number</label>
+ <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+   {language === 'bn' ? 'মোবাইল নম্বর' : 'Phone Number'}
+ </label>
  <div className="relative">
  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
  <span className="absolute left-9 top-1/2 -translate-y-1/2 font-medium text-gray-300 pointer-events-none">+880</span>
@@ -347,14 +355,20 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  {matchedCustomer && (
  <div className="flex items-start gap-2 p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs text-blue-400 mt-2">
  <CheckCircle className="w-4 h-4 shrink-0 text-blue-400 mt-0.5" />
- <span className="leading-tight">পূর্বের কাস্টমার পাওয়া গেছে: <strong>{matchedCustomer.name}</strong>। নতুন তথ্যগুলো এই কাস্টমারের হিস্ট্রিতে যুক্ত হবে।</span>
+ <span className="leading-tight">
+   {language === 'bn' 
+     ? <>পূর্বের কাস্টমার পাওয়া গেছে: <strong>{matchedCustomer.name}</strong>। নতুন তথ্যগুলো এই কাস্টমারের হিস্ট্রিতে যুক্ত হবে।</>
+     : <>Existing customer found: <strong>{matchedCustomer.name}</strong>. New job will be linked to this customer.</>}
+ </span>
  </div>
  )}
  </div>
 
  {/* Name */}
  <div className="space-y-1.5">
- <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Full Name</label>
+ <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+   {language === 'bn' ? 'কাস্টমারের নাম' : 'Full Name'}
+ </label>
  <div className="relative">
  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
  <Input 
@@ -362,7 +376,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  value={formData.name}
  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
  className="pl-10" 
- placeholder="e.g. Rahim Uddin"
+ placeholder={language === 'bn' ? 'যেমন: রহিম উদ্দিন' : 'e.g. Rahim Uddin'}
  />
  </div>
  </div>
@@ -370,7 +384,9 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
 
  {/* Address */}
  <div className="space-y-1.5 pt-1">
- <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Address</label>
+ <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+   {language === 'bn' ? 'ঠিকানা' : 'Address'}
+ </label>
  <div className="relative">
  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
  <Input 
@@ -378,7 +394,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  value={formData.address}
  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
  className="pl-10" 
- placeholder="e.g. Dhaka, Bangladesh"
+ placeholder={language === 'bn' ? 'যেমন: ধানমন্ডি, ঢাকা' : 'e.g. Dhaka, Bangladesh'}
  />
  <datalist id="address-suggestions">
  {existingAddresses.map((addr, idx) => (
@@ -392,15 +408,17 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  {/* 2. Device Info */}
  <div className="bg-[#1a1d2d]/30 p-3.5 sm:p-5 rounded-xl border border-gray-800/60 space-y-3.5 sm:space-y-4">
  <h4 className="text-xs sm:text-sm font-semibold text-orange-400 flex items-center gap-2 mb-1">
- <Tv className="w-4 h-4" /> Device Information
+ <Tv className="w-4 h-4" /> {language === 'bn' ? 'ডিভাইস তথ্য' : 'Device Information'}
  </h4>
  
  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
  {/* Device Type */}
    <div className="space-y-1.5">
    <div className="flex items-center justify-between">
-   <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Device Type</label>
-   <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceTypes')} className="h-6 w-6 text-gray-500 hover:text-blue-400 p-0" title="Manage Types">
+   <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+     {language === 'bn' ? 'ডিভাইসের ধরন' : 'Device Type'}
+   </label>
+   <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceTypes')} className="h-6 w-6 text-gray-500 hover:text-blue-400 p-0" title={language === 'bn' ? 'ধরন ম্যানেজ করুন' : 'Manage Types'}>
    <Settings2 className="w-3.5 h-3.5" />
    </Button>
    </div>
@@ -408,7 +426,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
    value={formData.deviceType}
    onChange={(val) => setFormData({ ...formData, deviceType: val })}
    options={deviceTypes}
-   placeholder="Select Type"
+   placeholder={language === 'bn' ? 'ধরন নির্বাচন করুন' : 'Select Type'}
    icon={<Tv className="w-4 h-4" />}
    />
    </div>
@@ -416,8 +434,10 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
    {/* Device Brand */}
    <div className="space-y-1.5">
      <div className="flex items-center justify-between">
-     <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Device Brand</label>
-     <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceBrands')} className="h-6 w-6 text-gray-500 hover:text-blue-400 p-0" title="Manage Brands">
+     <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+       {language === 'bn' ? 'ডিভাইস ব্র্যান্ড' : 'Device Brand'}
+     </label>
+     <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceBrands')} className="h-6 w-6 text-gray-500 hover:text-blue-400 p-0" title={language === 'bn' ? 'ব্র্যান্ড ম্যানেজ করুন' : 'Manage Brands'}>
      <Settings2 className="w-3.5 h-3.5" />
      </Button>
      </div>
@@ -436,7 +456,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
               setFormData(prev => ({ ...prev, deviceBrand: finalBrand }));
             }}
             className="pl-20 pr-8 text-sm bg-secondary border-amber-500/40 focus-visible:ring-amber-500/50" 
-            placeholder="যেমন: Sunny, Vision..."
+            placeholder={language === 'bn' ? 'যেমন: Sunny, Vision...' : 'e.g. Sunny, Vision...'}
           />
           <button
             type="button"
@@ -446,7 +466,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
               setFormData(prev => ({ ...prev, deviceBrand: '' }));
             }}
             className="absolute right-2 text-gray-400 hover:text-red-400 p-1 rounded transition-colors"
-            title="অন্য ব্র্যান্ড সিলেক্ট করতে ড্রপডাউনে ফিরুন"
+            title={language === 'bn' ? 'অন্য ব্র্যান্ড সিলেক্ট করতে ড্রপডাউনে ফিরুন' : 'Back to brand dropdown'}
           >
             <X className="w-4 h-4" />
           </button>
@@ -466,7 +486,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
           }
         }}
         options={currentBrands}
-        placeholder="Select Brand"
+        placeholder={language === 'bn' ? 'ব্র্যান্ড নির্বাচন করুন' : 'Select Brand'}
         icon={<Tag className="w-4 h-4" />}
         />
       )}
@@ -477,8 +497,10 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
    {/* Device Problem */}
    <div className="space-y-1.5">
      <div className="flex items-center justify-between">
-     <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Primary Issue</label>
-     <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceProblems')} className="h-6 w-6 text-gray-500 hover:text-blue-400 p-0" title="Manage Problems">
+     <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+       {language === 'bn' ? 'প্রধান সমস্যা' : 'Primary Issue'}
+     </label>
+     <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceProblems')} className="h-6 w-6 text-gray-500 hover:text-blue-400 p-0" title={language === 'bn' ? 'সমস্যা ম্যানেজ করুন' : 'Manage Problems'}>
      <Settings2 className="w-3.5 h-3.5" />
      </Button>
      </div>
@@ -486,21 +508,23 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
      value={formData.deviceProblem}
      onChange={(val) => setFormData({ ...formData, deviceProblem: val })}
      options={currentProblems}
-     placeholder="Select Problem"
+     placeholder={language === 'bn' ? 'সমস্যা নির্বাচন করুন' : 'Select Problem'}
      icon={<Wrench className="w-4 h-4" />}
      />
      </div>
 
    {/* Device Details */}
  <div className="space-y-1.5">
- <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Device Details / Model</label>
+ <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+   {language === 'bn' ? 'মডেল বা বিবরণ' : 'Device Details / Model'}
+ </label>
  <div className="relative">
  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
  <Input 
  value={formData.deviceDetails}
  onChange={(e) => setFormData({ ...formData, deviceDetails: e.target.value })}
  className="pl-10 text-sm" 
- placeholder="e.g. 55 inch Bravia"
+ placeholder={language === 'bn' ? 'যেমন: ৫৫ ইঞ্চি ব্রাভিয়া' : 'e.g. 55 inch Bravia'}
  />
  </div>
  </div>
@@ -508,7 +532,9 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
 
  {/* Serial Number */}
  <div className="space-y-1.5">
- <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Serial Number / Barcode</label>
+ <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+   {language === 'bn' ? 'সিরিয়াল নম্বর বা বারকোড' : 'Serial Number / Barcode'}
+ </label>
  <div className="flex gap-2">
  <div className="relative flex-1">
  <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -520,13 +546,15 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  />
  </div>
  <Button 
- type="button"
+ type="button" 
  onClick={() => setIsScannerOpen(true)}
  className="h-10 w-10 sm:w-auto sm:px-4 bg-blue-600/10 hover:bg-blue-600/20 text-blue-500 border border-blue-500/20 rounded-lg flex items-center justify-center transition-colors shrink-0 p-0 sm:py-2"
- title="Scan Barcode using Camera"
+ title={language === 'bn' ? 'ক্যামেরা দিয়ে বারকোড স্ক্যান করুন' : 'Scan Barcode using Camera'}
  >
  <Camera className="w-4 h-4" />
- <span className="hidden sm:inline-block ml-1.5 text-xs font-medium">Scan</span>
+ <span className="hidden sm:inline-block ml-1.5 text-xs font-medium">
+   {language === 'bn' ? 'স্ক্যান' : 'Scan'}
+ </span>
  </Button>
  </div>
  </div>
@@ -535,14 +563,16 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  {/* 3. Billing & Warranty */}
  <div className="bg-[#1a1d2d]/30 p-3.5 sm:p-5 rounded-xl border border-gray-800/60 space-y-3.5 sm:space-y-4">
  <h4 className="text-xs sm:text-sm font-semibold text-emerald-400 flex items-center gap-2 mb-1">
- <FileText className="w-4 h-4" /> Billing & Warranty
+ <FileText className="w-4 h-4" /> {language === 'bn' ? 'বিলিং ও ওয়ারেন্টি' : 'Billing & Warranty'}
  </h4>
  
  {/* Row 1: Financials & Warranty (3 columns on PC) */}
  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
  {/* Total Bill */}
  <div className="space-y-1.5">
- <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Total Bill</label>
+ <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+   {language === 'bn' ? 'মোট বিল' : 'Total Bill'}
+ </label>
  <div className="relative">
  <span className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center text-blue-500 font-bold">৳</span>
  <Input 
@@ -557,12 +587,16 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  placeholder="0"
  />
  </div>
- <p className="text-[11px] text-gray-500">ফাঁকা রাখলে বিল পেন্ডিং হবে</p>
+ <p className="text-[11px] text-gray-500">
+   {language === 'bn' ? 'ফাঁকা রাখলে বিল পেন্ডিং হবে' : 'Leave empty for bill pending'}
+ </p>
  </div>
 
  {/* Advance */}
  <div className="space-y-1.5">
- <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Advance</label>
+ <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+   {language === 'bn' ? 'অগ্রিম গ্রহণ' : 'Advance'}
+ </label>
  <div className="relative">
  <span className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center text-green-500 font-bold">৳</span>
  <Input 
@@ -574,21 +608,29 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  placeholder="0"
  />
  </div>
- <p className="text-[11px] text-gray-500">অগ্রিম জমা থাকলে লিখুন</p>
+ <p className="text-[11px] text-gray-500">
+   {language === 'bn' ? 'অগ্রিম জমা থাকলে লিখুন' : 'Enter if advance was received'}
+ </p>
  </div>
  
  {/* Warranty */}
  <div className="space-y-1.5">
- <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Warranty</label>
+ <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+   {language === 'bn' ? 'ওয়ারেন্টি' : 'Warranty'}
+ </label>
  <CustomSelect 
- value={formData.warrantyMonths ? String(formData.warrantyMonths) : 'No Warranty'}
+ value={formData.warrantyMonths ? String(formData.warrantyMonths) : (language === 'bn' ? 'ওয়ারেন্টি নেই' : 'No Warranty')}
  onChange={(val) => {
- setFormData({ ...formData, warrantyMonths: val === 'No Warranty' ? '' : val });
+ setFormData({ ...formData, warrantyMonths: (val === 'No Warranty' || val === 'ওয়ারেন্টি নেই') ? '' : val });
  }}
- options={['No Warranty', '7 Days', '15 Days', '1 Month', '3 Months', '6 Months', '12 Months', '24 Months']}
- placeholder="Select warranty"
+ options={language === 'bn' 
+   ? ['ওয়ারেন্টি নেই', '৭ দিন', '১৫ দিন', '১ মাস', '৩ মাস', '৬ মাস', '১২ মাস', '২৪ মাস'] 
+   : ['No Warranty', '7 Days', '15 Days', '1 Month', '3 Months', '6 Months', '12 Months', '24 Months']}
+ placeholder={language === 'bn' ? 'ওয়ারেন্টি নির্বাচন করুন' : 'Select warranty'}
  />
- <p className="text-[11px] text-gray-500">সার্ভিসিং ওয়ারেন্টি সময়</p>
+ <p className="text-[11px] text-gray-500">
+   {language === 'bn' ? 'সার্ভিসিং ওয়ারেন্টি সময়' : 'Service warranty period'}
+ </p>
  </div>
  </div>
 
@@ -597,7 +639,9 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  {/* Expected Delivery */}
  <div className="space-y-1.5">
  <div className="flex items-center justify-between">
- <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Expected Delivery</label>
+ <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+   {language === 'bn' ? 'সম্ভাব্য ডেলিভারি' : 'Expected Delivery'}
+ </label>
  <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium text-blue-400 hover:text-blue-300 transition-colors select-none">
  <input 
  type="checkbox" 
@@ -605,13 +649,13 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  onChange={(e) => setInstantDelivery(e.target.checked)}
  className="w-3.5 h-3.5 rounded border-gray-700 bg-gray-900 text-blue-500 focus:ring-blue-500"
  />
- <span>Instant Delivery (তাৎক্ষণিক)</span>
+ <span>{language === 'bn' ? 'তাৎক্ষণিক ডেলিভারি (Instant)' : 'Instant Delivery'}</span>
  </label>
  </div>
 
  {instantDelivery ? (
  <div className="h-10 px-3 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center text-xs text-blue-400 font-medium">
- ⚡ তাৎক্ষণিক সার্ভিস (আজকেই ডেলিভারি হবে)
+   {language === 'bn' ? '⚡ তাৎক্ষণিক সার্ভিস (আজকেই ডেলিভারি হবে)' : '⚡ Instant Service (Delivery today)'}
  </div>
  ) : (
  <Input 
@@ -632,11 +676,15 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  : 'bg-orange-500/10 border-orange-500/30 text-orange-400'
  }`}>
  <span className="text-xs uppercase tracking-wider text-gray-400">
- {isBillPending ? 'বিল স্ট্যাটাস:' : 'বাকি (Due):'}
+ {isBillPending 
+   ? (language === 'bn' ? 'বিল স্ট্যাটাস:' : 'Bill Status:') 
+   : (language === 'bn' ? 'বাকি (Due):' : 'Due:')}
  </span>
  <span className="text-base font-bold">
  {isBillPending 
- ? ((formData.advance || 0) > 0 ? `Adv: ৳${formData.advance} (বিল পেন্ডিং)` : '⏳ বিল পেন্ডিং') 
+ ? ((formData.advance || 0) > 0 
+     ? `${language === 'bn' ? 'অগ্রিম' : 'Adv'}: ৳${formData.advance} (${language === 'bn' ? 'বিল পেন্ডিং' : 'Bill Pending'})` 
+     : (language === 'bn' ? '⏳ বিল পেন্ডিং' : '⏳ Bill Pending')) 
  : formatCurrency(Math.max(0, (formData.totalBill || 0) - (formData.advance || 0)))}
  </span>
  </div>
@@ -650,7 +698,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  onClick={onClose}
  className="flex-1 sm:flex-none h-10 px-4 rounded-xl text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800/50 border border-gray-800 sm:border-transparent transition-all flex items-center justify-center"
  >
- Cancel
+ {t('common.cancel')}
  </Button>
  <Button 
  type="submit" 
@@ -660,10 +708,10 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  {isSubmitting ? (
  <>
  <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
- Saving...
+ {t('common.saving')}
  </>
  ) : (
- 'Save Customer'
+   initialData ? t('customerModal.updateCustomer') : t('customerModal.saveCustomer')
  )}
  </Button>
  </div>

@@ -3,28 +3,30 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Users, Boxes, UserCircle } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export function TechnicianBottomNav() {
+  const { t } = useTranslation();
   const pathname = usePathname();
 
   const navTabs = [
     {
       id: 'customers',
-      name: 'কাস্টমার',
+      name: t('nav.customers'),
       href: '/customers',
       icon: Users,
       isActive: pathname.startsWith('/customers')
     },
     {
       id: 'inventory',
-      name: 'ইনভেন্টরি',
+      name: t('nav.inventory'),
       href: '/inventory',
       icon: Boxes,
       isActive: pathname.startsWith('/inventory')
     },
     {
       id: 'profile',
-      name: 'প্রোফাইল',
+      name: t('nav.attendance'),
       href: '/staff',
       icon: UserCircle,
       isActive: pathname === '/staff'

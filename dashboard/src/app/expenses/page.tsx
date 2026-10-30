@@ -13,18 +13,20 @@ import { expenseService, Expense } from '@/lib/services/expense';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { FilterChipBar } from '@/components/ui/FilterChipBar';
 import { getLocalDateString } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import toast from 'react-hot-toast';
 
 const EXPENSE_CATEGORIES = [
-  { name: 'Tea & Snacks', icon: Coffee, color: 'text-orange-400' },
-  { name: 'Utilities & Bills', icon: Plug, color: 'text-blue-400' },
-  { name: 'Transport', icon: Car, color: 'text-emerald-400' },
-  { name: 'Staff Salary', icon: UserCircle, color: 'text-purple-400' },
-  { name: 'Shop Supplies', icon: ShoppingBag, color: 'text-pink-400' },
-  { name: 'Other', icon: Wallet, color: 'text-gray-400' }
+  { name: 'Tea & Snacks', bn: 'চা ও নাশতা', icon: Coffee, color: 'text-orange-400' },
+  { name: 'Utilities & Bills', bn: 'বিল ও ইউটিলিটি', icon: Plug, color: 'text-blue-400' },
+  { name: 'Transport', bn: 'যাতায়াত / ভাড়া', icon: Car, color: 'text-emerald-400' },
+  { name: 'Staff Salary', bn: 'স্টাফ বেতন', icon: UserCircle, color: 'text-purple-400' },
+  { name: 'Shop Supplies', bn: 'দোকানের মালামাল', icon: ShoppingBag, color: 'text-pink-400' },
+  { name: 'Other', bn: 'অন্যান্য', icon: Wallet, color: 'text-gray-400' }
 ];
 
 export default function ExpensesPage() {
+  const { t, language } = useTranslation();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirmModal, setConfirmModal] = useState<{isOpen: boolean, id: string | null}>({isOpen: false, id: null});
@@ -97,7 +99,7 @@ export default function ExpensesPage() {
         setIsModalOpen(false);
         setEditingExpenseId(null);
         setFormData({ title: '', category: 'Tea & Snacks', amount: '', date: getLocalDateString() });
-        toast.success('খরচ সফলভাবে আপডেট করা হয়েছে');
+        toast.success(language === 'bn' ? 'খরচ সফলভাবে আপডেট করা হয়েছে' : 'Expense updated successfully');
       } else {
         const newExpense = {
           title: formData.title,
@@ -109,11 +111,11 @@ export default function ExpensesPage() {
         setExpenses([{ id, ...newExpense }, ...expenses]);
         setIsModalOpen(false);
         setFormData({ title: '', category: 'Tea & Snacks', amount: '', date: getLocalDateString() });
-        toast.success('খরচ সফলভাবে যোগ করা হয়েছে');
+        toast.success(language === 'bn' ? 'খরচ সফলভাবে যোগ করা হয়েছে' : 'Expense added successfully');
       }
     } catch (err) {
       console.error("Failed to save expense", err);
-      toast.error('খরচ সংরক্ষণ করতে সমস্যা হয়েছে');
+      toast.error(language === 'bn' ? 'খরচ সংরক্ষণ করতে সমস্যা হয়েছে' : 'Failed to save expense');
     }
   };
 
@@ -126,10 +128,10 @@ export default function ExpensesPage() {
     try {
       await expenseService.delete(confirmModal.id as string);
       setExpenses(expenses.filter(e => e.id !== (confirmModal.id as string)));
-      toast.success('খরচ সফলভাবে মুছে ফেলা হয়েছে');
+      toast.success(language === 'bn' ? 'খরচ সফলভাবে মুছে ফেলা হয়েছে' : 'Expense deleted successfully');
     } catch (err) {
       console.error(err);
-      toast.error('খরচ মুছতে সমস্যা হয়েছে');
+      toast.error(language === 'bn' ? 'খরচ মুছতে সমস্যা হয়েছে' : 'Failed to delete expense');
     } finally {
       setConfirmModal({isOpen: false, id: null});
     }
@@ -207,9 +209,11 @@ export default function ExpensesPage() {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
             <Wallet className="w-5 h-5 sm:w-6 sm:h-6 text-pink-500" />
-            Shop Expenses (দোকানের খরচ)
+            {language === 'bn' ? 'দোকানের খরচ (Expenses)' : 'Shop Expenses'}
           </h1>
-          <p className="text-xs sm:text-sm text-gray-400 mt-0.5 sm:mt-1">দৈনন্দিন খরচ ও নিয়মিত ব্যয় ট্র্যাকিং</p>
+          <p className="text-xs sm:text-sm text-gray-400 mt-0.5 sm:mt-1">
+            {language === 'bn' ? 'দৈনন্দিন খরচ ও নিয়মিত ব্যয় ট্র্যাকিং' : 'Daily expenses and routine expenditure tracking'}
+          </p>
         </div>
       </div>
 
@@ -218,7 +222,7 @@ export default function ExpensesPage() {
         {/* Card 1: This Month */}
         <div className="bg-card/90 border border-pink-500/20 hover:border-pink-500/40 rounded-xl sm:rounded-2xl p-2.5 sm:p-5 relative overflow-hidden group shadow-sm transition-all flex flex-col justify-between">
           <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2">
-            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">চলতি মাস</span>
+            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">{language === 'bn' ? 'চলতি মাস' : 'This Month'}</span>
             <div className="w-6 h-6 sm:w-9 sm:h-9 bg-pink-500/10 rounded-lg sm:rounded-xl flex items-center justify-center border border-pink-500/20 text-pink-400 shrink-0">
               <Wallet className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
             </div>
@@ -228,7 +232,7 @@ export default function ExpensesPage() {
               {formatCurrency(thisMonthExpenses)}
             </div>
             <p className="text-[9px] sm:text-[11px] text-gray-500 mt-0.5 truncate hidden sm:block">
-              চলতি মাসের মোট ব্যয়
+              {language === 'bn' ? 'চলতি মাসের মোট ব্যয়' : 'Total spent this month'}
             </p>
           </div>
         </div>
@@ -236,7 +240,7 @@ export default function ExpensesPage() {
         {/* Card 2: Today */}
         <div className="bg-card/90 border border-blue-500/20 hover:border-blue-500/40 rounded-xl sm:rounded-2xl p-2.5 sm:p-5 relative overflow-hidden group shadow-sm transition-all flex flex-col justify-between">
           <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2">
-            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">আজকের খরচ</span>
+            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">{language === 'bn' ? 'আজকের খরচ' : 'Today\'s Expenses'}</span>
             <div className="w-6 h-6 sm:w-9 sm:h-9 bg-blue-500/10 rounded-lg sm:rounded-xl flex items-center justify-center border border-blue-500/20 text-blue-400 shrink-0">
               <Calendar className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
             </div>
@@ -246,7 +250,7 @@ export default function ExpensesPage() {
               {formatCurrency(todayExpenses)}
             </div>
             <p className="text-[9px] sm:text-[11px] text-gray-500 mt-0.5 truncate hidden sm:block">
-              আজকের মোট ব্যয়
+              {language === 'bn' ? 'আজকের মোট ব্যয়' : 'Total spent today'}
             </p>
           </div>
         </div>
@@ -254,7 +258,7 @@ export default function ExpensesPage() {
         {/* Card 3: Total Expenses */}
         <div className="bg-card/90 border border-emerald-500/20 hover:border-emerald-500/40 rounded-xl sm:rounded-2xl p-2.5 sm:p-5 relative overflow-hidden group shadow-sm transition-all flex flex-col justify-between">
           <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2">
-            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">সর্বমোট খরচ</span>
+            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">{language === 'bn' ? 'সর্বমোট খরচ' : 'Total Expenses'}</span>
             <div className="w-6 h-6 sm:w-9 sm:h-9 bg-emerald-500/10 rounded-xl sm:rounded-xl flex items-center justify-center border border-emerald-500/20 text-emerald-400 shrink-0">
               <Coffee className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
             </div>
@@ -264,7 +268,7 @@ export default function ExpensesPage() {
               {formatCurrency(totalAllTimeExpenses)}
             </div>
             <p className="text-[9px] sm:text-[11px] text-gray-500 mt-0.5 truncate hidden sm:block">
-              মোট {expenses.length} টি রেকর্ড
+              {language === 'bn' ? `মোট ${expenses.length} টি রেকর্ড` : `Total ${expenses.length} records`}
             </p>
           </div>
         </div>
@@ -277,7 +281,7 @@ export default function ExpensesPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             <Input 
               type="text" 
-              placeholder="খরচের বিবরণ বা ক্যাটাগরি..." 
+              placeholder={language === 'bn' ? 'খরচের বিবরণ বা ক্যাটাগরি...' : 'Expense title or category...'} 
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-9 bg-popover/80 border-gray-800 h-9 sm:h-10 text-xs sm:text-sm rounded-xl focus:border-blue-500"
@@ -285,10 +289,10 @@ export default function ExpensesPage() {
           </div>
           <FilterChipBar
             filters={[
-              { id: 'all', label: 'সব খরচ', count: expenses.length },
-              { id: 'today', label: 'আজকে', count: expenses.filter(e => e.date === todayStr).length },
-              { id: 'week', label: 'গত ৭ দিন' },
-              { id: 'month', label: 'চলতি মাস', count: expenses.filter(e => e.date.startsWith(currentMonth)).length }
+              { id: 'all', label: language === 'bn' ? 'সব খরচ' : 'All Expenses', count: expenses.length },
+              { id: 'today', label: language === 'bn' ? 'আজকে' : 'Today', count: expenses.filter(e => e.date === todayStr).length },
+              { id: 'week', label: language === 'bn' ? 'গত ৭ দিন' : 'Last 7 Days' },
+              { id: 'month', label: language === 'bn' ? 'চলতি মাস' : 'This Month', count: expenses.filter(e => e.date.startsWith(currentMonth)).length }
             ]}
             activeFilter={dateFilter}
             onFilterChange={handleFilterChange}
@@ -302,8 +306,12 @@ export default function ExpensesPage() {
           <div className="w-16 h-16 bg-pink-500/10 rounded-full flex items-center justify-center mb-4">
             <Wallet className="w-8 h-8 text-pink-400" />
           </div>
-          <h3 className="text-lg font-semibold text-white mb-2">কোন খরচ পাওয়া যায়নি</h3>
-          <p className="text-gray-400 text-sm">নতুন খরচ যোগ করতে উপরের &quot;নতুন খরচ&quot; বাটনে ক্লিক করুন।</p>
+          <h3 className="text-lg font-semibold text-white mb-2">
+            {language === 'bn' ? 'কোন খরচ পাওয়া যায়নি' : 'No expenses found'}
+          </h3>
+          <p className="text-gray-400 text-sm">
+            {language === 'bn' ? 'নতুন খরচ যোগ করতে উপরের "নতুন খরচ" বাটনে ক্লিক করুন।' : 'Click the "New Expense" button to record an expense.'}
+          </p>
         </div>
       ) : (
         <>
@@ -313,11 +321,11 @@ export default function ExpensesPage() {
               <table className="w-full text-sm text-left whitespace-nowrap">
                 <thead className="text-xs text-gray-400 uppercase bg-secondary/50 border-b border-border">
                   <tr>
-                    <th className="px-6 py-4 font-semibold">তারিখ</th>
-                    <th className="px-6 py-4 font-semibold">ক্যাটাগরি</th>
-                    <th className="px-6 py-4 font-semibold">বিবরণ</th>
-                    <th className="px-6 py-4 font-semibold">পরিমাণ</th>
-                    <th className="px-6 py-4 font-semibold text-right">পদক্ষেপ</th>
+                    <th className="px-6 py-4 font-semibold">{language === 'bn' ? 'তারিখ' : 'Date'}</th>
+                    <th className="px-6 py-4 font-semibold">{language === 'bn' ? 'ক্যাটাগরি' : 'Category'}</th>
+                    <th className="px-6 py-4 font-semibold">{language === 'bn' ? 'বিবরণ' : 'Description'}</th>
+                    <th className="px-6 py-4 font-semibold">{language === 'bn' ? 'পরিমাণ' : 'Amount'}</th>
+                    <th className="px-6 py-4 font-semibold text-right">{language === 'bn' ? 'অ্যাকশন' : 'Actions'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
@@ -343,7 +351,9 @@ export default function ExpensesPage() {
                             <div className={`p-1.5 rounded-md bg-secondary border border-border ${Category.color}`}>
                               <Icon className="w-3.5 h-3.5" />
                             </div>
-                            <span className="text-gray-300 font-medium">{expense.category}</span>
+                            <span className="text-gray-300 font-medium">
+                              {language === 'bn' ? (Category.bn || expense.category) : expense.category}
+                            </span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -361,7 +371,7 @@ export default function ExpensesPage() {
                               size="icon"
                               onClick={() => handleOpenEditModal(expense)}
                               className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
-                              title="এডিট করুন"
+                              title={language === 'bn' ? 'এডিট করুন' : 'Edit'}
                             >
                               <Edit2 className="w-4 h-4" />
                             </Button>
@@ -370,7 +380,7 @@ export default function ExpensesPage() {
                               size="icon"
                               onClick={() => handleDeleteRequest(expense.id)}
                               className="text-red-500 hover:text-red-400 hover:bg-red-500/10"
-                              title="মুছে ফেলুন"
+                              title={language === 'bn' ? 'মুছে ফেলুন' : 'Delete'}
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -407,7 +417,9 @@ export default function ExpensesPage() {
                     <div className="flex items-center gap-1.5 text-[11px] text-gray-400 mt-0.5 truncate">
                       <span>{expense.date}</span>
                       <span>•</span>
-                      <span className="text-gray-300 font-medium truncate">{expense.category}</span>
+                      <span className="text-gray-300 font-medium truncate">
+                        {language === 'bn' ? (Category.bn || expense.category) : expense.category}
+                      </span>
                     </div>
                   </div>
 
@@ -422,14 +434,14 @@ export default function ExpensesPage() {
                       <button
                         onClick={() => handleOpenEditModal(expense)}
                         className="w-7 h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 flex items-center justify-center transition-colors"
-                        title="এডিট"
+                        title={language === 'bn' ? 'এডিট' : 'Edit'}
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleDeleteRequest(expense.id)}
                         className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition-colors"
-                        title="মুছে ফেলুন"
+                        title={language === 'bn' ? 'মুছে ফেলুন' : 'Delete'}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -456,22 +468,24 @@ export default function ExpensesPage() {
         <DialogContent className="w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto bg-popover border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold text-white">
-              {editingExpenseId ? 'খরচ এডিট করুন (Edit Expense)' : 'নতুন খরচ যোগ করুন (Add Expense)'}
+              {editingExpenseId 
+                ? (language === 'bn' ? 'খরচ সম্পাদনা করুন' : 'Edit Expense') 
+                : (language === 'bn' ? 'নতুন খরচ যোগ করুন' : 'Add New Expense')}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSave} className="space-y-4 mt-4">
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1.5">Category</label>
+              <label className="block text-sm font-medium text-gray-400 mb-1.5">{language === 'bn' ? 'ক্যাটাগরি' : 'Category'}</label>
               <Select value={formData.category} onValueChange={(v) => setFormData({...formData, category: v || ''})}>
                 <SelectTrigger className="w-full bg-secondary border-border h-10">
-                  <SelectValue placeholder="Select Category" />
+                  <SelectValue placeholder={language === 'bn' ? 'ক্যাটাগরি নির্বাচন করুন' : 'Select Category'} />
                 </SelectTrigger>
                 <SelectContent>
                   {EXPENSE_CATEGORIES.map(cat => (
                     <SelectItem key={cat.name} value={cat.name}>
                       <div className="flex items-center gap-2">
                         <cat.icon className={`w-4 h-4 ${cat.color}`} />
-                        {cat.name}
+                        {language === 'bn' ? cat.bn : cat.name}
                       </div>
                     </SelectItem>
                   ))}
@@ -480,18 +494,18 @@ export default function ExpensesPage() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1.5">Title / Description</label>
+              <label className="block text-sm font-medium text-gray-400 mb-1.5">{language === 'bn' ? 'বিবরণ / শিরোনাম' : 'Title / Description'}</label>
               <Input 
                 required
                 value={formData.title}
                 onChange={(e) => setFormData({...formData, title: e.target.value})}
-                placeholder="e.g. Afternoon Tea, Electricity Bill..."
+                placeholder={language === 'bn' ? 'যেমন: বিকালের চা-নাস্তা, বিদ্যুৎ বিল...' : 'e.g. Afternoon Tea, Electricity Bill...'}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1.5">Amount (৳)</label>
+                <label className="block text-sm font-medium text-gray-400 mb-1.5">{language === 'bn' ? 'পরিমাণ (৳)' : 'Amount (৳)'}</label>
                 <Input 
                   required
                   type="number"
@@ -502,7 +516,7 @@ export default function ExpensesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1.5">Date</label>
+                <label className="block text-sm font-medium text-gray-400 mb-1.5">{language === 'bn' ? 'তারিখ' : 'Date'}</label>
                 <Input 
                   required
                   type="date"
@@ -514,10 +528,10 @@ export default function ExpensesPage() {
 
             <div className="pt-4 flex justify-end gap-3">
               <Button type="button" variant="outline" onClick={() => { setIsModalOpen(false); setEditingExpenseId(null); }}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="submit" className="bg-primary hover:bg-primary/90 text-white">
-                {editingExpenseId ? 'আপডেট করুন (Update)' : 'খরচ সংরক্ষণ (Save Expense)'}
+                {editingExpenseId ? (language === 'bn' ? 'আপডেট করুন' : 'Update Expense') : (language === 'bn' ? 'খরচ সংরক্ষণ করুন' : 'Save Expense')}
               </Button>
             </div>
           </form>
@@ -528,9 +542,9 @@ export default function ExpensesPage() {
         isOpen={confirmModal.isOpen}
         onClose={() => setConfirmModal({isOpen: false, id: null})}
         onConfirm={handleConfirmDelete}
-        title="Delete Expense?"
-        message="Are you sure you want to delete this expense record? This action cannot be undone."
-        confirmText="Delete Expense"
+        title={language === 'bn' ? 'খরচ মুছে ফেলবেন?' : 'Delete Expense?'}
+        message={language === 'bn' ? 'আপনি কি নিশ্চিত যে এই খরচের রেকর্ডটি মুছে ফেলতে চান? এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।' : 'Are you sure you want to delete this expense record? This action cannot be undone.'}
+        confirmText={language === 'bn' ? 'মুছে ফেলুন' : 'Delete Expense'}
       />
     </div>
   );

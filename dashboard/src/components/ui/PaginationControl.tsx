@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 interface PaginationControlProps {
   currentPage: number;
@@ -24,6 +25,7 @@ export function PaginationControl({
   containerId,
   className = '',
 }: PaginationControlProps) {
+  const { t, language } = useTranslation();
   if (totalItems <= 0) return null;
 
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -71,10 +73,21 @@ export function PaginationControl({
       {/* Desktop view */}
       <div className="hidden sm:flex items-center justify-between">
         <div className="text-xs text-gray-400">
-          Showing <span className="font-semibold text-white">{startIndex + 1}</span> to{' '}
-          <span className="font-semibold text-white">{endIndex}</span> of{' '}
-          <span className="font-semibold text-white">{totalItems}</span> {itemLabel}
-          <span className="text-gray-500 ml-1.5">(Page {currentPage} of {totalPages})</span>
+          {language === 'bn' ? (
+            <>
+              মোট <span className="font-semibold text-white">{totalItems}</span> টির মধ্যে{' '}
+              <span className="font-semibold text-white">{startIndex + 1}</span> থেকে{' '}
+              <span className="font-semibold text-white">{endIndex}</span> দেখানো হচ্ছে{' '}
+              <span className="text-gray-500 ml-1.5">(পৃষ্ঠা {currentPage} / {totalPages})</span>
+            </>
+          ) : (
+            <>
+              Showing <span className="font-semibold text-white">{startIndex + 1}</span> to{' '}
+              <span className="font-semibold text-white">{endIndex}</span> of{' '}
+              <span className="font-semibold text-white">{totalItems}</span> {itemLabel}
+              <span className="text-gray-500 ml-1.5">(Page {currentPage} of {totalPages})</span>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -83,7 +96,7 @@ export function PaginationControl({
             onClick={() => handlePageClick(currentPage - 1)}
             disabled={currentPage <= 1}
             className="h-8 w-8 inline-flex items-center justify-center bg-card border border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors"
-            title="Previous Page"
+            title={language === 'bn' ? 'পূর্ববর্তী পৃষ্ঠা' : 'Previous Page'}
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -119,7 +132,7 @@ export function PaginationControl({
             onClick={() => handlePageClick(currentPage + 1)}
             disabled={currentPage >= totalPages}
             className="h-8 w-8 inline-flex items-center justify-center bg-card border border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors"
-            title="Next Page"
+            title={language === 'bn' ? 'পরবর্তী পৃষ্ঠা' : 'Next Page'}
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -134,7 +147,7 @@ export function PaginationControl({
             onClick={() => handlePageClick(currentPage - 1)}
             disabled={currentPage <= 1}
             className="h-8 w-8 inline-flex items-center justify-center bg-card border border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors"
-            title="Previous Page"
+            title={language === 'bn' ? 'পূর্ববর্তী পৃষ্ঠা' : 'Previous Page'}
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -170,17 +183,28 @@ export function PaginationControl({
             onClick={() => handlePageClick(currentPage + 1)}
             disabled={currentPage >= totalPages}
             className="h-8 w-8 inline-flex items-center justify-center bg-card border border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors"
-            title="Next Page"
+            title={language === 'bn' ? 'পরবর্তী পৃষ্ঠা' : 'Next Page'}
           >
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
 
         <div className="text-[11px] text-gray-400 text-center">
-          Showing <span className="font-semibold text-white">{startIndex + 1}</span> to{' '}
-          <span className="font-semibold text-white">{endIndex}</span> of{' '}
-          <span className="font-semibold text-white">{totalItems}</span>
-          <span className="text-gray-500 ml-1">(Page {currentPage} of {totalPages})</span>
+          {language === 'bn' ? (
+            <>
+              <span className="font-semibold text-white">{startIndex + 1}</span> -{' '}
+              <span className="font-semibold text-white">{endIndex}</span> (মোট{' '}
+              <span className="font-semibold text-white">{totalItems}</span> টি){' '}
+              <span className="text-gray-500 ml-1">(পৃষ্ঠা {currentPage} / {totalPages})</span>
+            </>
+          ) : (
+            <>
+              Showing <span className="font-semibold text-white">{startIndex + 1}</span> to{' '}
+              <span className="font-semibold text-white">{endIndex}</span> of{' '}
+              <span className="font-semibold text-white">{totalItems}</span>
+              <span className="text-gray-500 ml-1">(Page {currentPage} of {totalPages})</span>
+            </>
+          )}
         </div>
       </div>
     </div>

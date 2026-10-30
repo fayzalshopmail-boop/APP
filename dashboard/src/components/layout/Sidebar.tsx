@@ -11,34 +11,37 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/useAppStore';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import { auth } from '@/lib/firebase';
 import { offlineSyncService } from '@/lib/services/offlineSync';
 
-const navItemsAll = [
-  { name: 'Dashboard', href: '/', icon: Home },
-  { name: 'Customer Details', href: '/customers', icon: Users },
-  { name: 'Inventory', href: '/inventory', icon: Box },
-  { name: 'Due', href: '/due', icon: Clock },
-  { name: 'My Loans', href: '/loans', icon: CreditCard },
-  { name: 'Loyalty', href: '/loyalty', icon: Star },
-  { name: 'Mechanics (B2B)', href: '/mechanics', icon: Wrench },
-  { name: 'Suppliers', href: '/suppliers', icon: Truck },
-  { name: 'Expenses', href: '/expenses', icon: Receipt },
-  { name: 'Reports', href: '/reports', icon: BarChart2 },
-  { name: 'Shop Settings', href: '/settings', icon: Settings },
-  { name: 'SMS Settings', href: '/sms', icon: MessageSquare },
-];
-
-const technicianNavItems = [
-  { name: 'My Attendance', href: '/staff', icon: CalendarCheck },
-  { name: 'Customer Details', href: '/customers', icon: Users },
-  { name: 'Inventory', href: '/inventory', icon: Box },
-];
-
 export function Sidebar() {
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);  const pathname = usePathname();
+  const { t } = useTranslation();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const pathname = usePathname();
   const router = useRouter();
   const { user, setUser, setUnlocked, isSidebarOpen, toggleSidebar, setSidebarOpen, shop } = useAppStore();
+
+  const navItemsAll = [
+    { name: t('nav.dashboard'), href: '/', icon: Home },
+    { name: t('nav.customers'), href: '/customers', icon: Users },
+    { name: t('nav.inventory'), href: '/inventory', icon: Box },
+    { name: t('nav.due'), href: '/due', icon: Clock },
+    { name: t('nav.loans'), href: '/loans', icon: CreditCard },
+    { name: t('nav.loyalty'), href: '/loyalty', icon: Star },
+    { name: t('nav.mechanics'), href: '/mechanics', icon: Wrench },
+    { name: t('nav.suppliers'), href: '/suppliers', icon: Truck },
+    { name: t('nav.expenses'), href: '/expenses', icon: Receipt },
+    { name: t('nav.reports'), href: '/reports', icon: BarChart2 },
+    { name: t('nav.settings'), href: '/settings', icon: Settings },
+    { name: t('nav.sms'), href: '/sms', icon: MessageSquare },
+  ];
+
+  const technicianNavItems = [
+    { name: t('nav.attendance'), href: '/staff', icon: CalendarCheck },
+    { name: t('nav.customers'), href: '/customers', icon: Users },
+    { name: t('nav.inventory'), href: '/inventory', icon: Box },
+  ];
 
   // Smart Offline/Online State
   const [isOnline, setIsOnline] = useState(true);
@@ -202,9 +205,9 @@ export function Sidebar() {
         isOpen={showLogoutConfirm}
         onClose={() => setShowLogoutConfirm(false)}
         onConfirm={handleConfirmLogout}
-        title="Log Out?"
-        message="Are you sure you want to log out of your account? You will need your credentials and PIN to access the dashboard again."
-        confirmText="Log Out"
+        title={t('nav.logoutConfirmTitle')}
+        message={t('nav.logoutConfirmMessage')}
+        confirmText={t('nav.logoutButton')}
         variant="warning"
       />
     </>

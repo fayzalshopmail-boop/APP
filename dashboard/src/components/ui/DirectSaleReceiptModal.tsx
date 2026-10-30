@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { formatEnglishCurrency } from '@/lib/currency';
 import { useAppStore } from '@/store/useAppStore';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import { Printer, X, ShoppingBag, Phone, MapPin } from 'lucide-react';
 import { useRef } from 'react';
 
@@ -24,6 +25,7 @@ interface DirectSaleReceiptModalProps {
 }
 
 export function DirectSaleReceiptModal({ isOpen, onClose, receiptData }: DirectSaleReceiptModalProps) {
+  const { t, language } = useTranslation();
   const printRef = useRef<HTMLDivElement>(null);
   const { shop } = useAppStore();
 
@@ -38,21 +40,23 @@ export function DirectSaleReceiptModal({ isOpen, onClose, receiptData }: DirectS
   const shopPhone = shop?.phone || '';
   const shopAddress = shop?.address || '';
   const receiptNo = receiptData.id ? receiptData.id.slice(0, 8).toUpperCase() : 'DS-SALE';
-  const dateStr = receiptData.date || new Date().toLocaleDateString('en-GB');
+  const dateStr = receiptData.date || new Date().toLocaleDateString(language === 'bn' ? 'bn-BD' : 'en-GB');
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[700px] bg-popover text-white border-gray-800 shadow-2xl p-0 overflow-hidden [&>button]:hidden print:bg-white print:text-black print:border-none print:shadow-none print:max-w-full">
         {/* Screen Only Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-800 bg-secondary print:hidden">
-          <h2 className="text-lg font-bold">Sales Receipt (বিক্রয় রশিদ)</h2>
+          <h2 className="text-lg font-bold">
+            {language === 'bn' ? 'বিক্রয় রশিদ' : 'Sales Receipt'}
+          </h2>
           <div className="flex items-center gap-3">
             <Button 
               onClick={handlePrint}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
             >
               <Printer className="w-4 h-4" />
-              Print Receipt
+              {language === 'bn' ? 'রসিদ প্রিন্ট' : 'Print Receipt'}
             </Button>
             <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-400 hover:text-white">
               <X className="w-5 h-5" />
@@ -82,16 +86,26 @@ export function DirectSaleReceiptModal({ isOpen, onClose, receiptData }: DirectS
               </div>
             </div>
             <div className="text-right">
-              <h2 className="text-xl font-bold text-gray-800 uppercase tracking-wide">Cash Receipt</h2>
-              <p className="text-sm text-gray-500 mt-1">Receipt No: #{receiptNo}</p>
-              <p className="text-sm text-gray-500">Date: {dateStr}</p>
+              <h2 className="text-xl font-bold text-gray-800 uppercase tracking-wide">
+                {language === 'bn' ? 'ক্যাশ মেমো / রশিদ' : 'Cash Receipt'}
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {language === 'bn' ? 'রসিদ নং:' : 'Receipt No:'} #{receiptNo}
+              </p>
+              <p className="text-sm text-gray-500">
+                {language === 'bn' ? 'তারিখ:' : 'Date:'} {dateStr}
+              </p>
             </div>
           </div>
 
           {/* Customer Details */}
           <div className="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Customer Information</h3>
-            <p className="text-base font-bold text-gray-800">{receiptData.customerName || 'Walk-in Customer'}</p>
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">
+              {language === 'bn' ? 'গ্রাহকের তথ্য' : 'Customer Information'}
+            </h3>
+            <p className="text-base font-bold text-gray-800">
+              {receiptData.customerName || (language === 'bn' ? 'সাধারণ কাস্টমার' : 'Walk-in Customer')}
+            </p>
           </div>
 
           {/* Items Table */}
@@ -99,10 +113,18 @@ export function DirectSaleReceiptModal({ isOpen, onClose, receiptData }: DirectS
             <table className="w-full text-left text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 font-bold text-gray-600">Item Description</th>
-                  <th className="px-6 py-3 font-bold text-gray-600 text-center">Qty</th>
-                  <th className="px-6 py-3 font-bold text-gray-600 text-right">Unit Price</th>
-                  <th className="px-6 py-3 font-bold text-gray-600 text-right">Total</th>
+                  <th className="px-6 py-3 font-bold text-gray-600">
+                    {language === 'bn' ? 'পণ্যের বিবরণ' : 'Item Description'}
+                  </th>
+                  <th className="px-6 py-3 font-bold text-gray-600 text-center">
+                    {language === 'bn' ? 'পরিমাণ' : 'Qty'}
+                  </th>
+                  <th className="px-6 py-3 font-bold text-gray-600 text-right">
+                    {language === 'bn' ? 'দর / একক মূল্য' : 'Unit Price'}
+                  </th>
+                  <th className="px-6 py-3 font-bold text-gray-600 text-right">
+                    {language === 'bn' ? 'মোট' : 'Total'}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
@@ -123,19 +145,25 @@ export function DirectSaleReceiptModal({ isOpen, onClose, receiptData }: DirectS
               </tbody>
               <tfoot className="bg-gray-50 border-t-2 border-gray-200">
                 <tr>
-                  <td colSpan={3} className="px-6 py-3 font-bold text-gray-800 text-right uppercase tracking-wider text-xs">Total Amount</td>
+                  <td colSpan={3} className="px-6 py-3 font-bold text-gray-800 text-right uppercase tracking-wider text-xs">
+                    {language === 'bn' ? 'সর্বমোট টাকা' : 'Total Amount'}
+                  </td>
                   <td className="px-6 py-3 text-right font-black text-gray-900 text-base">
                     {formatEnglishCurrency(receiptData.total)}
                   </td>
                 </tr>
                 <tr>
-                  <td colSpan={3} className="px-6 py-2 font-medium text-gray-600 text-right text-xs">Paid (Cash)</td>
+                  <td colSpan={3} className="px-6 py-2 font-medium text-gray-600 text-right text-xs">
+                    {language === 'bn' ? 'পরিশোধ (নগদ)' : 'Paid (Cash)'}
+                  </td>
                   <td className="px-6 py-2 text-right font-bold text-emerald-600 text-sm">
                     {formatEnglishCurrency(receiptData.total)}
                   </td>
                 </tr>
                 <tr>
-                  <td colSpan={3} className="px-6 py-2 font-bold text-gray-800 text-right uppercase tracking-wider text-xs">Due</td>
+                  <td colSpan={3} className="px-6 py-2 font-bold text-gray-800 text-right uppercase tracking-wider text-xs">
+                    {language === 'bn' ? 'বকেয়া' : 'Due'}
+                  </td>
                   <td className="px-6 py-2 text-right font-bold text-gray-500 text-sm">
                     ৳ 0
                   </td>
@@ -147,17 +175,27 @@ export function DirectSaleReceiptModal({ isOpen, onClose, receiptData }: DirectS
           {/* Footer / Terms */}
           <div className="border-t border-gray-200 pt-6 flex justify-between items-end">
             <div className="w-1/2">
-              <h4 className="text-xs font-bold text-gray-800 uppercase mb-2">Terms & Conditions</h4>
+              <h4 className="text-xs font-bold text-gray-800 uppercase mb-2">
+                {language === 'bn' ? 'শর্তাবলী' : 'Terms & Conditions'}
+              </h4>
               <ul className="text-[10px] text-gray-500 space-y-1 list-disc pl-3">
-                <li>Goods once sold can only be exchanged within 3 days with this receipt.</li>
-                <li>No warranty on electronic components against power surge or physical damage.</li>
-                <li>Thank you for choosing our services!</li>
+                <li>
+                  {language === 'bn' ? 'বিক্রিত পণ্য ৩ দিনের মধ্যে রসিদসহ পরিবর্তনযোগ্য।' : 'Goods once sold can only be exchanged within 3 days with this receipt.'}
+                </li>
+                <li>
+                  {language === 'bn' ? 'বিদ্যুৎ বিভ্রাট বা ফিজিক্যাল ড্যামেজে কোনো পার্টসের ওয়ারেন্টি কার্যকর হবে না।' : 'No warranty on electronic components against power surge or physical damage.'}
+                </li>
+                <li>
+                  {language === 'bn' ? 'আমাদের সাথে থাকার জন্য আপনাকে ধন্যবাদ!' : 'Thank you for choosing our services!'}
+                </li>
               </ul>
             </div>
             
             <div className="w-[180px] text-center">
               <div className="border-b border-gray-400 h-10 mb-2"></div>
-              <p className="text-xs font-medium text-gray-600">Authorized Signature</p>
+              <p className="text-xs font-medium text-gray-600">
+                {language === 'bn' ? 'কর্তৃপক্ষের স্বাক্ষর' : 'Authorized Signature'}
+              </p>
             </div>
           </div>
           

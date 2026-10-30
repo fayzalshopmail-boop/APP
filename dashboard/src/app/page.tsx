@@ -9,11 +9,13 @@ import { normalizePhone } from '@/lib/services/customer';
 import { formatCurrency } from '@/lib/currency';
 import { getLocalDateString } from '@/lib/utils';
 import { useAppStore } from '@/store/useAppStore';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function Dashboard() {
   const { user, dashboardTimeFilter } = useAppStore();
+  const { t, isBangla } = useTranslation();
   const router = useRouter();
 
   useEffect(() => {
@@ -237,18 +239,18 @@ export default function Dashboard() {
       {/* 4 Core StatCards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 xl:gap-4 shrink-0">
         <StatCard 
-          title="মোট কাস্টমার" 
+          title={isBangla ? "মোট কাস্টমার" : "Total Customers"} 
           value={isLoading ? '...' : filteredStats.totalCustomers.toString()} 
           subtitle={
             timeFilter === 'Today' 
-              ? 'আজকের কাস্টমার' 
+              ? (isBangla ? 'আজকের কাস্টমার' : "Today's Customers") 
               : timeFilter === 'This Week' 
-              ? 'এই সপ্তাহের কাস্টমার' 
+              ? (isBangla ? 'এই সপ্তাহের কাস্টমার' : "This Week's Customers") 
               : timeFilter === 'This Month' 
-              ? 'এই মাসের কাস্টমার' 
+              ? (isBangla ? 'এই মাসের কাস্টমার' : "This Month's Customers") 
               : timeFilter === 'This Year' 
-              ? 'এই বছরের কাস্টমার' 
-              : 'সর্বমোট কাস্টমার'
+              ? (isBangla ? 'এই বছরের কাস্টমার' : "This Year's Customers") 
+              : (isBangla ? 'সর্বমোট কাস্টমার' : "All Time Customers")
           } 
           icon={<Users className="w-5 h-5 text-blue-500" />} 
           iconBgColor="bg-blue-500/10" 
@@ -257,9 +259,17 @@ export default function Dashboard() {
           href="/customers"
         />
         <StatCard 
-          title="সংগৃহীত রাজস্ব" 
+          title={isBangla ? "সংগৃহীত রাজস্ব" : "Total Revenue"} 
           value={isLoading ? '...' : formatCurrency(filteredStats.totalRevenue)} 
-          subtitle={timeFilter === 'Today' ? 'আজকের নেট আদায়' : timeFilter === 'This Week' ? 'সাপ্তাহিক নেট আদায়' : timeFilter === 'This Month' ? 'মাসিক নেট আদায়' : 'মোট নেট আদায়'} 
+          subtitle={
+            timeFilter === 'Today' 
+              ? (isBangla ? 'আজকের নেট আদায়' : "Today's Collection") 
+              : timeFilter === 'This Week' 
+              ? (isBangla ? 'সাপ্তাহিক নেট আদায়' : "Weekly Collection") 
+              : timeFilter === 'This Month' 
+              ? (isBangla ? 'মাসিক নেট আদায়' : "Monthly Collection") 
+              : (isBangla ? 'মোট নেট আদায়' : "Total Net Collection")
+          } 
           icon={<Coins className="w-5 h-5 text-emerald-500" />} 
           iconBgColor="bg-emerald-500/10" 
           iconColor="text-emerald-500" 
@@ -267,9 +277,9 @@ export default function Dashboard() {
           href="/reports"
         />
         <StatCard 
-          title="পেন্ডিং কাজ" 
+          title={isBangla ? "পেন্ডিং কাজ" : "Pending Repairs"} 
           value={isLoading ? '...' : filteredStats.pendingJobs.toString()} 
-          subtitle="চলমান মেরামত কাজ" 
+          subtitle={isBangla ? "চলমান মেরামত কাজ" : "Under active repair"} 
           icon={<Tv className="w-5 h-5 text-orange-500" />} 
           iconBgColor="bg-orange-500/10" 
           iconColor="text-orange-500" 
@@ -277,9 +287,17 @@ export default function Dashboard() {
           href="/customers?status=Pending"
         />
         <StatCard 
-          title="সম্পন্ন মেরামত" 
+          title={isBangla ? "সম্পন্ন মেরামত" : "Completed Repairs"} 
           value={isLoading ? '...' : filteredStats.completedRepairs.toString()} 
-          subtitle={timeFilter === 'Today' ? 'আজকের ডেলিভারি' : timeFilter === 'This Week' ? 'এই সপ্তাহের ডেলিভারি' : timeFilter === 'This Month' ? 'এই মাসের ডেলিভারি' : 'সর্বমোট সম্পন্ন'} 
+          subtitle={
+            timeFilter === 'Today' 
+              ? (isBangla ? 'আজকের ডেলিভারি' : "Today's Deliveries") 
+              : timeFilter === 'This Week' 
+              ? (isBangla ? 'এই সপ্তাহের ডেলিভারি' : "This Week's Deliveries") 
+              : timeFilter === 'This Month' 
+              ? (isBangla ? 'এই মাসের ডেলিভারি' : "This Month's Deliveries") 
+              : (isBangla ? 'সর্বমোট সম্পন্ন' : "All-Time Completed")
+          } 
           icon={<Wrench className="w-5 h-5 text-purple-500" />} 
           iconBgColor="bg-purple-500/10" 
           iconColor="text-purple-500" 
@@ -296,50 +314,50 @@ export default function Dashboard() {
               <TrendingUp className="w-4 h-4 text-emerald-400" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-gray-200">আর্থিক সারসংক্ষেপ ও নিট লাভ</h3>
-              <p className="text-[11px] text-gray-400">ফিল্টার অনুযায়ী ক্যাশ কালেকশন, মোট খরচ ও প্রকৃত নিট লাভ</p>
+              <h3 className="text-sm font-bold text-gray-200">{isBangla ? "আর্থিক সারসংক্ষেপ ও নিট লাভ" : "Financial Summary & Net Profit"}</h3>
+              <p className="text-[11px] text-gray-400">{isBangla ? "ফিল্টার অনুযায়ী ক্যাশ কালেকশন, মোট খরচ ও প্রকৃত নিট লাভ" : "Collection, expenses and net profit for period"}</p>
             </div>
           </div>
           <Link 
             href="/reports" 
             className="text-xs text-blue-400 hover:text-blue-300 font-medium inline-flex items-center gap-1 transition-colors self-start sm:self-auto"
           >
-            <span>পূর্ণাঙ্গ রিপোর্ট ও লেজার</span>
+            <span>{isBangla ? "পূর্ণাঙ্গ রিপোর্ট ও লেজার" : "Full Reports & Ledger"}</span>
             <ArrowUpRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 xl:gap-4">
           <Link href="/reports" className="bg-secondary/40 hover:bg-secondary/70 p-2.5 sm:p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-all block">
-            <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider block">নেট ক্যাশ জমা</span>
+            <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider block">{isBangla ? "নেট ক্যাশ জমা" : "Net Cash In"}</span>
             <div className="text-base sm:text-lg xl:text-xl font-bold text-emerald-400 mt-0.5 truncate">
               {isLoading ? '...' : formatCurrency(filteredStats.totalRevenue)}
             </div>
-            <span className="text-[10px] text-gray-500">রিফান্ড বাদ দেওয়া</span>
+            <span className="text-[10px] text-gray-500">{isBangla ? "রিফান্ড বাদ দেওয়া" : "Excl. refunds"}</span>
           </Link>
 
           <Link href="/expenses" className="bg-secondary/40 hover:bg-secondary/70 p-2.5 sm:p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-all block">
-            <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider block">দোকানের মোট খরচ</span>
+            <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider block">{isBangla ? "দোকানের মোট খরচ" : "Total Expenses"}</span>
             <div className="text-base sm:text-lg xl:text-xl font-bold text-rose-400 mt-0.5 truncate">
               {isLoading ? '...' : formatCurrency(filteredStats.totalExpenses)}
             </div>
-            <span className="text-[10px] text-gray-500">পার্টস ও সাধারণ খরচ</span>
+            <span className="text-[10px] text-gray-500">{isBangla ? "পার্টস ও সাধারণ খরচ" : "Parts & overheads"}</span>
           </Link>
 
           <Link href="/reports" className="bg-secondary/40 hover:bg-secondary/70 p-2.5 sm:p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-all block">
-            <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider block">আসল লাভ (নিট ব্যালেন্স)</span>
+            <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider block">{isBangla ? "আসল লাভ (নিট ব্যালেন্স)" : "Net Profit Balance"}</span>
             <div className={`text-base sm:text-lg xl:text-xl font-bold mt-0.5 truncate ${filteredStats.netProfit >= 0 ? 'text-indigo-400' : 'text-rose-400'}`}>
               {isLoading ? '...' : formatCurrency(filteredStats.netProfit)}
             </div>
-            <span className="text-[10px] text-gray-500">জমা থেকে খরচ বাদ</span>
+            <span className="text-[10px] text-gray-500">{isBangla ? "জমা থেকে খরচ বাদ" : "Revenue minus expense"}</span>
           </Link>
 
           <Link href="/due" className="bg-secondary/40 hover:bg-secondary/70 p-2.5 sm:p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-all block">
-            <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider block">গ্রাহকদের মোট বাকি</span>
+            <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider block">{isBangla ? "গ্রাহকদের মোট বাকি" : "Total Customer Dues"}</span>
             <div className="text-base sm:text-lg xl:text-xl font-bold text-amber-400 mt-0.5 truncate">
               {isLoading ? '...' : formatCurrency(filteredStats.totalPendingDues)}
             </div>
-            <span className="text-[10px] text-gray-500">আদায়ের অপেক্ষায়</span>
+            <span className="text-[10px] text-gray-500">{isBangla ? "আদায়ের অপেক্ষায়" : "Pending collection"}</span>
           </Link>
         </div>
       </div>
@@ -374,8 +392,8 @@ export default function Dashboard() {
           }
         }}
         className="sm:hidden fixed bottom-24 right-4 z-40 w-13 h-13 bg-gradient-to-tr from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 active:scale-90 text-white rounded-full flex items-center justify-center shadow-2xl shadow-blue-600/50 border border-blue-400/30 transition-all focus:outline-none"
-        title="নতুন কাস্টমার যোগ করুন"
-        aria-label="নতুন কাস্টমার যোগ করুন"
+        title={t('topbar.addCustomer')}
+        aria-label={t('topbar.addCustomer')}
       >
         <Plus className="w-6 h-6 stroke-[2.5]" />
       </button>

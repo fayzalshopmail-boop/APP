@@ -8,10 +8,12 @@ import { customerService, Customer } from '@/lib/services/customer';
 import { inventoryService, InventoryItem } from '@/lib/services/inventory';
 import { formatCurrency } from '@/lib/currency';
 import { PaginationControl } from '@/components/ui/PaginationControl';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 type TimeFilter = 'today' | 'week' | 'month' | 'all';
 
 export default function ReportsPage() {
+  const { t, language } = useTranslation();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -22,6 +24,21 @@ export default function ReportsPage() {
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  const getTransactionTypeLabel = (type: string) => {
+    if (language === 'en') return type;
+    switch (type) {
+      case 'Advance Payment': return 'অগ্রিম গ্রহণ';
+      case 'Due Collection': return 'বাকি আদায়';
+      case 'Direct Sell': return 'সরাসরি বিক্রয়';
+      case 'Refund': return 'রিফান্ড';
+      case 'Inventory Purchase': return 'মালামাল ক্রয়';
+      case 'Supplier Payment': return 'সাপ্লায়ার পরিশোধ';
+      case 'Mechanic Payment': return 'মেকানিক কমিশন পরিশোধ';
+      case 'Loan Repayment': return 'হাওলাত পরিশোধ';
+      default: return type;
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -79,7 +96,7 @@ export default function ReportsPage() {
   };
 
   const formatDateDisplay = (dateVal: any) => {
-    if (!dateVal) return 'সদ্যকৃত';
+    if (!dateVal) return language === 'bn' ? 'সদ্যকৃত' : 'Recent';
     let d: Date;
     if (typeof dateVal === 'object' && 'seconds' in dateVal) {
       d = new Date(dateVal.seconds * 1000);
@@ -88,8 +105,8 @@ export default function ReportsPage() {
     } else {
       d = new Date(dateVal);
     }
-    if (isNaN(d.getTime())) return 'সদ্যকৃত';
-    return d.toLocaleDateString('en-GB', {
+    if (isNaN(d.getTime())) return language === 'bn' ? 'সদ্যকৃত' : 'Recent';
+    return d.toLocaleDateString(language === 'bn' ? 'bn-BD' : 'en-GB', {
       day: 'numeric',
       month: 'short',
       hour: '2-digit',
@@ -155,10 +172,10 @@ export default function ReportsPage() {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
             <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
-            Financial Reports
+            {language === 'bn' ? 'আর্থিক রিপোর্ট' : 'Financial Reports'}
           </h1>
           <p className="text-gray-400 text-xs sm:text-sm mt-0.5 sm:mt-1">
-            দোকানের আয়, ব্যয়, মুনাফা ও লেনদেনের বিস্তারিত খতিয়ান
+            {language === 'bn' ? 'দোকানের আয়, ব্যয়, মুনাফা ও লেনদেনের বিস্তারিত খতিয়ান' : 'Detailed ledger of shop income, expenses, profit and transactions'}
           </p>
         </div>
         
@@ -172,7 +189,13 @@ export default function ReportsPage() {
                 timeFilter === f ? 'bg-blue-600 text-white shadow-md font-semibold' : 'text-gray-400 hover:text-gray-200'
               }`}
             >
-              {f === 'today' ? 'আজ' : f === 'week' ? '৭ দিন' : f === 'month' ? '১ মাস' : 'সব সময়'}
+              {f === 'today' 
+                ? (language === 'bn' ? 'আজ' : 'Today') 
+                : f === 'week' 
+                ? (language === 'bn' ? '৭ দিন' : '7 Days') 
+                : f === 'month' 
+                ? (language === 'bn' ? '১ মাস' : '1 Month') 
+                : (language === 'bn' ? 'সব সময়' : 'All Time')}
             </button>
           ))}
         </div>
@@ -190,7 +213,9 @@ export default function ReportsPage() {
             <div className="bg-[#1a1d2d]/80 border border-emerald-500/25 hover:border-emerald-500/40 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 relative overflow-hidden group shadow-sm transition-all flex flex-col justify-between">
               <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-xl pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
               <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2 relative z-10">
-                <span className="text-[11px] sm:text-xs font-semibold text-gray-400 truncate">Total Income</span>
+                <span className="text-[11px] sm:text-xs font-semibold text-gray-400 truncate">
+                  {language === 'bn' ? 'মোট আয়' : 'Total Income'}
+                </span>
                 <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0 text-emerald-400">
                   <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
@@ -200,7 +225,7 @@ export default function ReportsPage() {
                   {formatCurrency(totalIncome)}
                 </div>
                 <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 truncate">
-                  {incomeTrans.length} টি লেনদেন
+                  {language === 'bn' ? `${incomeTrans.length} টি লেনদেন` : `${incomeTrans.length} transactions`}
                 </p>
               </div>
             </div>
@@ -209,7 +234,9 @@ export default function ReportsPage() {
             <div className="bg-[#1a1d2d]/80 border border-red-500/25 hover:border-red-500/40 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 relative overflow-hidden group shadow-sm transition-all flex flex-col justify-between">
               <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/5 rounded-full blur-xl pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
               <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2 relative z-10">
-                <span className="text-[11px] sm:text-xs font-semibold text-gray-400 truncate">Total Expenses</span>
+                <span className="text-[11px] sm:text-xs font-semibold text-gray-400 truncate">
+                  {language === 'bn' ? 'মোট ব্যয়' : 'Total Expenses'}
+                </span>
                 <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0 text-red-400">
                   <TrendingDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
@@ -219,7 +246,9 @@ export default function ReportsPage() {
                   {formatCurrency(totalExpenses)}
                 </div>
                 <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 truncate">
-                  {filteredExpenses.length} ম্যানুয়াল, {outflowTrans.length} অটো
+                  {language === 'bn' 
+                    ? `${filteredExpenses.length} ম্যানুয়াল, ${outflowTrans.length} অটো` 
+                    : `${filteredExpenses.length} manual, ${outflowTrans.length} auto`}
                 </p>
               </div>
             </div>
@@ -228,7 +257,9 @@ export default function ReportsPage() {
             <div className="bg-[#1a1d2d]/80 border border-blue-500/25 hover:border-blue-500/40 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 relative overflow-hidden group shadow-sm transition-all flex flex-col justify-between">
               <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-xl pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
               <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2 relative z-10">
-                <span className="text-[11px] sm:text-xs font-semibold text-gray-400 truncate">Net Profit</span>
+                <span className="text-[11px] sm:text-xs font-semibold text-gray-400 truncate">
+                  {language === 'bn' ? 'নিট লাভ' : 'Net Profit'}
+                </span>
                 <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0 text-blue-400">
                   <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
@@ -238,7 +269,7 @@ export default function ReportsPage() {
                   {formatCurrency(netProfit)}
                 </div>
                 <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 truncate">
-                  ক্যাশ বেসিস মুনাফা
+                  {language === 'bn' ? 'ক্যাশ বেসিস মুনাফা' : 'Cash basis profit'}
                 </p>
               </div>
             </div>
@@ -247,7 +278,9 @@ export default function ReportsPage() {
             <div className="bg-[#1a1d2d]/80 border border-orange-500/25 hover:border-orange-500/40 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 relative overflow-hidden group shadow-sm transition-all flex flex-col justify-between">
               <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 rounded-full blur-xl pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
               <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2 relative z-10">
-                <span className="text-[11px] sm:text-xs font-semibold text-gray-400 truncate">Total Refunds</span>
+                <span className="text-[11px] sm:text-xs font-semibold text-gray-400 truncate">
+                  {language === 'bn' ? 'মোট রিফান্ড' : 'Total Refunds'}
+                </span>
                 <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shrink-0 text-orange-400">
                   <ArrowDownRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
@@ -257,7 +290,7 @@ export default function ReportsPage() {
                   {formatCurrency(totalRefunds)}
                 </div>
                 <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 truncate">
-                  {refundTrans.length} টি রিফান্ড
+                  {language === 'bn' ? `${refundTrans.length} টি রিফান্ড` : `${refundTrans.length} refunds`}
                 </p>
               </div>
             </div>
@@ -272,12 +305,15 @@ export default function ReportsPage() {
                   <Scale className="w-3.5 h-3.5 text-yellow-500" />
                 </div>
                 <h2 className="text-xs sm:text-sm font-bold text-gray-200 truncate">
-                  ক্যাপিটাল তুলনা <span className="text-gray-400 font-normal hidden sm:inline">(Assets Comparison)</span>
+                  {language === 'bn' ? 'ক্যাপিটাল তুলনা' : 'Capital Comparison'}{' '}
+                  <span className="text-gray-400 font-normal hidden sm:inline">
+                    {language === 'bn' ? '(সম্পদ তুলনা)' : '(Assets Comparison)'}
+                  </span>
                 </h2>
               </div>
 
               <div className="flex items-center gap-1 text-[11px] sm:text-xs bg-gray-800/80 px-2.5 py-1 rounded-lg border border-gray-700/60 shrink-0">
-                <span className="text-gray-400">মোট:</span>
+                <span className="text-gray-400">{language === 'bn' ? 'মোট:' : 'Total:'}</span>
                 <span className="font-bold text-white tracking-tight">{formatCurrency(totalTiedCapital)}</span>
               </div>
             </div>
@@ -288,21 +324,21 @@ export default function ReportsPage() {
                 <div 
                   style={{ width: `${totalTiedCapital > 0 ? duesPercent : 50}%` }}
                   className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-l-full transition-all duration-500"
-                  title={`মার্কেট বাকি: ${formatCurrency(totalPendingDues)} (${duesPercent}%)`}
+                  title={language === 'bn' ? `মার্কেট বাকি: ${formatCurrency(totalPendingDues)} (${duesPercent}%)` : `Market Dues: ${formatCurrency(totalPendingDues)} (${duesPercent}%)`}
                 />
                 <div 
                   style={{ width: `${totalTiedCapital > 0 ? stockPercent : 50}%` }}
                   className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-r-full transition-all duration-500"
-                  title={`স্টক মালামাল: ${formatCurrency(totalInventoryValue)} (${stockPercent}%)`}
+                  title={language === 'bn' ? `স্টক মালামাল: ${formatCurrency(totalInventoryValue)} (${stockPercent}%)` : `Stock Products: ${formatCurrency(totalInventoryValue)} (${stockPercent}%)`}
                 />
               </div>
               <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-medium px-0.5">
                 <span className="text-yellow-400 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 inline-block"></span>
-                  মার্কেট বাকি {duesPercent}%
+                  {language === 'bn' ? `মার্কেট বাকি ${duesPercent}%` : `Market Dues ${duesPercent}%`}
                 </span>
                 <span className="text-purple-400 flex items-center gap-1">
-                  স্টক পণ্য {stockPercent}%
+                  {language === 'bn' ? `স্টক পণ্য ${stockPercent}%` : `Stock Products ${stockPercent}%`}
                   <span className="w-1.5 h-1.5 rounded-full bg-purple-400 inline-block"></span>
                 </span>
               </div>
@@ -313,7 +349,9 @@ export default function ReportsPage() {
               {/* Market Dues Card */}
               <div className="bg-[#1a1d2d]/80 border border-yellow-500/20 hover:border-yellow-500/40 rounded-lg sm:rounded-xl p-2 sm:p-3 relative overflow-hidden transition-all flex flex-col justify-between">
                 <div className="flex items-center justify-between gap-1 mb-0.5">
-                  <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate">মার্কেট বাকি</span>
+                  <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate">
+                    {language === 'bn' ? 'মার্কেট বাকি' : 'Market Dues'}
+                  </span>
                   <span className="text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded bg-yellow-500/10 text-yellow-400 font-semibold shrink-0">
                     {duesPercent}%
                   </span>
@@ -323,7 +361,7 @@ export default function ReportsPage() {
                     {formatCurrency(totalPendingDues)}
                   </div>
                   <p className="text-[9px] sm:text-[10px] text-gray-500 mt-0.5 truncate">
-                    {dueCustomersCount} জন কাস্টমার
+                    {language === 'bn' ? `${dueCustomersCount} জন কাস্টমার` : `${dueCustomersCount} customers`}
                   </p>
                 </div>
               </div>
@@ -331,7 +369,9 @@ export default function ReportsPage() {
               {/* Current Stock Value Card */}
               <div className="bg-[#1a1d2d]/80 border border-purple-500/20 hover:border-purple-500/40 rounded-lg sm:rounded-xl p-2 sm:p-3 relative overflow-hidden transition-all flex flex-col justify-between">
                 <div className="flex items-center justify-between gap-1 mb-0.5">
-                  <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate">স্টক পণ্য</span>
+                  <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate">
+                    {language === 'bn' ? 'স্টক পণ্য' : 'Stock Products'}
+                  </span>
                   <span className="text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-400 font-semibold shrink-0">
                     {stockPercent}%
                   </span>
@@ -341,7 +381,7 @@ export default function ReportsPage() {
                     {formatCurrency(totalInventoryValue)}
                   </div>
                   <p className="text-[9px] sm:text-[10px] text-gray-500 mt-0.5 truncate">
-                    {inStockItemsCount} টি আইটেম
+                    {language === 'bn' ? `${inStockItemsCount} টি আইটেম` : `${inStockItemsCount} items`}
                   </p>
                 </div>
               </div>
@@ -353,9 +393,17 @@ export default function ReportsPage() {
                 <span className="text-yellow-400 shrink-0">💡</span>
                 <span className="truncate">
                   {Number(duesToStockRatio) > 1 ? (
-                    <>স্টক পণ্যের চেয়ে বাকি <strong className="text-yellow-400">{duesToStockRatio} গুণ</strong> বেশি (আদায়ে গুরুত্ব দিন)</>
+                    language === 'bn' ? (
+                      <>স্টক পণ্যের চেয়ে বাকি <strong className="text-yellow-400">{duesToStockRatio} গুণ</strong> বেশি (আদায়ে গুরুত্ব দিন)</>
+                    ) : (
+                      <>Pending dues are <strong className="text-yellow-400">{duesToStockRatio}x</strong> higher than stock value (focus on collections)</>
+                    )
                   ) : (
-                    <>মার্কেট বাকির চেয়ে স্টকে পর্যাপ্ত পণ্য রয়েছে (<strong className="text-purple-400">{duesToStockRatio}x</strong>)</>
+                    language === 'bn' ? (
+                      <>মার্কেট বাকির চেয়ে স্টকে পর্যাপ্ত পণ্য রয়েছে (<strong className="text-purple-400">{duesToStockRatio}x</strong>)</>
+                    ) : (
+                      <>Stock inventory is well-balanced against market dues (<strong className="text-purple-400">{duesToStockRatio}x</strong>)</>
+                    )
                   )}
                 </span>
               </div>
@@ -370,16 +418,20 @@ export default function ReportsPage() {
                 <div>
                   <h2 className="text-base sm:text-lg font-semibold text-gray-200 flex items-center gap-2">
                     <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
-                    Transaction Ledger
+                    {language === 'bn' ? 'লেনদেন খতিয়ান' : 'Transaction Ledger'}
                   </h2>
-                  <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5">মোট {searchTransactions.length} টি লেনদেন পাওয়া গেছে</p>
+                  <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5">
+                    {language === 'bn' 
+                      ? `মোট ${searchTransactions.length} টি লেনদেন পাওয়া গেছে` 
+                      : `Total ${searchTransactions.length} transactions found`}
+                  </p>
                 </div>
               </div>
               <div className="relative w-full sm:w-72">
                 <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input 
                   type="text"
-                  placeholder="খুঁজুন (গ্রাহক, টাইপ, স্টাফ)..."
+                  placeholder={language === 'bn' ? 'খুঁজুন (গ্রাহক, ধরন, স্টাফ)...' : 'Search (customer, type, staff)...'}
                   value={search}
                   onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
                   className="w-full bg-background/80 border border-gray-800 text-xs sm:text-sm text-gray-200 rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-blue-500/50"
@@ -389,7 +441,7 @@ export default function ReportsPage() {
 
             {searchTransactions.length === 0 ? (
               <div className="p-8 sm:p-12 text-center text-gray-500 text-xs sm:text-sm">
-                এই সময়কালে কোন লেনদেন পাওয়া যায়নি।
+                {language === 'bn' ? 'এই সময়কালে কোনো লেনদেন পাওয়া যায়নি।' : 'No transactions found in this time period.'}
               </div>
             ) : (
               <>
@@ -398,11 +450,11 @@ export default function ReportsPage() {
                   <table className="w-full whitespace-nowrap text-sm">
                     <thead className="bg-background/50">
                       <tr className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-800/50">
-                        <th className="px-6 py-4">তারিখ ও সময়</th>
-                        <th className="px-6 py-4">গ্রাহক / বিবরণ</th>
-                        <th className="px-6 py-4">ক্যাটাগরি</th>
-                        <th className="px-6 py-4">টাকার পরিমাণ</th>
-                        <th className="px-6 py-4">রিসিভার</th>
+                        <th className="px-6 py-4">{language === 'bn' ? 'তারিখ ও সময়' : 'Date & Time'}</th>
+                        <th className="px-6 py-4">{language === 'bn' ? 'গ্রাহক / বিবরণ' : 'Customer / Description'}</th>
+                        <th className="px-6 py-4">{language === 'bn' ? 'ক্যাটাগরি' : 'Category'}</th>
+                        <th className="px-6 py-4">{language === 'bn' ? 'টাকার পরিমাণ' : 'Amount'}</th>
+                        <th className="px-6 py-4">{language === 'bn' ? 'রিসিভার' : 'Receiver'}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-800/50">
@@ -413,14 +465,16 @@ export default function ReportsPage() {
                             <td className="px-6 py-4 text-sm text-gray-400">
                               {formatDateDisplay(t.createdAt)}
                             </td>
-                            <td className="px-6 py-4 text-sm font-medium text-gray-200">{t.customerName || 'সরাসরি লেনদেন'}</td>
+                            <td className="px-6 py-4 text-sm font-medium text-gray-200">
+                              {t.customerName || (language === 'bn' ? 'সরাসরি লেনদেন' : 'Direct Transaction')}
+                            </td>
                             <td className="px-6 py-4">
                               <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
                                 isExpense 
                                 ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' 
                                 : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                               }`}>
-                                {t.type}
+                                {getTransactionTypeLabel(t.type)}
                               </span>
                             </td>
                             <td className={`px-6 py-4 text-sm font-bold ${isExpense ? 'text-orange-400' : 'text-emerald-400'}`}>
@@ -464,7 +518,7 @@ export default function ReportsPage() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
                             <span className="font-semibold text-gray-100 text-xs sm:text-sm truncate">
-                              {t.customerName || 'সরাসরি লেনদেন'}
+                              {t.customerName || (language === 'bn' ? 'সরাসরি লেনদেন' : 'Direct Transaction')}
                             </span>
                           </div>
                           <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-gray-400 mt-0.5 truncate">
@@ -472,7 +526,9 @@ export default function ReportsPage() {
                             {t.receivedBy && (
                               <>
                                 <span>•</span>
-                                <span className="text-gray-300 truncate">স্টাফ: {t.receivedBy}</span>
+                                <span className="text-gray-300 truncate">
+                                  {language === 'bn' ? 'স্টাফ:' : 'Staff:'} {t.receivedBy}
+                                </span>
                               </>
                             )}
                           </div>
@@ -492,7 +548,7 @@ export default function ReportsPage() {
                               ? 'bg-orange-500/10 text-orange-300 border-orange-500/20' 
                               : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
                           }`}>
-                            {t.type}
+                            {getTransactionTypeLabel(t.type)}
                           </span>
                         </div>
                       </div>

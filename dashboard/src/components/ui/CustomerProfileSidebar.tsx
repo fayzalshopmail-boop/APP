@@ -6,6 +6,7 @@ import { formatCurrency } from '@/lib/currency';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { transactionService } from '@/lib/services/transaction';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 interface CustomerProfileSidebarProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ interface CustomerProfileSidebarProps {
 }
 
 export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers, onOpenSetBill }: CustomerProfileSidebarProps) {
+  const { t, language } = useTranslation();
   const [advanceReceivedByMap, setAdvanceReceivedByMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -76,7 +78,7 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
       if (job.servicedBy.includes('@')) return job.servicedBy.split('@')[0];
       return job.servicedBy;
     }
-    return 'শপ স্টাফ';
+    return language === 'bn' ? 'শপ স্টাফ' : 'Shop Staff';
   };
 
   const formatJobDate = (createdAt: any) => {
@@ -91,7 +93,7 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
         d = new Date(createdAt);
       }
       if (isNaN(d.getTime())) return '';
-      return d.toLocaleDateString('bn-BD', { day: 'numeric', month: 'short', year: 'numeric' });
+      return d.toLocaleDateString(language === 'bn' ? 'bn-BD' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' });
     } catch {
       return '';
     }
@@ -123,7 +125,7 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
               <div>
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
                   <User className="w-5 h-5 text-blue-500" />
-                  Customer Profile
+                  {language === 'bn' ? 'কাস্টমার প্রোফাইল' : 'Customer Profile'}
                 </h2>
               </div>
               <button onClick={onClose} className="p-2 text-gray-400 hover:text-white transition-colors bg-gray-800/50 hover:bg-gray-800 rounded-full">
@@ -152,10 +154,10 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
                     <a 
                       href={`tel:${customer.phone}`}
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors shrink-0"
-                      title="Call Customer"
+                      title={language === 'bn' ? 'কাস্টমারকে কল দিন' : 'Call Customer'}
                     >
                       <PhoneCall className="w-3.5 h-3.5" />
-                      <span>Call</span>
+                      <span>{language === 'bn' ? 'কল' : 'Call'}</span>
                     </a>
                   </div>
                   <div className="flex items-center gap-3 text-gray-300">
@@ -168,11 +170,15 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
 
                 <div className="mt-6 pt-5 border-t border-gray-800 flex justify-between items-center">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Total Lifetime Value</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                      {language === 'bn' ? 'মোট লেনদেন' : 'Total Lifetime Value'}
+                    </p>
                     <p className="text-lg font-bold text-emerald-400">{formatCurrency(totalSpent)}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Loyalty Points</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                      {language === 'bn' ? 'লয়ালটি পয়েন্ট' : 'Loyalty Points'}
+                    </p>
                     <p className="text-lg font-bold text-blue-400">★ {customer.points || 0}</p>
                   </div>
                 </div>
@@ -182,7 +188,7 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
               <div>
                 <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2 mb-4">
                   <History className="w-4 h-4" />
-                  Repair History ({history.length})
+                  {language === 'bn' ? 'মেরামতের ইতিহাস' : 'Repair History'} ({history.length})
                 </h4>
                 
                 <div className="space-y-4">
@@ -190,7 +196,7 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
                     <div key={job.id} className={`relative p-5 rounded-xl border transition-all ${job.id === customer.id ? 'bg-blue-500/5 border-blue-500/30' : 'bg-secondary border-gray-800'}`}>
                       {job.id === customer.id && (
                         <div className="absolute top-0 right-6 -translate-y-1/2 bg-blue-500 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full shadow-lg">
-                          Current Viewing
+                          {language === 'bn' ? 'বর্তমান জব' : 'Current Viewing'}
                         </div>
                       )}
                       
@@ -212,7 +218,7 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
                         <div className="text-right">
                           {job.isBillPending ? (
                             <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full inline-block">
-                              ⏳ বিল পেন্ডিং
+                              {language === 'bn' ? '⏳ বিল পেন্ডিং' : '⏳ Bill Pending'}
                             </span>
                           ) : (
                             <p className="text-sm font-bold text-gray-200">{formatCurrency(job.totalBill)}</p>
@@ -230,7 +236,7 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
                             <UserCheck className="w-3 h-3" />
                           </div>
                           <span className="text-[11px] text-gray-400">
-                            রিসিভ করেছেন: <strong className="text-white font-semibold">{getReceivedByDisplay(job)}</strong>
+                            {language === 'bn' ? 'রিসিভ করেছেন:' : 'Received by:'} <strong className="text-white font-semibold">{getReceivedByDisplay(job)}</strong>
                           </span>
                         </div>
                         {formatJobDate(job.createdAt) && (
@@ -249,7 +255,7 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
                             className="w-full py-2 px-3 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-400 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-sm"
                           >
                             <Coins className="w-3.5 h-3.5" />
-                            <span>কাস্টমারের বিল নির্ধারণ করুন (Set Bill)</span>
+                            <span>{language === 'bn' ? 'কাস্টমারের বিল নির্ধারণ করুন (Set Bill)' : 'Set Customer Bill'}</span>
                           </button>
                         </div>
                       )}
@@ -257,13 +263,15 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
                       {job.warrantyMonths && (
                         <div className="mt-3 pt-3 border-t border-gray-800/50 flex items-center gap-2 text-xs text-purple-400 font-medium">
                           <Shield className="w-3.5 h-3.5" />
-                          {job.warrantyMonths} Warranty Provided
+                          {job.warrantyMonths} {language === 'bn' ? 'ওয়ারেন্টি অন্তর্ভুক্ত' : 'Warranty Provided'}
                         </div>
                       )}
 
                       {job.partsUsed && job.partsUsed.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-gray-800/50">
-                          <h5 className="text-xs font-medium text-gray-400 mb-2">Parts Replaced / Used</h5>
+                          <h5 className="text-xs font-medium text-gray-400 mb-2">
+                            {language === 'bn' ? 'ব্যবহৃত পার্টসসমূহ' : 'Parts Replaced / Used'}
+                          </h5>
                           <div className="space-y-1.5">
                             {job.partsUsed.map((part, i) => (
                               <div key={i} className="flex justify-between items-center text-xs">
@@ -272,7 +280,7 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
                               </div>
                             ))}
                             <div className="border-t border-gray-800 mt-2 pt-1 flex justify-between items-center text-[10px] text-gray-500">
-                              <span>Total Parts Cost: {formatCurrency(job.totalCost || 0)}</span>
+                              <span>{language === 'bn' ? 'মোট পার্টস খরচ:' : 'Total Parts Cost:'} {formatCurrency(job.totalCost || 0)}</span>
                             </div>
                           </div>
                         </div>

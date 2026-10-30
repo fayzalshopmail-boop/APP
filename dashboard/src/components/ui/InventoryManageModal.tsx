@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Trash2, Settings2 } from 'lucide-react';
 import { ConfirmModal } from './ConfirmModal';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 interface InventoryManageModalProps {
  isOpen: boolean;
@@ -22,6 +23,7 @@ interface InventoryManageModalProps {
 }
 
 export function InventoryManageModal({ isOpen, onClose, title, options, onAdd, onRemove }: InventoryManageModalProps) {
+ const { t, language } = useTranslation();
  const [newValue, setNewValue] = useState('');
  
  // Confirm Modal State
@@ -58,18 +60,18 @@ export function InventoryManageModal({ isOpen, onClose, title, options, onAdd, o
  <div className="p-5">
  <DialogHeader className="mb-4 flex flex-row items-center gap-2">
  <Settings2 className="w-5 h-5 text-blue-400" />
- <DialogTitle className="text-lg font-semibold m-0">Manage {title}</DialogTitle>
+ <DialogTitle className="text-lg font-semibold m-0">{language === 'bn' ? `${title} পরিচালনা` : `Manage ${title}`}</DialogTitle>
  </DialogHeader>
 
  <form onSubmit={handleAdd} className="flex gap-2 mb-4">
- <Input value={newValue} onChange={(e) => setNewValue(e.target.value)} placeholder="Add new option..." className="flex-1"
+ <Input value={newValue} onChange={(e) => setNewValue(e.target.value)} placeholder={language === 'bn' ? 'নতুন অপশন লিখুন...' : 'Add new option...'} className="flex-1"
  />
  <Button 
  type="submit"
  disabled={!newValue.trim()}
  className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-3 py-2 rounded-lg transition-colors flex items-center gap-1 text-sm font-medium"
  >
- <Plus className="w-4 h-4" /> Add
+ <Plus className="w-4 h-4" /> {language === 'bn' ? 'যোগ করুন' : 'Add'}
  </Button>
  </form>
 
@@ -83,13 +85,13 @@ export function InventoryManageModal({ isOpen, onClose, title, options, onAdd, o
  </div>
  ))}
  {options.length === 0 && (
- <div className="text-center text-sm text-gray-500 py-4">No options added yet.</div>
+ <div className="text-center text-sm text-gray-500 py-4">{language === 'bn' ? 'এখনো কোনো অপশন নেই।' : 'No options added yet.'}</div>
  )}
  </div>
  
  <div className="mt-5 text-right">
  <Button type="button" variant="secondary" onClick={onClose}>
- Done
+ {language === 'bn' ? 'সম্পন্ন' : 'Done'}
  </Button>
  </div>
  </div>
@@ -100,9 +102,9 @@ export function InventoryManageModal({ isOpen, onClose, title, options, onAdd, o
  isOpen={confirmModal.isOpen}
  onClose={() => setConfirmModal({ isOpen: false, optionToDelete: null })}
  onConfirm={handleConfirmDelete}
- title="Delete Option?"
- message={`Are you sure you want to delete "${confirmModal.optionToDelete}"?`}
- confirmText="Delete"
+ title={language === 'bn' ? 'অপশন মুছে ফেলতে চান?' : 'Delete Option?'}
+ message={language === 'bn' ? `আপনি কি নিশ্চিতভাবে "${confirmModal.optionToDelete}" অপশনটি মুছে ফেলতে চান?` : `Are you sure you want to delete "${confirmModal.optionToDelete}"?`}
+ confirmText={language === 'bn' ? 'মুছে ফেলুন' : 'Delete'}
  />
  </>
  );

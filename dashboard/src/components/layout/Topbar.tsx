@@ -2,6 +2,7 @@
 
 import { Bell, Lock, Menu, CheckCircle2, AlertTriangle, Info, BellRing, X, UserPlus, PackagePlus, PlusCircle, Wrench, Truck, Wallet, ShoppingCart, Receipt, Coins, WifiOff, ChevronLeft } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { notificationService, AppNotification } from '@/lib/services/notification';
@@ -19,50 +20,51 @@ const CustomerModal = dynamic(
   { ssr: false }
 );
 
-const headerAddButtons: Record<string, { label: string; icon: any; event?: string }> = {
-  '/customers': { label: 'নতুন কাস্টমার', icon: UserPlus, event: 'app:add-customer' },
-  '/inventory': { label: 'নতুন পার্টস', icon: PackagePlus, event: 'app:add-inventory' },
-  '/loans': { label: 'নতুন এন্ট্রি', icon: PlusCircle, event: 'app:add-loan' },
-  '/mechanics': { label: 'নতুন মেকানিক', icon: Wrench, event: 'app:add-mechanic' },
-  '/suppliers': { label: 'নতুন সাপ্লায়ার', icon: Truck, event: 'app:add-supplier' },
-  '/expenses': { label: 'নতুন খরচ', icon: Wallet, event: 'app:add-expense' },
-};
-
-const routeTitles: Record<string, string> = {
-  '/': 'Dashboard',
-  '/customers': 'Customer Details',
-  '/inventory': 'Inventory',
-  '/due': 'Due',
-  '/loans': 'My Loans',
-  '/loyalty': 'Loyalty',
-  '/mechanics': 'Mechanics (B2B)',
-  '/suppliers': 'Suppliers',
-  '/expenses': 'Expenses',
-  '/reports': 'Reports',
-  '/settings': 'Shop Settings',
-  '/sms': 'SMS Settings',
-  '/staff': 'My Attendance',
-};
-
-const routeSubtitles: Record<string, string> = {
-  '/': 'Welcome back to your dashboard.',
-  '/customers': 'Manage your TV repair customers and their records.',
-  '/inventory': 'Manage parts, stock levels, and pricing.',
-  '/due': 'Manage and collect outstanding balances from customers.',
-  '/loans': 'Manage money you\'ve borrowed or lent to others.',
-  '/loyalty': 'Manage customer reward points.',
-  '/mechanics': 'Manage B2B technician repairs and billing.',
-  '/suppliers': 'Manage your vendors and supply chain.',
-  '/expenses': 'Track and manage shop expenses.',
-  '/reports': 'View business analytics and insights.',
-  '/settings': 'Configure your shop settings.',
-  '/sms': 'SMS packages and delivery history.',
-  '/staff': 'Track your daily check-in, working hours, and attendance records.'
-};
-
 export function Topbar() {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
+
+  const headerAddButtons: Record<string, { label: string; icon: any; event?: string }> = {
+    '/customers': { label: t('topbar.addCustomer'), icon: UserPlus, event: 'app:add-customer' },
+    '/inventory': { label: t('topbar.addInventory'), icon: PackagePlus, event: 'app:add-inventory' },
+    '/loans': { label: t('topbar.addLoan'), icon: PlusCircle, event: 'app:add-loan' },
+    '/mechanics': { label: t('topbar.addMechanic'), icon: Wrench, event: 'app:add-mechanic' },
+    '/suppliers': { label: t('topbar.addSupplier'), icon: Truck, event: 'app:add-supplier' },
+    '/expenses': { label: t('topbar.addExpense'), icon: Wallet, event: 'app:add-expense' },
+  };
+
+  const routeTitles: Record<string, string> = {
+    '/': t('nav.dashboard'),
+    '/customers': t('nav.customers'),
+    '/inventory': t('nav.inventory'),
+    '/due': t('nav.due'),
+    '/loans': t('nav.loans'),
+    '/loyalty': t('nav.loyalty'),
+    '/mechanics': t('nav.mechanics'),
+    '/suppliers': t('nav.suppliers'),
+    '/expenses': t('nav.expenses'),
+    '/reports': t('nav.reports'),
+    '/settings': t('nav.settings'),
+    '/sms': t('nav.sms'),
+    '/staff': t('nav.attendance'),
+  };
+
+  const routeSubtitles: Record<string, string> = {
+    '/': t('topbar.dashboardWelcome'),
+    '/customers': t('topbar.customersSubtitle'),
+    '/inventory': t('topbar.inventorySubtitle'),
+    '/due': t('topbar.dueSubtitle'),
+    '/loans': t('topbar.loansSubtitle'),
+    '/loyalty': t('topbar.loyaltySubtitle'),
+    '/mechanics': t('topbar.mechanicsSubtitle'),
+    '/suppliers': t('topbar.suppliersSubtitle'),
+    '/expenses': t('topbar.expensesSubtitle'),
+    '/reports': t('topbar.reportsSubtitle'),
+    '/settings': t('topbar.settingsSubtitle'),
+    '/sms': t('topbar.smsSubtitle'),
+    '/staff': t('topbar.staffSubtitle'),
+  };
   const { setUnlocked, user, toggleSidebar, dashboardTimeFilter, setDashboardTimeFilter, shop } = useAppStore();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -358,10 +360,10 @@ export function Topbar() {
             <button
               onClick={() => setIsCustomerModalOpen(true)}
               className="flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-md shadow-blue-500/20 shrink-0"
-              title="নতুন কাস্টমার যোগ করুন"
+              title={t('topbar.addCustomer')}
             >
               <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span>+ নতুন কাস্টমার</span>
+              <span>+ {t('topbar.addCustomer')}</span>
             </button>
           </div>
         )}
@@ -389,14 +391,14 @@ export function Topbar() {
               onValueChange={(val: any) => setDashboardTimeFilter(val)}
             >
               <SelectTrigger className="w-[110px] sm:w-[130px] h-9 sm:h-10 bg-secondary border border-gray-800 text-gray-200 rounded-xl text-xs sm:text-sm font-medium focus:ring-1 focus:ring-blue-500/50">
-                <SelectValue placeholder="সময় নির্ধারণ" />
+                <SelectValue placeholder={t('dashboard.timeFilter.thisWeek')} />
               </SelectTrigger>
               <SelectContent alignItemWithTrigger={false}>
-                <SelectItem value="Today">আজকে</SelectItem>
-                <SelectItem value="This Week">এই সপ্তাহ</SelectItem>
-                <SelectItem value="This Month">এই মাস</SelectItem>
-                <SelectItem value="This Year">এই বছর</SelectItem>
-                <SelectItem value="All Time">সব সময়</SelectItem>
+                <SelectItem value="Today">{t('dashboard.timeFilter.today')}</SelectItem>
+                <SelectItem value="This Week">{t('dashboard.timeFilter.thisWeek')}</SelectItem>
+                <SelectItem value="This Month">{t('dashboard.timeFilter.thisMonth')}</SelectItem>
+                <SelectItem value="This Year">{t('dashboard.timeFilter.thisYear')}</SelectItem>
+                <SelectItem value="All Time">{t('dashboard.timeFilter.allTime')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -406,10 +408,10 @@ export function Topbar() {
         {!isOnline && (
           <div 
             className="flex items-center gap-1.5 bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-semibold shrink-0"
-            title="আপনি অফলাইনে আছেন। সমস্ত এন্ট্রি ফোনে সেভ হচ্ছে এবং ইন্টারনেট পেলে স্বয়ংক্রিয়ভাবে ক্লাউডে সিঙ্ক হবে।"
+            title="Offline"
           >
             <WifiOff className="w-3.5 h-3.5 text-amber-400" />
-            <span className="text-[11px] sm:text-xs">অফলাইন</span>
+            <span className="text-[11px] sm:text-xs">{t('common.offline')}</span>
           </div>
         )}
 
@@ -437,7 +439,7 @@ export function Topbar() {
               >
                 <div className="p-3 sm:p-4 border-b border-gray-800 flex items-center justify-between bg-[#1a1d2d] gap-2">
                   <h3 className="font-semibold text-white flex items-center gap-1.5 text-sm sm:text-base shrink-0">
-                    Notifications
+                    {t('topbar.notifications')}
                     {unreadCount > 0 && (
                       <span className="bg-blue-500 text-white text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-bold">
                         {unreadCount} NEW
@@ -447,12 +449,12 @@ export function Topbar() {
                   <div className="flex items-center gap-2 shrink-0">
                     {unreadCount > 0 && (
                       <button onClick={handleMarkAll} className="text-[11px] sm:text-xs whitespace-nowrap text-blue-400 hover:text-blue-300 font-medium transition-colors">
-                        Mark Read
+                        {t('topbar.markAllRead')}
                       </button>
                     )}
                     {notifications.length > 0 && (
                       <button onClick={handleClearAll} className="text-[11px] sm:text-xs whitespace-nowrap text-red-400 hover:text-red-300 font-medium transition-colors">
-                        Clear All
+                        {t('topbar.clearAll')}
                       </button>
                     )}
                   </div>
@@ -462,7 +464,7 @@ export function Topbar() {
                   {notifications.length === 0 ? (
                     <div className="p-8 text-center text-gray-500">
                       <Bell className="w-8 h-8 mx-auto mb-3 opacity-20" />
-                      <p className="text-sm">No notifications here.</p>
+                      <p className="text-sm">{t('topbar.noNotifications')}</p>
                     </div>
                   ) : (
                     <div className="divide-y divide-gray-800/50">

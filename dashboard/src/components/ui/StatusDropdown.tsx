@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, AlertCircle, Settings2, CheckCircle, ChevronDown, XCircle, Lock } from 'lucide-react';
 import { CustomerStatus } from '@/lib/services/customer';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 interface StatusDropdownProps {
   status: CustomerStatus | undefined;
@@ -14,6 +15,7 @@ interface StatusDropdownProps {
 const STATUS_OPTIONS: CustomerStatus[] = ['Received', 'In Progress', 'Waiting for Parts', 'Ready for Delivery', 'Delivered', 'Returned (Unrepaired)'];
 
 export function StatusDropdown({ status, onChange }: StatusDropdownProps) {
+  const { t, isBangla } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -100,13 +102,27 @@ export function StatusDropdown({ status, onChange }: StatusDropdownProps) {
     }
   };
 
+  const getStatusLabel = (s?: CustomerStatus) => {
+    switch (s) {
+      case 'Received': return t('status.received');
+      case 'In Progress': return t('status.inProgress');
+      case 'Waiting for Parts': return t('status.waitingForParts');
+      case 'Ready for Delivery': return t('status.readyForDelivery');
+      case 'Delivered': return t('status.delivered');
+      case 'Returned (Unrepaired)': return t('status.returned');
+      default: return s || t('status.received');
+    }
+  };
+
   const getStatusShortLabel = (s?: CustomerStatus) => {
     switch (s) {
-      case 'Waiting for Parts': return 'Waiting';
-      case 'Ready for Delivery': return 'Ready';
-      case 'Returned (Unrepaired)': return 'Returned';
-      case 'In Progress': return 'In Progress';
-      default: return s || 'Received';
+      case 'Waiting for Parts': return isBangla ? 'অপেক্ষায়' : 'Waiting';
+      case 'Ready for Delivery': return isBangla ? 'প্রস্তুত' : 'Ready';
+      case 'Returned (Unrepaired)': return isBangla ? 'ফেরত' : 'Returned';
+      case 'In Progress': return isBangla ? 'চলমান' : 'In Progress';
+      case 'Received': return isBangla ? 'গৃহীত' : 'Received';
+      case 'Delivered': return isBangla ? 'ডেলিভারি' : 'Delivered';
+      default: return s || t('status.received');
     }
   };
 
@@ -126,7 +142,7 @@ export function StatusDropdown({ status, onChange }: StatusDropdownProps) {
           className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border text-xs font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${currentConfig.bg} ${currentConfig.text} ${currentConfig.border} ${isFinalState ? 'cursor-not-allowed opacity-80 bg-opacity-50' : 'cursor-pointer hover:brightness-110'}`}
         >
           {currentConfig.icon}
-          <span className="hidden sm:inline">{status || 'Received'}</span>
+          <span className="hidden sm:inline">{getStatusLabel(status)}</span>
           <span className="sm:hidden">{getStatusShortLabel(status)}</span>
           {!isFinalState ? (
             <ChevronDown className={`w-3 h-3 opacity-50 ml-0.5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
@@ -168,7 +184,7 @@ export function StatusDropdown({ status, onChange }: StatusDropdownProps) {
                   <span className={`flex items-center justify-center w-5 h-5 rounded-md ${conf.bg} ${conf.text}`}>
                     {conf.icon}
                   </span>
-                  {opt}
+                  {getStatusLabel(opt)}
                 </button>
               );
             })}

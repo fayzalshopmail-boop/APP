@@ -17,11 +17,13 @@ import { CustomSelect } from "@/components/ui/CustomSelect";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { DirectSaleReceiptModal, DirectSaleReceiptData } from "@/components/ui/DirectSaleReceiptModal";
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import toast from "react-hot-toast";
 
 const formatNumber = (num: number) => num.toLocaleString('en-IN');
 
 export default function InventoryPage() {
+  const { t, language } = useTranslation();
   const { user, highlightInventorySearch, setHighlightInventorySearch } = useAppStore();
   const hasFullAccess = user?.role === 'Owner' || user?.role === 'Manager';
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -381,20 +383,9 @@ export default function InventoryPage() {
     return (
       <div className="flex flex-col items-center justify-center h-[70vh] text-center">
         <Box className="w-16 h-16 text-red-500/50 mb-4" />
-        <h2 className="text-2xl font-bold text-gray-200">Access Denied</h2>
-        <p className="text-gray-500 mt-2">You do not have permission to view Inventory.</p>
-          
-      <ConfirmModal
-        isOpen={deleteConfirm.isOpen}
-        onClose={() => setDeleteConfirm({isOpen: false, id: null})}
-        onConfirm={async () => {
-          if (deleteConfirm.id) await executeDelete(deleteConfirm.id);
-        }}
-        title="Delete Item?"
-        message="Are you sure you want to delete this item? This action cannot be undone."
-        confirmText="Delete"
-      />
-    </div>
+        <h2 className="text-2xl font-bold text-gray-200">{language === 'bn' ? 'অ্যাক্সেস অনুমোদিত নয়' : 'Access Denied'}</h2>
+        <p className="text-gray-500 mt-2">{language === 'bn' ? 'ইনভেন্টরি দেখার অনুমতি আপনার নেই।' : 'You do not have permission to view Inventory.'}</p>
+      </div>
   );
 }
 
@@ -405,10 +396,10 @@ export default function InventoryPage() {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
             <Box className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
-            দোকানের ইনভেন্টরি (Inventory)
+            {language === 'bn' ? 'দোকানের ইনভেন্টরি (Inventory)' : 'Shop Inventory'}
           </h1>
           <p className="text-gray-400 text-xs sm:text-sm mt-0.5 sm:mt-1">
-            পার্টস স্টক, ক্রয়-বিক্রয় মূল্য ও সরাসরি সেল
+            {language === 'bn' ? 'পার্টস স্টক, ক্রয়-বিক্রয় মূল্য ও সরাসরি সেল' : 'Parts stock, cost/selling price & direct sale'}
           </p>
         </div>
       </div>
@@ -418,7 +409,9 @@ export default function InventoryPage() {
         {/* Card 1: Total Items */}
         <div className="bg-card/90 border border-blue-500/20 hover:border-blue-500/40 rounded-xl sm:rounded-2xl p-2.5 sm:p-5 relative overflow-hidden group shadow-sm transition-all flex flex-col justify-between">
           <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2">
-            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">মোট পার্টস</span>
+            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">
+              {language === 'bn' ? 'মোট পার্টস' : 'Total Parts'}
+            </span>
             <div className="w-6 h-6 sm:w-9 sm:h-9 bg-blue-500/10 rounded-lg sm:rounded-xl flex items-center justify-center border border-blue-500/20 text-blue-400 shrink-0">
               <Box className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
             </div>
@@ -428,7 +421,7 @@ export default function InventoryPage() {
               {items.length}
             </div>
             <p className="text-[9px] sm:text-[11px] text-gray-500 mt-0.5 truncate hidden sm:block">
-              দোকানের নিবন্ধিত পার্টস
+              {language === 'bn' ? 'দোকানের নিবন্ধিত পার্টস' : 'Registered Parts'}
             </p>
           </div>
         </div>
@@ -436,7 +429,9 @@ export default function InventoryPage() {
         {/* Card 2: Total Stock Value */}
         <div className="bg-card/90 border border-emerald-500/20 hover:border-emerald-500/40 rounded-xl sm:rounded-2xl p-2.5 sm:p-5 relative overflow-hidden group shadow-sm transition-all flex flex-col justify-between">
           <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2">
-            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">স্টক মূল্য</span>
+            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">
+              {language === 'bn' ? 'স্টক মূল্য' : 'Stock Value'}
+            </span>
             <div className="w-6 h-6 sm:w-9 sm:h-9 bg-emerald-500/10 rounded-xl sm:rounded-xl flex items-center justify-center border border-emerald-500/20 text-emerald-400 shrink-0">
               <Coins className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
             </div>
@@ -446,7 +441,7 @@ export default function InventoryPage() {
               {formatCurrency(totalInventoryValue)}
             </div>
             <p className="text-[9px] sm:text-[11px] text-gray-500 mt-0.5 truncate hidden sm:block">
-              বর্তমান ইনভেন্টরি
+              {language === 'bn' ? 'বর্তমান ইনভেন্টরি' : 'Current Inventory'}
             </p>
           </div>
         </div>
@@ -454,7 +449,9 @@ export default function InventoryPage() {
         {/* Card 3: Low Stock Alerts */}
         <div className="bg-card/90 border border-red-500/20 hover:border-red-500/40 rounded-xl sm:rounded-2xl p-2.5 sm:p-5 relative overflow-hidden group shadow-sm transition-all flex flex-col justify-between">
           <div className="flex items-center justify-between gap-1 mb-1 sm:mb-2">
-            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">লো স্টক</span>
+            <span className="text-[10px] sm:text-xs font-semibold text-gray-400 truncate">
+              {language === 'bn' ? 'লো স্টক' : 'Low Stock'}
+            </span>
             <div className="w-6 h-6 sm:w-9 sm:h-9 bg-red-500/10 rounded-lg sm:rounded-xl flex items-center justify-center border border-red-500/20 text-red-400 shrink-0">
               <AlertCircle className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
             </div>
@@ -464,7 +461,7 @@ export default function InventoryPage() {
               {lowStockItems.length}
             </div>
             <p className="text-[9px] sm:text-[11px] text-gray-500 mt-0.5 truncate hidden sm:block">
-              রি-স্টক প্রয়োজন
+              {language === 'bn' ? 'রি-স্টক প্রয়োজন' : 'Restock Needed'}
             </p>
           </div>
         </div>
@@ -476,7 +473,7 @@ export default function InventoryPage() {
           <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <Input 
             type="text" 
-            placeholder="পার্টসের নাম দিয়ে খুঁজুন..." 
+            placeholder={language === 'bn' ? 'পার্টসের নাম দিয়ে খুঁজুন...' : 'Search parts by name...'} 
             value={searchTerm}
             onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-9 h-9 sm:h-11 text-xs sm:text-sm rounded-xl bg-popover/80 border-gray-800 focus:border-blue-500"
@@ -493,7 +490,11 @@ export default function InventoryPage() {
                   : 'bg-popover/60 text-gray-400 border-gray-800 hover:text-white hover:bg-gray-800'
               }`}
             >
-              {cat === 'Low Stock' ? `⚠️ লো স্টক (${lowStockItems.length})` : cat}
+              {cat === 'All' 
+                ? (language === 'bn' ? 'সকল পার্টস' : 'All') 
+                : cat === 'Low Stock' 
+                ? (language === 'bn' ? `⚠️ লো স্টক (${lowStockItems.length})` : `⚠️ Low Stock (${lowStockItems.length})`) 
+                : cat}
             </button>
           ))}
         </div>
@@ -507,7 +508,7 @@ export default function InventoryPage() {
       ) : filteredItems.length === 0 ? (
         <div className="bg-card border border-gray-800 rounded-2xl flex flex-col justify-center items-center h-64 text-gray-500">
           <Box className="w-12 h-12 mb-3 opacity-20" />
-          <p>কোন পার্টস পাওয়া যায়নি</p>
+          <p>{language === 'bn' ? 'কোন পার্টস পাওয়া যায়নি' : 'No parts found'}</p>
         </div>
       ) : (
         <>
@@ -517,12 +518,12 @@ export default function InventoryPage() {
               <table className="w-full text-left text-sm whitespace-nowrap">
                 <thead className="bg-popover sticky top-0 z-10 shadow-sm">
                   <tr className="text-gray-400 uppercase tracking-wider text-xs border-b border-gray-800">
-                    <th className="px-6 py-4 font-medium min-w-[200px]">Part Name</th>
-                    <th className="px-6 py-4 font-medium min-w-[120px]">Category</th>
-                    <th className="px-6 py-4 font-medium min-w-[100px]">Stock</th>
-                    <th className="px-6 py-4 font-medium min-w-[120px]">Cost Price</th>
-                    <th className="px-6 py-4 font-medium min-w-[120px]">Selling Price</th>
-                    <th className="px-6 py-4 font-medium text-right min-w-[100px]">Actions</th>
+                    <th className="px-6 py-4 font-medium min-w-[200px]">{language === 'bn' ? 'পার্টসের নাম' : 'Part Name'}</th>
+                    <th className="px-6 py-4 font-medium min-w-[120px]">{language === 'bn' ? 'ক্যাটাগরি' : 'Category'}</th>
+                    <th className="px-6 py-4 font-medium min-w-[100px]">{language === 'bn' ? 'স্টক' : 'Stock'}</th>
+                    <th className="px-6 py-4 font-medium min-w-[120px]">{language === 'bn' ? 'ক্রয়মূল্য' : 'Cost Price'}</th>
+                    <th className="px-6 py-4 font-medium min-w-[120px]">{language === 'bn' ? 'বিক্রয়মূল্য' : 'Selling Price'}</th>
+                    <th className="px-6 py-4 font-medium text-right min-w-[100px]">{language === 'bn' ? 'অ্যাকশন' : 'Actions'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800/50">
@@ -541,7 +542,7 @@ export default function InventoryPage() {
                           {item.stock} {item.unit || 'Pcs'}
                         </div>
                         {item.stock <= (item.minStockLevel || 5) && (
-                          <div className="text-[10px] text-red-500/70">Low Stock</div>
+                          <div className="text-[10px] text-red-500/70">{language === 'bn' ? 'লো স্টক' : 'Low Stock'}</div>
                         )}
                       </td>
                       <td className="px-6 py-4 text-gray-400">
@@ -557,7 +558,7 @@ export default function InventoryPage() {
                             size="icon" 
                             onClick={() => handleOpenSell(item)} 
                             className="h-8 w-8 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 hover:text-blue-400 rounded-lg transition-colors"
-                            title="Direct Sell"
+                            title={language === 'bn' ? 'সরাসরি বিক্রয়' : 'Direct Sell'}
                           >
                             <ShoppingCart className="w-4 h-4" />
                           </Button>
@@ -566,7 +567,7 @@ export default function InventoryPage() {
                             size="icon" 
                             onClick={() => handleOpenRestock(item)} 
                             className="h-8 w-8 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 hover:text-emerald-400 rounded-lg transition-colors"
-                            title="Restock Item"
+                            title={language === 'bn' ? 'আইটেম রিস্টক করুন' : 'Restock Item'}
                           >
                             <PlusCircle className="w-4 h-4" />
                           </Button>
@@ -577,7 +578,7 @@ export default function InventoryPage() {
                                 size="icon" 
                                 onClick={() => handleOpenModal(item)} 
                                 className="h-8 w-8 bg-gray-800/50 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg transition-colors"
-                                title="Edit Part"
+                                title={language === 'bn' ? 'এডিট করুন' : 'Edit Part'}
                               >
                                 <Edit2 className="w-4 h-4" />
                               </Button>
@@ -586,7 +587,7 @@ export default function InventoryPage() {
                                 size="icon" 
                                 onClick={() => handleDeleteRequest(item.id)} 
                                 className="h-8 w-8 bg-red-500/10 hover:bg-red-500/20 text-red-500 hover:text-red-400 rounded-lg transition-colors"
-                                title="Delete Part"
+                                title={language === 'bn' ? 'মুছে ফেলুন' : 'Delete Part'}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
@@ -640,19 +641,19 @@ export default function InventoryPage() {
                   {/* Financial Grid: Buy Price, Sell Price, Stock Valuation */}
                   <div className="grid grid-cols-3 gap-1.5 bg-[#121523]/80 p-2 rounded-lg border border-gray-800/60 text-center">
                     <div>
-                      <div className="text-[9px] text-gray-400">ক্রয়মূল্য</div>
+                      <div className="text-[9px] text-gray-400">{language === 'bn' ? 'ক্রয়মূল্য' : 'Cost Price'}</div>
                       <div className="text-xs font-semibold text-gray-300 truncate mt-0.5">
                         {formatCurrency(item.purchasePrice)}
                       </div>
                     </div>
                     <div className="border-x border-gray-800/80">
-                      <div className="text-[9px] text-gray-400">বিক্রয়মূল্য</div>
+                      <div className="text-[9px] text-gray-400">{language === 'bn' ? 'বিক্রয়মূল্য' : 'Selling Price'}</div>
                       <div className="text-xs font-semibold text-white truncate mt-0.5">
                         {formatCurrency(item.sellingPrice)}
                       </div>
                     </div>
                     <div>
-                      <div className="text-[9px] text-gray-400">মোট মূল্য</div>
+                      <div className="text-[9px] text-gray-400">{language === 'bn' ? 'মোট মূল্য' : 'Stock Value'}</div>
                       <div className={`text-xs font-bold truncate mt-0.5 ${isLow ? 'text-red-400' : 'text-emerald-400'}`}>
                         {formatCurrency(item.stock * item.purchasePrice)}
                       </div>
@@ -666,7 +667,7 @@ export default function InventoryPage() {
                       onClick={() => handleOpenSell(item)} 
                       className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-xs h-7.5 rounded-lg shadow-sm font-medium"
                     >
-                      <ShoppingCart className="w-3.5 h-3.5 mr-1" /> সেল
+                      <ShoppingCart className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'সেল' : 'Sell'}
                     </Button>
                     <Button 
                       size="sm" 
@@ -674,7 +675,7 @@ export default function InventoryPage() {
                       onClick={() => handleOpenRestock(item)} 
                       className="flex-1 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 text-xs h-7.5 rounded-lg font-medium"
                     >
-                      <PlusCircle className="w-3.5 h-3.5 mr-1" /> রিস্টক
+                      <PlusCircle className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'রিস্টক' : 'Restock'}
                     </Button>
                     {hasFullAccess && (
                       <div className="flex items-center gap-1 shrink-0">
@@ -683,7 +684,7 @@ export default function InventoryPage() {
                           variant="ghost" 
                           onClick={() => handleOpenModal(item)} 
                           className="h-7.5 w-7.5 p-0 bg-gray-800/50 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg"
-                          title="Edit Part"
+                          title={language === 'bn' ? 'এডিট করুন' : 'Edit Part'}
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </Button>
@@ -692,7 +693,7 @@ export default function InventoryPage() {
                           variant="ghost" 
                           onClick={() => handleDeleteRequest(item.id)} 
                           className="h-7.5 w-7.5 p-0 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg"
-                          title="Delete Part"
+                          title={language === 'bn' ? 'মুছে ফেলুন' : 'Delete Part'}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
@@ -724,10 +725,14 @@ export default function InventoryPage() {
             <div className="relative">
               <DialogTitle className="text-xl font-bold text-gray-100 flex items-center gap-2">
                 <Package className="w-5 h-5 text-blue-400" />
-                {editingItem ? 'Edit Product' : 'Add New Product'}
+                {editingItem 
+                  ? (language === 'bn' ? 'পণ্য সম্পাদনা করুন' : 'Edit Product') 
+                  : (language === 'bn' ? 'নতুন পণ্য যোগ করুন' : 'Add New Product')}
               </DialogTitle>
               <DialogDescription className="text-gray-400 mt-1">
-                {editingItem ? 'Update inventory details for this product.' : 'Enter details to add a new product to inventory.'}
+                {editingItem 
+                  ? (language === 'bn' ? 'এই পণ্যের ইনভেন্টরি বিবরণ আপডেট করুন।' : 'Update inventory details for this product.') 
+                  : (language === 'bn' ? 'ইনভেন্টরিতে নতুন পণ্য যোগ করতে বিবরণ লিখুন।' : 'Enter details to add a new product to inventory.')}
               </DialogDescription>
             </div>
             <Button onClick={() => closeInvModal()} className="p-2 rounded-full bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-gray-200 transition-colors relative z-10 focus:outline-none">
@@ -742,7 +747,7 @@ export default function InventoryPage() {
               {/* 1. Basic Info */}
               <div className="bg-[#1a1d2d]/30 p-4 sm:p-5 rounded-xl border border-gray-800/60 space-y-4">
                 <h4 className="text-sm font-semibold text-blue-400 flex items-center gap-2 mb-1">
-                  <Tag className="w-4 h-4" /> Product Information
+                  <Tag className="w-4 h-4" /> {language === 'bn' ? 'পণ্যের বিবরণ' : 'Product Information'}
                 </h4>
                 
                 
@@ -750,21 +755,21 @@ export default function InventoryPage() {
                     
                     
                     <div className="space-y-1.5 mb-4 col-span-full">
-                      <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Select Supplier (Optional)</label>
+                      <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">{language === 'bn' ? 'সাপ্লায়ার নির্বাচন করুন (ঐচ্ছিক)' : 'Select Supplier (Optional)'}</label>
                       <CustomSelect
                         value={formData.supplierId}
                         onChange={(val) => setFormData({ ...formData, supplierId: val })}
                         options={[
-                          { label: 'No Supplier', value: '' },
+                          { label: language === 'bn' ? 'কোন সাপ্লায়ার নেই' : 'No Supplier', value: '' },
                           ...suppliers.map(s => ({ label: s.name + (s.company ? ` (${s.company})` : ''), value: s.id }))
                         ]}
-                        placeholder="Select a supplier..."
+                        placeholder={language === 'bn' ? 'সাপ্লায়ার নির্বাচন করুন...' : 'Select a supplier...'}
                       />
                     </div>
                     {/* Category Field */}
                   <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Category <span className="text-red-400">*</span></label>
+                        <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">{language === 'bn' ? 'ক্যাটাগরি' : 'Category'} <span className="text-red-400">*</span></label>
                         <Button variant="ghost" size="icon" type="button" onClick={handleManageCategories} className="h-6 w-6 text-gray-500 hover:text-blue-400">
                           <Settings2 className="w-3.5 h-3.5" />
                         </Button>
@@ -773,7 +778,7 @@ export default function InventoryPage() {
                         value={formData.category}
                         onChange={(val) => setFormData({ ...formData, category: val, name: '' })}
                         options={invSettings.categories}
-                        placeholder="Select Category"
+                        placeholder={language === 'bn' ? 'ক্যাটাগরি নির্বাচন করুন' : 'Select Category'}
                         icon={<Layers className="w-4 h-4" />}
                       />
                     </div>
@@ -781,7 +786,7 @@ export default function InventoryPage() {
                   {/* Product Name Field */}
                   <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Product Name <span className="text-red-400">*</span></label>
+                        <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">{language === 'bn' ? 'পণ্যের নাম' : 'Product Name'} <span className="text-red-400">*</span></label>
                         <Button variant="ghost" size="icon" type="button" onClick={handleManageProducts} className="h-6 w-6 text-gray-500 hover:text-blue-400">
                           <Settings2 className="w-3.5 h-3.5" />
                         </Button>
@@ -790,7 +795,7 @@ export default function InventoryPage() {
                         value={formData.name}
                         onChange={(val) => setFormData({ ...formData, name: val })}
                         options={invSettings.productNames[formData.category] || []}
-                        placeholder={formData.category ? 'Select Product' : 'Select Category first'}
+                        placeholder={formData.category ? (language === 'bn' ? 'পণ্য নির্বাচন করুন' : 'Select Product') : (language === 'bn' ? 'প্রথমে ক্যাটাগরি নির্বাচন করুন' : 'Select Category first')}
                         icon={<Box className="w-4 h-4" />}
                         disabled={!formData.category}
                       />
@@ -801,13 +806,13 @@ export default function InventoryPage() {
               {/* 2. Stock Info */}
               <div className="bg-[#1a1d2d]/30 p-4 sm:p-5 rounded-xl border border-gray-800/60 space-y-4">
                 <h4 className="text-sm font-semibold text-emerald-400 flex items-center gap-2 mb-1">
-                  <Box className="w-4 h-4" /> Stock Details
+                  <Box className="w-4 h-4" /> {language === 'bn' ? 'স্টক বিবরণ' : 'Stock Details'}
                 </h4>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Stock Quantity */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Current Stock <span className="text-red-400">*</span></label>
+                    <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">{language === 'bn' ? 'বর্তমান স্টক' : 'Current Stock'} <span className="text-red-400">*</span></label>
                     <div className="flex gap-2">
                       <div className="relative flex-1">
                         <Input 
@@ -823,14 +828,14 @@ export default function InventoryPage() {
                           value={formData.unit}
                           onChange={(val) => setFormData({ ...formData, unit: val })}
                           options={['Pcs', 'Set']}
-                          placeholder="Unit"
+                          placeholder={language === 'bn' ? 'একক' : 'Unit'}
                         />
                     </div>
                   </div>
 
                   {/* Minimum Stock Alert */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Low Stock Alert</label>
+                    <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">{language === 'bn' ? 'লো স্টক সতর্কতা' : 'Low Stock Alert'}</label>
                     <div className="relative">
                       <AlertCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                       <Input 
@@ -848,13 +853,13 @@ export default function InventoryPage() {
               {/* 3. Pricing Info */}
               <div className="bg-[#1a1d2d]/30 p-4 sm:p-5 rounded-xl border border-gray-800/60 space-y-4">
                 <h4 className="text-sm font-semibold text-orange-400 flex items-center gap-2 mb-1">
-                  <Coins className="w-4 h-4" /> Pricing Information
+                  <Coins className="w-4 h-4" /> {language === 'bn' ? 'মূল্য নির্ধারণ' : 'Pricing Information'}
                 </h4>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Purchase Price */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Purchase Price <span className="text-red-400">*</span></label>
+                    <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">{language === 'bn' ? 'ক্রয়মূল্য' : 'Purchase Price'} <span className="text-red-400">*</span></label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm">৳</span>
                       <Input 
@@ -869,7 +874,7 @@ export default function InventoryPage() {
                   </div>
                   {/* Selling Price */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Selling Price <span className="text-red-400">*</span></label>
+                    <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">{language === 'bn' ? 'বিক্রয়মূল্য' : 'Selling Price'} <span className="text-red-400">*</span></label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm">৳</span>
                       <Input 
@@ -888,7 +893,7 @@ export default function InventoryPage() {
                     {formData.purchasePrice > 0 && formData.sellingPrice > 0 && formData.sellingPrice < formData.purchasePrice && (
                       <p className="text-[11px] text-red-400 flex items-center gap-1 mt-1 font-medium animate-in fade-in">
                         <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                        বিক্রয়মূল্য অবশ্যই ক্রয়মূল্যের (কেনা দাম) চেয়ে বেশি বা সমান হতে হবে!
+                        {language === 'bn' ? 'বিক্রয়মূল্য অবশ্যই ক্রয়মূল্যের (কেনা দাম) চেয়ে বেশি বা সমান হতে হবে!' : 'Selling price must be greater than or equal to purchase price!'}
                       </p>
                     )}
                   </div>
@@ -904,14 +909,14 @@ export default function InventoryPage() {
                 onClick={() => closeInvModal()}
                 className="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-400 bg-gray-800/50 hover:bg-gray-800 hover:text-gray-200 transition-colors"
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button 
                 type="submit"
                 className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-600/20 flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
-                {editingItem ? 'Save Changes' : 'Add Product'}
+                {editingItem ? (language === 'bn' ? 'সংরক্ষণ করুন' : 'Save Changes') : (language === 'bn' ? 'পণ্য যোগ করুন' : 'Add Product')}
               </Button>
             </div>
           </form>
@@ -923,7 +928,7 @@ export default function InventoryPage() {
       <InventoryManageModal 
         isOpen={manageCategoryModal}
         onClose={() => setManageCategoryModal(false)}
-        title="Categories"
+        title={language === 'bn' ? 'ক্যাটাগরি সমূহ' : 'Categories'}
         options={invSettings.categories}
         onAdd={handleAddCategory}
         onRemove={handleRemoveCategory}
@@ -933,7 +938,7 @@ export default function InventoryPage() {
       <InventoryManageModal 
         isOpen={manageProductModal}
         onClose={() => setManageProductModal(false)}
-        title={`Products (${formData.category})`}
+        title={language === 'bn' ? `পণ্য সমূহ (${formData.category})` : `Products (${formData.category})`}
         options={invSettings.productNames[formData.category] || []}
         onAdd={handleAddProduct}
         onRemove={handleRemoveProduct}
@@ -947,10 +952,10 @@ export default function InventoryPage() {
             <div className="relative">
               <DialogTitle className="text-xl font-bold text-gray-100 flex items-center gap-2">
                 <PlusCircle className="w-5 h-5 text-emerald-400" />
-                Restock Item
+                {language === 'bn' ? 'আইটেম রিস্টক করুন' : 'Restock Item'}
               </DialogTitle>
               <DialogDescription className="text-gray-400 mt-1">
-                Add stock and recalculate average cost price.
+                {language === 'bn' ? 'স্টক যোগ করুন এবং গড় ক্রয়মূল্য হিসাব করুন।' : 'Add stock and recalculate average cost price.'}
               </DialogDescription>
             </div>
             <Button onClick={() => closeRestockModal()} className="p-2 rounded-full bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-gray-200 transition-colors relative z-10 focus:outline-none">
@@ -964,8 +969,8 @@ export default function InventoryPage() {
                 <div className="bg-[#1a1d2d]/30 p-4 rounded-xl border border-gray-800/60 space-y-2">
                   <h4 className="text-sm font-semibold text-emerald-400">{restockItem.name}</h4>
                   <div className="flex justify-between text-xs text-gray-400">
-                    <span>Current Stock: <strong className="text-gray-200">{restockItem.stock} {restockItem.unit}</strong></span>
-                    <span>Current Avg Cost: <strong className="text-gray-200">{formatCurrency(restockItem.purchasePrice)}</strong></span>
+                    <span>{language === 'bn' ? 'বর্তমান স্টক:' : 'Current Stock:'} <strong className="text-gray-200">{restockItem.stock} {restockItem.unit}</strong></span>
+                    <span>{language === 'bn' ? 'বর্তমান গড় ক্রয়মূল্য:' : 'Current Avg Cost:'} <strong className="text-gray-200">{formatCurrency(restockItem.purchasePrice)}</strong></span>
                   </div>
                 </div>
 
@@ -975,18 +980,18 @@ export default function InventoryPage() {
                     
                   
                   <div className="space-y-1.5 mb-4">
-                    <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Select Supplier (Optional)</label>
+                    <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">{language === 'bn' ? 'সাপ্লায়ার নির্বাচন করুন (ঐচ্ছিক)' : 'Select Supplier (Optional)'}</label>
                     <CustomSelect
                       value={restockData.supplierId}
                       onChange={(val) => setRestockData({ ...restockData, supplierId: val })}
                       options={[
-                        { label: 'No Supplier', value: '' },
+                        { label: language === 'bn' ? 'কোন সাপ্লায়ার নেই' : 'No Supplier', value: '' },
                         ...suppliers.map(s => ({ label: s.name + (s.company ? ` (${s.company})` : ''), value: s.id }))
                       ]}
-                      placeholder="Select a supplier..."
+                      placeholder={language === 'bn' ? 'সাপ্লায়ার নির্বাচন করুন...' : 'Select a supplier...'}
                     />
                   </div>
-                  <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Add Quantity <span className="text-red-400">*</span></label>
+                  <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">{language === 'bn' ? 'পরিমাণ যোগ করুন' : 'Add Quantity'} <span className="text-red-400">*</span></label>
                     <Input 
                       type="number" 
                       required min="1"
@@ -998,7 +1003,7 @@ export default function InventoryPage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">New Purchase Price <span className="text-red-400">*</span></label>
+                      <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">{language === 'bn' ? 'নতুন ক্রয়মূল্য' : 'New Purchase Price'} <span className="text-red-400">*</span></label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm">৳</span>
                         <Input 
@@ -1011,7 +1016,7 @@ export default function InventoryPage() {
                       </div>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Selling Price <span className="text-red-400">*</span></label>
+                      <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">{language === 'bn' ? 'বিক্রয়মূল্য' : 'Selling Price'} <span className="text-red-400">*</span></label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm">৳</span>
                         <Input 
@@ -1029,7 +1034,7 @@ export default function InventoryPage() {
                       {restockData.newPurchasePrice > 0 && restockData.newSellingPrice > 0 && restockData.newSellingPrice < restockData.newPurchasePrice && (
                         <p className="text-[11px] text-red-400 flex items-center gap-1 mt-1 font-medium animate-in fade-in">
                           <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                          বিক্রয়মূল্য কেনা দামের চেয়ে কম হতে পারে না!
+                          {language === 'bn' ? 'বিক্রয়মূল্য কেনা দামের চেয়ে কম হতে পারে না!' : 'Selling price cannot be less than purchase price!'}
                         </p>
                       )}
                     </div>
@@ -1038,7 +1043,7 @@ export default function InventoryPage() {
                   {/* Calculated WAC preview */}
                   {(restockData.addQuantity > 0 && restockData.newPurchasePrice >= 0) && (
                     <div className="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-lg flex items-center justify-between mt-2">
-                      <span className="text-xs text-emerald-400/80">Calculated Average Cost:</span>
+                      <span className="text-xs text-emerald-400/80">{language === 'bn' ? 'হিসাবকৃত গড় ক্রয়মূল্য:' : 'Calculated Average Cost:'}</span>
                       <span className="text-sm font-bold text-emerald-400">
                         {formatCurrency(((restockItem.stock * restockItem.purchasePrice) + (restockData.addQuantity * restockData.newPurchasePrice)) / (restockItem.stock + restockData.addQuantity))}
                       </span>
@@ -1054,14 +1059,14 @@ export default function InventoryPage() {
                 onClick={() => closeRestockModal()}
                 className="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-400 bg-gray-800/50 hover:bg-gray-800 hover:text-gray-200 transition-colors"
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button 
                 type="submit"
                 className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-600/20 flex items-center gap-2"
               >
                 <PlusCircle className="w-4 h-4" />
-                Confirm Restock
+                {language === 'bn' ? 'রিস্টক নিশ্চিত করুন' : 'Confirm Restock'}
               </Button>
             </div>
           </form>
@@ -1077,10 +1082,10 @@ export default function InventoryPage() {
             <div className="relative">
               <DialogTitle className="text-xl font-bold text-gray-100 flex items-center gap-2">
                 <ShoppingCart className="w-5 h-5 text-blue-400" />
-                Direct Sell
+                {language === 'bn' ? 'সরাসরি বিক্রয়' : 'Direct Sell'}
               </DialogTitle>
               <DialogDescription className="text-gray-400 mt-1">
-                Sell this item directly without a repair job.
+                {language === 'bn' ? 'সার্ভিসিং জব ছাড়াই সরাসরি এই আইটেমটি বিক্রি করুন।' : 'Sell this item directly without a repair job.'}
               </DialogDescription>
             </div>
             <Button onClick={() => closeSellModal()} className="p-2 rounded-full bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-gray-200 transition-colors relative z-10 focus:outline-none">
@@ -1094,26 +1099,26 @@ export default function InventoryPage() {
                 <div className="bg-[#1a1d2d]/30 p-4 rounded-xl border border-gray-800/60 space-y-2">
                   <h4 className="text-sm font-semibold text-blue-400">{sellItem.name}</h4>
                   <div className="flex justify-between text-xs text-gray-400">
-                    <span>Available Stock: <strong className="text-emerald-400">{sellItem.stock} {sellItem.unit}</strong></span>
-                    <span>Selling Price: <strong className="text-gray-200">{formatCurrency(sellItem.sellingPrice)}</strong></span>
+                    <span>{language === 'bn' ? 'উপলব্ধ স্টক:' : 'Available Stock:'} <strong className="text-emerald-400">{sellItem.stock} {sellItem.unit}</strong></span>
+                    <span>{language === 'bn' ? 'বিক্রয়মূল্য:' : 'Selling Price:'} <strong className="text-gray-200">{formatCurrency(sellItem.sellingPrice)}</strong></span>
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Customer Name</label>
+                    <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">{language === 'bn' ? 'কাস্টমারের নাম' : 'Customer Name'}</label>
                     <Input 
                       type="text" 
                       value={sellData.customerName}
                       onChange={e => setSellData({...sellData, customerName: e.target.value})}
-                      placeholder="Walk-in Customer"
+                      placeholder={language === 'bn' ? 'সাধারণ ক্রেতা' : 'Walk-in Customer'}
                       
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Quantity <span className="text-red-400">*</span></label>
+                      <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">{language === 'bn' ? 'পরিমাণ' : 'Quantity'} <span className="text-red-400">*</span></label>
                       <Input 
                         type="number" 
                         required min="1" max={sellItem.stock}
@@ -1123,7 +1128,7 @@ export default function InventoryPage() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Unit Price <span className="text-red-400">*</span></label>
+                      <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">{language === 'bn' ? 'একক মূল্য' : 'Unit Price'} <span className="text-red-400">*</span></label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm">৳</span>
                         <Input 
@@ -1140,7 +1145,7 @@ export default function InventoryPage() {
                   {/* Total summary preview */}
                   {(sellData.quantity > 0 && sellData.price >= 0) && (
                     <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-lg flex items-center justify-between mt-2">
-                      <span className="text-xs text-blue-400/80">Total Revenue to Collect:</span>
+                      <span className="text-xs text-blue-400/80">{language === 'bn' ? 'মোট আদায়যোগ্য অর্থ:' : 'Total Revenue to Collect:'}</span>
                       <span className="text-base font-bold text-blue-400">
                         {formatCurrency(sellData.quantity * sellData.price)}
                       </span>
@@ -1156,14 +1161,14 @@ export default function InventoryPage() {
                 onClick={() => closeSellModal()}
                 className="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-400 bg-gray-800/50 hover:bg-gray-800 hover:text-gray-200 transition-colors"
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button 
                 type="submit"
                 className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 transition-colors shadow-lg shadow-blue-600/20 flex items-center gap-2"
               >
                 <ShoppingCart className="w-4 h-4" />
-                Confirm Sale
+                {language === 'bn' ? 'বিক্রয় নিশ্চিত করুন' : 'Confirm Sale'}
               </Button>
             </div>
           </form>
@@ -1174,6 +1179,17 @@ export default function InventoryPage() {
         isOpen={!!receiptData}
         onClose={() => setReceiptData(null)}
         receiptData={receiptData}
+      />
+
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({isOpen: false, id: null})}
+        onConfirm={async () => {
+          if (deleteConfirm.id) await executeDelete(deleteConfirm.id);
+        }}
+        title={language === 'bn' ? 'আইটেম মুছে ফেলবেন?' : 'Delete Item?'}
+        message={language === 'bn' ? 'আপনি কি নিশ্চিত যে এই আইটেমটি মুছে ফেলতে চান? এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।' : 'Are you sure you want to delete this item? This action cannot be undone.'}
+        confirmText={language === 'bn' ? 'মুছে ফেলুন' : 'Delete'}
       />
     </div>
   );

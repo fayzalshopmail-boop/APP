@@ -49,11 +49,18 @@ interface AppState {
   isMoreMenuOpen: boolean;
   setIsMoreMenuOpen: (isOpen: boolean) => void;
   toggleMoreMenu: () => void;
+
+  // Internationalization (Bilingual: 'bn' | 'en')
+  language: 'bn' | 'en';
+  setLanguage: (language: 'bn' | 'en') => void;
 }
 
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
+      language: 'bn',
+      setLanguage: (language) => set({ language }),
+
       isSidebarOpen: false, // Default to false so it's hidden on mobile
       toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
       setSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
@@ -146,7 +153,8 @@ export const useAppStore = create<AppState>()(
           ...(persistedState as any),
           isUnlocked: state?.isUnlocked ?? false,
           deviceBrands: migratedBrands,
-          deviceProblems: migratedProblems
+          deviceProblems: migratedProblems,
+          language: (state?.language === 'en' || state?.language === 'bn') ? state.language : (state?.shop?.language || 'bn')
         };
       },
       partialize: (state) => ({ 
@@ -156,7 +164,8 @@ export const useAppStore = create<AppState>()(
         isUnlocked: state.isUnlocked,
         deviceBrands: state.deviceBrands,
         deviceTypes: state.deviceTypes,
-        deviceProblems: state.deviceProblems
+        deviceProblems: state.deviceProblems,
+        language: state.language
       }),
     }
   )

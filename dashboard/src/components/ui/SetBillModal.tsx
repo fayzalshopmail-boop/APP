@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Customer } from '@/lib/services/customer';
 import { formatCurrency } from '@/lib/currency';
 import { Tv, Phone, Coins, Loader2, MessageCircle, CheckCircle, Calendar, AlertCircle } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 interface SetBillModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ interface SetBillModalProps {
 }
 
 export function SetBillModal({ isOpen, onClose, customer, onSave, smsSettings }: SetBillModalProps) {
+  const { t, language } = useTranslation();
   const [totalBill, setTotalBill] = useState<number | ''>('');
   const [discount, setDiscount] = useState<number | ''>('');
   const [expectedDate, setExpectedDate] = useState('');
@@ -55,7 +57,11 @@ export function SetBillModal({ isOpen, onClose, customer, onSave, smsSettings }:
   const getWhatsAppMessage = () => {
     const brand = customer.deviceBrand || 'Appliance';
     const type = customer.deviceType ? ` (${customer.deviceType})` : '';
-    return `প্রিয় ${customer.name}, আপনার ${brand}${type} সার্ভিসিং এর মোট খরচ ৳${numBill || 0} টাকা নির্ধারণ করা হয়েছে।${advance > 0 ? ` আপনার অগ্রিম ৳${advance} টাকা বাদ দিয়ে বাকি থাকবে ৳${calculatedDue} টাকা।` : ''} কাজ সম্পন্ন করতে আপনার সম্মতি প্রয়োজন। ধন্যবাদ!`;
+    if (language === 'bn') {
+      return `প্রিয় ${customer.name}, আপনার ${brand}${type} সার্ভিসিং এর মোট খরচ ৳${numBill || 0} টাকা নির্ধারণ করা হয়েছে।${advance > 0 ? ` আপনার অগ্রিম ৳${advance} টাকা বাদ দিয়ে বাকি থাকবে ৳${calculatedDue} টাকা।` : ''} কাজ সম্পন্ন করতে আপনার সম্মতি প্রয়োজন। ধন্যবাদ!`;
+    } else {
+      return `Dear ${customer.name}, the servicing bill for your ${brand}${type} has been set to ৳${numBill || 0}.${advance > 0 ? ` Less advance of ৳${advance}, outstanding balance is ৳${calculatedDue}.` : ''} Please confirm to proceed. Thank you!`;
+    }
   };
 
   return (
@@ -70,10 +76,12 @@ export function SetBillModal({ isOpen, onClose, customer, onSave, smsSettings }:
               <span className="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
                 <Coins className="w-5 h-5" />
               </span>
-              বিল নির্ধারণ করুন (Set Bill)
+              {language === 'bn' ? 'বিল নির্ধারণ করুন (Set Bill)' : 'Set Final Bill'}
             </DialogTitle>
             <DialogDescription className="text-xs sm:text-sm text-gray-400">
-              ডিভাইস চেক করার পর কাস্টমারের মোট সার্ভিসিং খরচ ইনপুট দিন।
+              {language === 'bn' 
+                ? 'ডিভাইস চেক করার পর কাস্টমারের মোট সার্ভিসিং খরচ ইনপুট দিন।' 
+                : 'Enter total servicing cost after inspecting the device.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -102,7 +110,7 @@ export function SetBillModal({ isOpen, onClose, customer, onSave, smsSettings }:
 
             {advance > 0 && (
               <div className="flex items-center justify-between text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg font-medium">
-                <span>পূর্বের অগ্রিম জমা (Advance):</span>
+                <span>{language === 'bn' ? 'পূর্বের অগ্রিম জমা (Advance):' : 'Advance Paid:'}</span>
                 <span className="font-bold">{formatCurrency(advance)}</span>
               </div>
             )}
@@ -112,8 +120,10 @@ export function SetBillModal({ isOpen, onClose, customer, onSave, smsSettings }:
             {/* Total Bill Input */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider flex items-center justify-between">
-                <span>মোট সার্ভিসিং বিল (Total Bill) *</span>
-                <span className="text-[11px] text-amber-400 font-normal lowercase">বাধ্যতামূলক</span>
+                <span>{language === 'bn' ? 'মোট সার্ভিসিং বিল (Total Bill) *' : 'Total Servicing Bill *'}</span>
+                <span className="text-[11px] text-amber-400 font-normal lowercase">
+                  {language === 'bn' ? 'বাধ্যতামূলক' : 'required'}
+                </span>
               </label>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">৳</span>
@@ -127,7 +137,7 @@ export function SetBillModal({ isOpen, onClose, customer, onSave, smsSettings }:
                     const val = e.target.value.replace(/\D/g, '');
                     setTotalBill(val ? Number(val) : '');
                   }}
-                  placeholder="যেমন: 2500"
+                  placeholder={language === 'bn' ? 'যেমন: ২৫০০' : 'e.g. 2500'}
                   className="pl-8 text-base font-bold bg-[#121526] border-gray-700 hover:border-gray-600 focus:!border-amber-500 focus:!ring-1 focus:!ring-amber-500/50 rounded-xl !h-11"
                 />
               </div>
@@ -138,7 +148,7 @@ export function SetBillModal({ isOpen, onClose, customer, onSave, smsSettings }:
               {/* Discount Input */}
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  ডিসকাউন্ট (Discount)
+                  {language === 'bn' ? 'ডিসকাউন্ট (Discount)' : 'Discount'}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">৳</span>
@@ -159,7 +169,7 @@ export function SetBillModal({ isOpen, onClose, customer, onSave, smsSettings }:
               {/* Delivery Date */}
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  সম্ভাব্য ডেলিভারি তারিখ
+                  {language === 'bn' ? 'সম্ভাব্য ডেলিভারি তারিখ' : 'Expected Delivery Date'}
                 </label>
                 <Input 
                   type="date"
@@ -173,15 +183,17 @@ export function SetBillModal({ isOpen, onClose, customer, onSave, smsSettings }:
             {/* Calculation Preview Strip */}
             <div className="bg-secondary/60 rounded-xl p-3 border border-gray-800 flex items-center justify-between text-xs sm:text-sm">
               <div className="space-y-0.5 text-gray-400">
-                <div>মোট বিল: <strong className="text-gray-200">{formatCurrency(numBill)}</strong></div>
-                {advance > 0 && <div>অগ্রিম বাদ: <span className="text-emerald-400">-{formatCurrency(advance)}</span></div>}
-                {numDiscount > 0 && <div>ডিসকাউন্ট: <span className="text-purple-400">-{formatCurrency(numDiscount)}</span></div>}
+                <div>{language === 'bn' ? 'মোট বিল:' : 'Total Bill:'} <strong className="text-gray-200">{formatCurrency(numBill)}</strong></div>
+                {advance > 0 && <div>{language === 'bn' ? 'অগ্রিম বাদ:' : 'Less Advance:'} <span className="text-emerald-400">-{formatCurrency(advance)}</span></div>}
+                {numDiscount > 0 && <div>{language === 'bn' ? 'ডিসকাউন্ট:' : 'Less Discount:'} <span className="text-purple-400">-{formatCurrency(numDiscount)}</span></div>}
               </div>
 
               <div className="text-right">
-                <span className="text-[11px] text-gray-400 uppercase tracking-wider block">বকেয়া থাকবে (Due)</span>
+                <span className="text-[11px] text-gray-400 uppercase tracking-wider block">
+                  {language === 'bn' ? 'বকেয়া থাকবে (Due)' : 'Due Balance'}
+                </span>
                 <span className={`text-lg font-extrabold ${calculatedDue > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                  {calculatedDue > 0 ? formatCurrency(calculatedDue) : 'Paid ✓'}
+                  {calculatedDue > 0 ? formatCurrency(calculatedDue) : (language === 'bn' ? 'পরিশোধিত ✓' : 'Paid ✓')}
                 </span>
               </div>
             </div>
@@ -195,7 +207,7 @@ export function SetBillModal({ isOpen, onClose, customer, onSave, smsSettings }:
                 className="flex items-center justify-center gap-2 py-2 px-3 bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/30 text-emerald-400 rounded-xl text-xs font-semibold transition-all"
               >
                 <MessageCircle className="w-4 h-4" />
-                <span>কাস্টমারকে হোয়াটসঅ্যাপে বিল পাঠান (WhatsApp Share)</span>
+                <span>{language === 'bn' ? 'কাস্টমারকে হোয়াটসঅ্যাপে বিল পাঠান' : 'Share Bill via WhatsApp'}</span>
               </a>
             )}
 
@@ -208,7 +220,7 @@ export function SetBillModal({ isOpen, onClose, customer, onSave, smsSettings }:
                 disabled={isSubmitting}
                 className="flex-1 sm:flex-none text-gray-400 hover:text-white rounded-xl text-xs sm:text-sm h-10"
               >
-                বাতিল (Cancel)
+                {t('common.cancel')}
               </Button>
 
               <Button 
@@ -219,12 +231,12 @@ export function SetBillModal({ isOpen, onClose, customer, onSave, smsSettings }:
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
-                    সংরক্ষণ হচ্ছে...
+                    {t('common.saving')}
                   </>
                 ) : (
                   <>
                     <CheckCircle className="w-4 h-4 mr-1.5" />
-                    বিল চূড়ান্ত করুন
+                    {language === 'bn' ? 'বিল চূড়ান্ত করুন' : 'Save Final Bill'}
                   </>
                 )}
               </Button>
