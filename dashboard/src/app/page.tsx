@@ -233,9 +233,9 @@ export default function Dashboard() {
   if (user?.role === 'Technician') return null;
 
   return (
-    <div className="space-y-3 sm:space-y-6 max-w-[1600px] mx-auto pb-6">
+    <div className="flex-1 flex flex-col justify-between gap-3 sm:gap-3.5 xl:gap-4 max-w-[1600px] mx-auto w-full pb-6 sm:pb-1">
       {/* 4 Core StatCards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 xl:gap-4 shrink-0">
         <StatCard 
           title="মোট কাস্টমার" 
           value={isLoading ? '...' : filteredStats.totalCustomers.toString()} 
@@ -289,8 +289,8 @@ export default function Dashboard() {
       </div>
 
       {/* Financial Health Overview Bar */}
-      <div className="bg-card/70 border border-gray-800/80 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-800/60 pb-3 mb-3">
+      <div className="bg-card/70 border border-gray-800/80 rounded-xl sm:rounded-2xl p-3 sm:p-3.5 xl:p-4 shadow-lg backdrop-blur-sm shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-800/60 pb-2 sm:pb-2.5 mb-2.5 sm:mb-3">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
               <TrendingUp className="w-4 h-4 text-emerald-400" />
@@ -309,34 +309,34 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          <Link href="/reports" className="bg-secondary/40 hover:bg-secondary/70 p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-all block">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 xl:gap-4">
+          <Link href="/reports" className="bg-secondary/40 hover:bg-secondary/70 p-2.5 sm:p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-all block">
             <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider block">নেট ক্যাশ জমা</span>
-            <div className="text-base sm:text-xl font-bold text-emerald-400 mt-0.5 truncate">
+            <div className="text-base sm:text-lg xl:text-xl font-bold text-emerald-400 mt-0.5 truncate">
               {isLoading ? '...' : formatCurrency(filteredStats.totalRevenue)}
             </div>
             <span className="text-[10px] text-gray-500">রিফান্ড বাদ দেওয়া</span>
           </Link>
 
-          <Link href="/expenses" className="bg-secondary/40 hover:bg-secondary/70 p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-all block">
+          <Link href="/expenses" className="bg-secondary/40 hover:bg-secondary/70 p-2.5 sm:p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-all block">
             <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider block">দোকানের মোট খরচ</span>
-            <div className="text-base sm:text-xl font-bold text-rose-400 mt-0.5 truncate">
+            <div className="text-base sm:text-lg xl:text-xl font-bold text-rose-400 mt-0.5 truncate">
               {isLoading ? '...' : formatCurrency(filteredStats.totalExpenses)}
             </div>
             <span className="text-[10px] text-gray-500">পার্টস ও সাধারণ খরচ</span>
           </Link>
 
-          <Link href="/reports" className="bg-secondary/40 hover:bg-secondary/70 p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-all block">
+          <Link href="/reports" className="bg-secondary/40 hover:bg-secondary/70 p-2.5 sm:p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-all block">
             <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider block">আসল লাভ (নিট ব্যালেন্স)</span>
-            <div className={`text-base sm:text-xl font-bold mt-0.5 truncate ${filteredStats.netProfit >= 0 ? 'text-indigo-400' : 'text-rose-400'}`}>
+            <div className={`text-base sm:text-lg xl:text-xl font-bold mt-0.5 truncate ${filteredStats.netProfit >= 0 ? 'text-indigo-400' : 'text-rose-400'}`}>
               {isLoading ? '...' : formatCurrency(filteredStats.netProfit)}
             </div>
             <span className="text-[10px] text-gray-500">জমা থেকে খরচ বাদ</span>
           </Link>
 
-          <Link href="/due" className="bg-secondary/40 hover:bg-secondary/70 p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-all block">
+          <Link href="/due" className="bg-secondary/40 hover:bg-secondary/70 p-2.5 sm:p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-all block">
             <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider block">গ্রাহকদের মোট বাকি</span>
-            <div className="text-base sm:text-xl font-bold text-amber-400 mt-0.5 truncate">
+            <div className="text-base sm:text-lg xl:text-xl font-bold text-amber-400 mt-0.5 truncate">
               {isLoading ? '...' : formatCurrency(filteredStats.totalPendingDues)}
             </div>
             <span className="text-[10px] text-gray-500">আদায়ের অপেক্ষায়</span>
@@ -344,19 +344,19 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 xl:gap-5 flex-1 min-h-[260px] pb-1">
+        <div className="lg:col-span-2 flex flex-col">
           {isLoading ? (
-            <div className="bg-card p-6 rounded-2xl border border-gray-800/50 h-full min-h-[300px] flex items-center justify-center">
+            <div className="bg-card p-4 sm:p-6 rounded-2xl border border-gray-800/50 h-full min-h-[220px] flex items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-gray-600" />
             </div>
           ) : (
             <RevenueChart timeFilter={timeFilter} />
           )}
         </div>
-        <div>
+        <div className="flex flex-col">
           {isLoading ? (
-            <div className="bg-card p-6 rounded-2xl border border-gray-800/50 h-full min-h-[300px] flex items-center justify-center">
+            <div className="bg-card p-4 sm:p-6 rounded-2xl border border-gray-800/50 h-full min-h-[220px] flex items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-gray-600" />
             </div>
           ) : (

@@ -143,8 +143,8 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
       {!isTechnician && <Sidebar />}
       <div className={`flex-1 flex flex-col h-[100dvh] overflow-hidden transition-all duration-300 ${!isTechnician ? 'md:ml-64' : 'w-full'}`}>
         <Topbar />
-        <main className={`flex-1 overflow-y-auto min-h-0 p-3 sm:p-4 md:p-6 ${isTechnician ? 'pb-24 md:pb-18' : 'pb-24 md:pb-6'}`}>
-          <div className="max-w-[1600px] mx-auto w-full">
+        <main className={`flex-1 overflow-y-auto min-h-0 p-3 sm:p-4 md:px-6 md:py-4 xl:py-4.5 ${isTechnician ? 'pb-24 md:pb-16' : 'pb-24 md:pb-5'}`}>
+          <div className="max-w-[1600px] mx-auto w-full min-h-full flex flex-col">
             {children}
           </div>
         </main>

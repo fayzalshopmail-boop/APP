@@ -219,49 +219,52 @@ export function QuickAlerts() {
   }, []);
 
   return (
-    <div className="bg-card border border-gray-800 rounded-2xl p-6 shadow-xl relative overflow-hidden h-full">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+    <div className="bg-card border border-gray-800 rounded-xl sm:rounded-2xl p-3.5 sm:p-4.5 xl:p-5 shadow-xl relative overflow-hidden h-full flex flex-col justify-between">
+      <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
       
-      <div className="flex items-center justify-between mb-6 relative">
-        <h3 className="text-lg font-bold text-white flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
-            <AlertCircle className="w-4 h-4 text-orange-500" />
-          </div>
-          জরুরি নোটিফিকেশন
-        </h3>
-        <Link href="/reports" className="text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1">
-          সকল রিপোর্ট <span className="text-[10px]">→</span>
-        </Link>
-      </div>
-      
-      <div className="space-y-4 relative">
-        {alerts.map((alert, idx) => (
-          <Link 
-            href={alert.link} 
-            key={alert.id}
-            className="block no-underline group"
-          >
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 * idx }}
-              className="p-4 rounded-xl border border-gray-800/60 bg-popover/50 hover:bg-[#1a1d2d] transition-all hover:border-gray-700/80 cursor-pointer flex items-center justify-between"
-            >
-              <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-full ${alert.bgColor} flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform`}>
-                  <alert.icon className={`w-5 h-5 ${alert.color}`} />
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-200 group-hover:text-white transition-colors">{alert.title}</h4>
-                  <div className="text-xs text-gray-500 mt-0.5">{alert.desc}</div>
-                </div>
-              </div>
-              <div className={`text-xl font-bold ${alert.countColor}`}>
-                {alert.count}
-              </div>
-            </motion.div>
+      <div className="flex-1 flex flex-col justify-between">
+        <div className="flex items-center justify-between mb-2.5 sm:mb-3 relative shrink-0">
+          <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
+              <AlertCircle className="w-4 h-4 text-orange-500" />
+            </div>
+            <span>জরুরি নোটিফিকেশন</span>
+          </h3>
+          <Link href="/reports" className="text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1">
+            <span>সকল রিপোর্ট</span>
+            <span className="text-[10px]">→</span>
           </Link>
-        ))}
+        </div>
+        
+        <div className="flex-1 flex flex-col justify-between gap-2 sm:gap-2.5 relative">
+          {alerts.map((alert, idx) => (
+            <Link 
+              href={alert.link} 
+              key={alert.id}
+              className="block no-underline group flex-1 flex flex-col justify-center"
+            >
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 * idx }}
+                className="p-2.5 sm:p-3 xl:p-3.5 rounded-xl border border-gray-800/60 bg-popover/50 hover:bg-[#1a1d2d] transition-all hover:border-gray-700/80 cursor-pointer flex items-center justify-between h-full"
+              >
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                  <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full ${alert.bgColor} flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform`}>
+                    <alert.icon className={`w-4 h-4 sm:w-4.5 sm:h-4.5 ${alert.color}`} />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-xs sm:text-sm font-semibold text-gray-200 group-hover:text-white transition-colors truncate">{alert.title}</h4>
+                    <div className="text-[11px] sm:text-xs text-gray-400 mt-0.5 truncate">{alert.desc}</div>
+                  </div>
+                </div>
+                <div className={`text-base sm:text-lg xl:text-xl font-bold ${alert.countColor} ml-2 shrink-0`}>
+                  {alert.count}
+                </div>
+              </motion.div>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );

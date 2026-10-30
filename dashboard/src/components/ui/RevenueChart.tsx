@@ -284,32 +284,32 @@ export function RevenueChart({ timeFilter: propTimeFilter }: RevenueChartProps) 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4 }}
-      className="bg-card border border-gray-800 rounded-2xl p-4 sm:p-6 shadow-xl relative"
+      className="bg-card border border-gray-800 rounded-xl sm:rounded-2xl p-3.5 sm:p-4.5 xl:p-5 shadow-xl relative h-full flex flex-col justify-between"
     >
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 sm:mb-4 shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
-            <div className="w-3 h-3 rounded-sm bg-indigo-500" />
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0">
+            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm bg-indigo-500" />
           </div>
           <div>
-            <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-              রাজস্ব চিত্র <span className="text-gray-400 text-xs sm:text-sm font-medium">{subtitle}</span>
+            <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+              রাজস্ব চিত্র <span className="text-gray-400 text-xs font-medium">{subtitle}</span>
             </h3>
-            <p className="text-[11px] text-gray-500">
+            <p className="text-[10px] sm:text-[11px] text-gray-500">
               নির্বাচিত সময়সীমার রাজস্ব ও সংগৃহীত নগদ প্রবাহ
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto bg-secondary/50 px-3 py-1.5 rounded-xl border border-gray-800/60">
+        <div className="flex items-center gap-2 self-start sm:self-auto bg-secondary/50 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl border border-gray-800/60">
           <span className="text-[10px] text-gray-400 uppercase tracking-wider">মোট রাজস্ব:</span>
-          <span className="text-sm font-bold text-indigo-400">
+          <span className="text-xs sm:text-sm font-bold text-indigo-400">
             {loading ? '...' : formatCurrency(totalRevenue)}
           </span>
         </div>
       </div>
 
-      <div className="h-[300px] w-full">
+      <div className="flex-1 min-h-[220px] w-full">
         {loading ? (
           <div className="w-full h-full flex items-center justify-center text-gray-500 text-sm">
             চার্ট ডেটা লোড হচ্ছে...

@@ -349,7 +349,7 @@ export function Topbar() {
   };
 
   return (
-    <header className="h-16 md:h-20 px-3 sm:px-4 md:px-8 flex items-center justify-between bg-background sticky top-0 z-40 border-b border-gray-800 md:border-none">
+    <header className="h-14 sm:h-16 px-3 sm:px-4 md:px-6 flex items-center justify-between bg-background sticky top-0 z-40 border-b border-gray-800 md:border-none shrink-0">
       <div className="flex items-center gap-2 sm:gap-3">
         {pathname !== '/' && (
           <button
@@ -363,8 +363,8 @@ export function Topbar() {
           </button>
         )}
         <div className="flex flex-col min-w-0">
-          <h1 className="text-lg md:text-2xl font-bold text-white leading-tight truncate">{title}</h1>
-          {subtitle && <p className="text-[10px] md:text-sm text-gray-400 leading-tight truncate">{subtitle}</p>}
+          <h1 className="text-base sm:text-lg md:text-xl font-bold text-white leading-tight truncate">{title}</h1>
+          {subtitle && <p className="text-[10px] md:text-xs text-gray-400 leading-tight truncate">{subtitle}</p>}
         </div>
       </div>
 
