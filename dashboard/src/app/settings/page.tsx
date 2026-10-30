@@ -401,75 +401,6 @@ export default function SettingsPage() {
 
       {activeTab === 'shop' && (
         <div className="space-y-6">
-          {/* Language Selection Card */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-gray-800 rounded-2xl p-6 lg:p-8">
-            <div className="flex items-center gap-3 mb-6 border-b border-gray-800 pb-4">
-              <Globe className="w-5 h-5 text-blue-400" />
-              <div>
-                <h2 className="text-lg font-semibold text-white">{t('settings.languageCard.title')}</h2>
-                <p className="text-xs text-gray-400 mt-0.5">{t('settings.languageCard.description')}</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Bangla Option */}
-              <button
-                type="button"
-                onClick={() => handleLanguageChange('bn')}
-                className={`relative flex items-center justify-between p-4 rounded-xl border text-left transition-all ${
-                  language === 'bn'
-                    ? 'bg-blue-600/15 border-blue-500 shadow-md shadow-blue-500/10'
-                    : 'bg-popover border-gray-800 hover:border-gray-700 text-gray-300'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
-                    language === 'bn' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400'
-                  }`}>
-                    বাং
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-white text-sm">{t('settings.languageCard.bangla')}</h3>
-                    <p className="text-xs text-gray-400 mt-0.5">{t('settings.languageCard.banglaSub')}</p>
-                  </div>
-                </div>
-                {language === 'bn' && (
-                  <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center shrink-0">
-                    <Check className="w-3.5 h-3.5" />
-                  </div>
-                )}
-              </button>
-
-              {/* English Option */}
-              <button
-                type="button"
-                onClick={() => handleLanguageChange('en')}
-                className={`relative flex items-center justify-between p-4 rounded-xl border text-left transition-all ${
-                  language === 'en'
-                    ? 'bg-blue-600/15 border-blue-500 shadow-md shadow-blue-500/10'
-                    : 'bg-popover border-gray-800 hover:border-gray-700 text-gray-300'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
-                    language === 'en' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400'
-                  }`}>
-                    EN
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-white text-sm">{t('settings.languageCard.english')}</h3>
-                    <p className="text-xs text-gray-400 mt-0.5">{t('settings.languageCard.englishSub')}</p>
-                  </div>
-                </div>
-                {language === 'en' && (
-                  <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center shrink-0">
-                    <Check className="w-3.5 h-3.5" />
-                  </div>
-                )}
-              </button>
-            </div>
-          </motion.div>
-
           {/* Shop Information Card */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-gray-800 rounded-2xl p-6 lg:p-8">
             <div className="flex items-center gap-3 mb-6 border-b border-gray-800 pb-4">
@@ -623,6 +554,75 @@ export default function SettingsPage() {
               >
                 {savingShop ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {t('settings.shopInfo.saveButton')}
+              </button>
+            </div>
+          </motion.div>
+
+          {/* Language Selection Card */}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-gray-800 rounded-2xl p-6 lg:p-8">
+            <div className="flex items-center gap-3 mb-6 border-b border-gray-800 pb-4">
+              <Globe className="w-5 h-5 text-blue-400" />
+              <div>
+                <h2 className="text-lg font-semibold text-white">{t('settings.languageCard.title')}</h2>
+                <p className="text-xs text-gray-400 mt-0.5">{t('settings.languageCard.description')}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Bangla Option */}
+              <button
+                type="button"
+                onClick={() => handleLanguageChange('bn')}
+                className={`relative flex items-center justify-between p-4 rounded-xl border text-left transition-all ${
+                  language === 'bn'
+                    ? 'bg-blue-600/15 border-blue-500 shadow-md shadow-blue-500/10'
+                    : 'bg-popover border-gray-800 hover:border-gray-700 text-gray-300'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
+                    language === 'bn' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400'
+                  }`}>
+                    বাং
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-white text-sm">{t('settings.languageCard.bangla')}</h3>
+                    <p className="text-xs text-gray-400 mt-0.5">{t('settings.languageCard.banglaSub')}</p>
+                  </div>
+                </div>
+                {language === 'bn' && (
+                  <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center shrink-0">
+                    <Check className="w-3.5 h-3.5" />
+                  </div>
+                )}
+              </button>
+
+              {/* English Option */}
+              <button
+                type="button"
+                onClick={() => handleLanguageChange('en')}
+                className={`relative flex items-center justify-between p-4 rounded-xl border text-left transition-all ${
+                  language === 'en'
+                    ? 'bg-blue-600/15 border-blue-500 shadow-md shadow-blue-500/10'
+                    : 'bg-popover border-gray-800 hover:border-gray-700 text-gray-300'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
+                    language === 'en' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400'
+                  }`}>
+                    EN
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-white text-sm">{t('settings.languageCard.english')}</h3>
+                    <p className="text-xs text-gray-400 mt-0.5">{t('settings.languageCard.englishSub')}</p>
+                  </div>
+                </div>
+                {language === 'en' && (
+                  <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center shrink-0">
+                    <Check className="w-3.5 h-3.5" />
+                  </div>
+                )}
               </button>
             </div>
           </motion.div>
