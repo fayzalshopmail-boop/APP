@@ -37,27 +37,38 @@ function sanitizeGatewayUrl(candidateUrl?: string): string {
 
 export async function POST(request: Request) {
   try {
-    // 1. Authenticate Request via Firebase Auth ID Token if available
+    // 1. Strictly authenticate Request via Firebase Auth ID Token or CRON_SECRET
     const authHeader = request.headers.get('authorization');
-    let callerEmail: string | null = null;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: "Missing or invalid authorization header. Login required." }, { status: 401 });
+    }
 
-    if (authHeader?.startsWith('Bearer ')) {
-      const idToken = authHeader.substring(7).trim();
+    const token = authHeader.substring(7).trim();
+    const isCron = Boolean(process.env.CRON_SECRET && token === process.env.CRON_SECRET);
+    let isAuthorized = isCron;
+
+    if (!isAuthorized) {
       try {
         const { adminAuth, adminDb } = await import('@/lib/firebase-admin');
         if (adminAuth) {
-          const decodedToken = await adminAuth.verifyIdToken(idToken);
-          callerEmail = (decodedToken.email || '').toLowerCase().trim();
-          if (adminDb && callerEmail) {
+          const decodedToken = await adminAuth.verifyIdToken(token);
+          const callerEmail = (decodedToken.email || '').toLowerCase().trim();
+          if (callerEmail && adminDb) {
             const userDoc = await adminDb.collection('users').doc(callerEmail).get();
-            if (userDoc.exists && userDoc.data()?.isActive === false) {
-              return NextResponse.json({ error: "Your account is disabled. Cannot send SMS." }, { status: 403 });
+            if (userDoc.exists && userDoc.data()?.isActive !== false) {
+              isAuthorized = true;
+            } else {
+              return NextResponse.json({ error: "Your account is disabled or unauthorized to dispatch SMS." }, { status: 403 });
             }
           }
         }
       } catch (authErr: any) {
-        console.warn("Auth token check skipped or failed:", authErr);
+        return NextResponse.json({ error: "Invalid or expired authorization token." }, { status: 401 });
       }
+    }
+
+    if (!isAuthorized) {
+      return NextResponse.json({ error: "Unauthorized SMS request." }, { status: 401 });
     }
 
     const body = await request.json().catch(() => ({}));

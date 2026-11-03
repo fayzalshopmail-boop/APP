@@ -1,5 +1,6 @@
 import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
+import { telegramService } from './telegramService';
 
 export type AttendanceStatus = 'Present' | 'Late' | 'Half Day' | 'Leave' | 'Absent';
 
@@ -120,6 +121,19 @@ export const attendanceService = {
       } catch (err) {
         console.warn('Failed to import notificationService:', err);
       }
+
+      try {
+        telegramService.notifyAttendance({
+          eventType: 'check_in',
+          staffName: staff.name,
+          role: staff.role,
+          time: timeNow,
+          date: today,
+          status
+        });
+      } catch (tgErr) {
+        console.warn('Failed to send telegram checkin notification:', tgErr);
+      }
     }
 
     return { id: docId, ...record };
@@ -165,6 +179,19 @@ export const attendanceService = {
         }).catch(err => console.warn('Failed to send checkout notification:', err));
       } catch (err) {
         console.warn('Failed to import notificationService:', err);
+      }
+
+      try {
+        telegramService.notifyAttendance({
+          eventType: 'check_out',
+          staffName: data.userName,
+          role: data.userRole,
+          time: timeNow,
+          date: today,
+          workingHours
+        });
+      } catch (tgErr) {
+        console.warn('Failed to send telegram checkout notification:', tgErr);
       }
     }
   },

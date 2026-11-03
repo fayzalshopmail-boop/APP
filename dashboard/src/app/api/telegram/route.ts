@@ -15,54 +15,106 @@ function formatNow(): string {
   }).format(new Date());
 }
 
+function getTodayDhakaDateStr(): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Dhaka',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(new Date());
+  return parts; // 'YYYY-MM-DD'
+}
+
 export async function POST(request: Request) {
   try {
-    const body = await request.json().catch(() => ({}));
-    const { action, botToken: directToken, chatId: directChatId, type, data } = body;
+    // 1. Mandatory Authentication: Either CRON_SECRET or verified active Firebase User token
+    const authHeader = request.headers.get('authorization');
+    const bearerToken = (authHeader || '').replace(/^Bearer\s+/i, '').trim();
 
-    // Determine botToken and chatId (Direct payload or environment variables or Firestore)
-    let token = directToken || process.env.TELEGRAM_BOT_TOKEN;
-    let chatId = directChatId || process.env.TELEGRAM_CHAT_ID;
+    const expectedCronSecret = process.env.CRON_SECRET;
+    const isServerCron = Boolean(expectedCronSecret && bearerToken && bearerToken === expectedCronSecret);
 
-    // If not supplied directly or in env, check Firestore settings
-    if (!token || !chatId) {
+    let isUserAuthorized = false;
+    let userRole = '';
+
+    if (!isServerCron && bearerToken) {
       try {
-        const { adminDb } = await import('@/lib/firebase-admin');
-        if (adminDb) {
-          const settingsSnap = await adminDb.collection('settings').doc('shop').get();
-          if (settingsSnap.exists) {
-            const settings = settingsSnap.data();
-            const tg = settings?.telegram;
-            if (tg) {
-              if (!token && tg.botToken) token = tg.botToken;
-              if (!chatId && tg.chatId) chatId = tg.chatId;
-              
-              // If not an explicit test action and telegram is disabled in settings, skip
-              if (action !== 'test' && tg.enabled === false) {
-                return NextResponse.json({ success: true, skipped: true, reason: 'Telegram notifications are disabled in settings' });
-              }
-
-              // Check individual event filters
-              if (action === 'notify') {
-                if (type === 'sale' && tg.notifyOnSale === false) {
-                  return NextResponse.json({ success: true, skipped: true });
-                }
-                if (type === 'payment' && tg.notifyOnPayment === false) {
-                  return NextResponse.json({ success: true, skipped: true });
-                }
-                if (type === 'expense' && tg.notifyOnExpense === false) {
-                  return NextResponse.json({ success: true, skipped: true });
-                }
-                if (type === 'low_stock' && tg.notifyOnLowStock === false) {
-                  return NextResponse.json({ success: true, skipped: true });
-                }
-              }
+        const { adminAuth, adminDb } = await import('@/lib/firebase-admin');
+        if (adminAuth && adminDb) {
+          const decoded = await adminAuth.verifyIdToken(bearerToken);
+          const email = (decoded.email || '').toLowerCase().trim();
+          if (email) {
+            const userDoc = await adminDb.collection('users').doc(email).get();
+            if (userDoc.exists && userDoc.data()?.isActive !== false) {
+              isUserAuthorized = true;
+              userRole = userDoc.data()?.role || '';
             }
           }
         }
-      } catch (dbErr) {
-        console.warn('Could not read Telegram settings from Firestore:', dbErr);
+      } catch (authErr) {
+        // Token invalid or expired
       }
+    }
+
+    if (!isServerCron && !isUserAuthorized) {
+      return NextResponse.json({ success: false, error: 'Unauthorized Telegram request' }, { status: 401 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const { action, botToken: directToken, chatId: directChatId, type, data } = body;
+
+    // For test actions, only Owner or Manager (or Cron) is permitted
+    if (action === 'test' && !isServerCron && userRole !== 'Owner' && userRole !== 'Manager') {
+      return NextResponse.json({ success: false, error: 'Only Owners or Managers can send test Telegram messages' }, { status: 403 });
+    }
+
+    // Default to server-configured secrets
+    let token = process.env.TELEGRAM_BOT_TOKEN;
+    let chatId = process.env.TELEGRAM_CHAT_ID;
+
+    // Direct token and chat ID override is ONLY permitted for Owners/Managers in test mode
+    if (action === 'test' && (isServerCron || userRole === 'Owner' || userRole === 'Manager')) {
+      if (directToken) token = directToken;
+      if (directChatId) chatId = directChatId;
+    }
+
+    // Check Firestore settings if needed
+    let tgSettings: any = null;
+    try {
+      const { adminDb } = await import('@/lib/firebase-admin');
+      if (adminDb) {
+        const settingsSnap = await adminDb.collection('settings').doc('shop').get();
+        if (settingsSnap.exists) {
+          const settings = settingsSnap.data();
+          tgSettings = settings?.telegram || null;
+          if (tgSettings) {
+            if (!token && tgSettings.botToken) token = tgSettings.botToken;
+            if (!chatId && tgSettings.chatId) chatId = tgSettings.chatId;
+
+            // If not explicit test and disabled globally, skip
+            if (action !== 'test' && tgSettings.enabled === false) {
+              return NextResponse.json({ success: true, skipped: true, reason: 'Telegram disabled in settings' });
+            }
+
+            // Check granular notification toggles
+            if (action === 'notify') {
+              if (type === 'customer_create' && tgSettings.notifyOnCustomerCreate === false) return NextResponse.json({ success: true, skipped: true });
+              if (type === 'sale' && tgSettings.notifyOnSale === false) return NextResponse.json({ success: true, skipped: true });
+              if (type === 'payment' && tgSettings.notifyOnPayment === false) return NextResponse.json({ success: true, skipped: true });
+              if (type === 'status_change' && tgSettings.notifyOnStatusChange === false) return NextResponse.json({ success: true, skipped: true });
+              if (type === 'expense' && tgSettings.notifyOnExpense === false) return NextResponse.json({ success: true, skipped: true });
+              if (type === 'low_stock' && tgSettings.notifyOnLowStock === false) return NextResponse.json({ success: true, skipped: true });
+              if (type === 'attendance' && tgSettings.notifyOnAttendance === false) return NextResponse.json({ success: true, skipped: true });
+              if (type === 'supplier' && tgSettings.notifyOnSupplier === false) return NextResponse.json({ success: true, skipped: true });
+              if (type === 'security' && tgSettings.notifyOnSecurity === false) return NextResponse.json({ success: true, skipped: true });
+            } else if (action === 'send_daily_summary') {
+              if (tgSettings.notifyOnDailySummary === false) return NextResponse.json({ success: true, skipped: true });
+            }
+          }
+        }
+      }
+    } catch (dbErr) {
+      console.warn('Could not read Telegram settings from Firestore:', dbErr);
     }
 
     if (!token || !chatId) {
@@ -79,8 +131,90 @@ export async function POST(request: Request) {
              `🔒 <b>ব্যক্তিগত সুরক্ষা:</b>\n` +
              `আপনার শপ ম্যানেজমেন্ট অ্যাপের সকল জরুরি নোটিফিকেশন এখন থেকে সরাসরি শুধুমাত্র আপনার এই অ্যাকাউন্টে চলে আসবে।\n\n` +
              `🕒 <b>সময়:</b> ${formatNow()}`;
+    } else if (action === 'send_daily_summary') {
+      // Build daily closing summary from database
+      const todayStr = getTodayDhakaDateStr();
+      const startOfDay = new Date(`${todayStr}T00:00:00+06:00`);
+      const startOfDayMs = startOfDay.getTime();
+
+      let cashCollected = 0;
+      let totalExpenses = 0;
+      let totalBilled = 0;
+      let newCustomersCount = 0;
+      let deliveredCount = 0;
+
+      try {
+        const { adminDb } = await import('@/lib/firebase-admin');
+        if (adminDb) {
+          // 1. Transactions today
+          const transSnap = await adminDb.collection('transactions').get();
+          transSnap.forEach((doc: any) => {
+            const tData = doc.data();
+            const createdAt = tData.createdAt?.toDate ? tData.createdAt.toDate() : (tData.createdAt ? new Date(tData.createdAt) : null);
+            if (createdAt && createdAt.getTime() >= startOfDayMs) {
+              const amt = Number(tData.amount) || 0;
+              if (amt > 0 && tData.type !== 'Supplier Payment') {
+                cashCollected += amt;
+              }
+            }
+          });
+
+          // 2. Expenses today
+          const expenseSnap = await adminDb.collection('expenses').get();
+          expenseSnap.forEach((doc: any) => {
+            const eData = doc.data();
+            const eDate = eData.date || '';
+            const createdAt = eData.createdAt?.toDate ? eData.createdAt.toDate() : (eData.createdAt ? new Date(eData.createdAt) : null);
+            if (eDate === todayStr || (createdAt && createdAt.getTime() >= startOfDayMs)) {
+              totalExpenses += Number(eData.amount) || 0;
+            }
+          });
+
+          // 3. Customers created or delivered today
+          const customerSnap = await adminDb.collection('customers').get();
+          customerSnap.forEach((doc: any) => {
+            const cData = doc.data();
+            const createdAt = cData.createdAt?.toDate ? cData.createdAt.toDate() : (cData.createdAt ? new Date(cData.createdAt) : null);
+            const deliveredAt = cData.deliveredAt?.toDate ? cData.deliveredAt.toDate() : (cData.deliveredAt ? new Date(cData.deliveredAt) : null);
+            
+            if (createdAt && createdAt.getTime() >= startOfDayMs) {
+              newCustomersCount++;
+              totalBilled += Number(cData.totalBill) || 0;
+            }
+            if (cData.status === 'Delivered' && deliveredAt && deliveredAt.getTime() >= startOfDayMs) {
+              deliveredCount++;
+            }
+          });
+        }
+      } catch (sumErr) {
+        console.warn('Error calculating daily summary:', sumErr);
+      }
+
+      const netCash = cashCollected - totalExpenses;
+
+      text = `📊 <b>আজকের ব্যবসায়িক হিসাব বিবরণী (Daily Summary)</b>\n` +
+             `📅 <b>তারিখ:</b> ${todayStr}\n\n` +
+             `💵 <b>মোট নগদ ক্যাশ জমা:</b> ${formatCurrency(cashCollected)}\n` +
+             `💸 <b>মোট দোকানের খরচ:</b> ${formatCurrency(totalExpenses)}\n` +
+             `📈 <b>আজকের নেট ক্যাশ ব্যালেন্স:</b> ${formatCurrency(netCash)}\n\n` +
+             `🛒 <b>মোট সার্ভিসিং ও সেলস বিল:</b> ${formatCurrency(totalBilled)}\n` +
+             `📱 <b>নতুন ডিভাইস গ্রহণ:</b> ${newCustomersCount} টি\n` +
+             `🚚 <b>ডেলিভারি সম্পন্ন:</b> ${deliveredCount} টি\n\n` +
+             `🕒 <b>রিপোর্ট তৈরির সময়:</b> ${formatNow()}\n` +
+             `✨ <i>আজকের দিনের হিসাব ক্লোজিং সম্পন্ন হয়েছে।</i>`;
     } else if (action === 'notify') {
-      if (type === 'sale') {
+      if (type === 'customer_create') {
+        const { customerName, phone, device, problem, advance, totalBill, isBillPending, staffName } = data || {};
+        text = `📱 <b>নতুন কাস্টমার / সার্ভিস রিসিভ</b>\n\n` +
+               `👤 <b>গ্রাহক:</b> ${customerName || 'N/A'}\n` +
+               `📱 <b>মোবাইল:</b> ${phone || 'N/A'}\n` +
+               (device ? `🛠️ <b>ডিভাইস:</b> ${device}\n` : '') +
+               (problem ? `⚠️ <b>সমস্যা:</b> ${problem}\n` : '') +
+               (advance > 0 ? `💵 <b>অগ্রিম জমা:</b> ${formatCurrency(advance)}\n` : '') +
+               (!isBillPending && totalBill > 0 ? `💰 <b>মোট বিল:</b> ${formatCurrency(totalBill)}\n` : `⏳ <b>বিল স্ট্যাটাস:</b> চেক করে জানানো হবে (পেন্ডিং)\n`) +
+               (staffName ? `👨‍🔧 <b>রিসিভ করেছেন:</b> ${staffName}\n` : '') +
+               `\n🕒 <b>সময়:</b> ${formatNow()}`;
+      } else if (type === 'sale') {
         const { customerName, phone, device, totalBill, advance, due, staffName } = data || {};
         text = `🧾 <b>নতুন সার্ভিসিং / সেলস বিল</b>\n\n` +
                `👤 <b>গ্রাহক:</b> ${customerName || 'N/A'}\n` +
@@ -99,6 +233,82 @@ export async function POST(request: Request) {
                `💵 <b>জমা নেওয়া হয়েছে:</b> ${formatCurrency(amount)} (${paymentMethod || 'Cash'})\n` +
                (remainingDue > 0 ? `⚠️ <b>বর্তমান বকেয়া:</b> ${formatCurrency(remainingDue)}\n` : `✅ <b>বকেয়া স্ট্যাটাস:</b> সকল বকেয়া পরিশোধিত\n`) +
                (staffName ? `👨‍💼 <b>কালেকশনকারী:</b> ${staffName}\n` : '') +
+               `\n🕒 <b>সময়:</b> ${formatNow()}`;
+      } else if (type === 'status_change') {
+        const { customerName, phone, device, status, due, totalBill, paid, reason, staffName } = data || {};
+        if (status === 'Ready for Delivery') {
+          text = `✅ <b>ডিভাইস প্রস্তুত (Ready for Delivery)</b>\n\n` +
+                 `👤 <b>গ্রাহক:</b> ${customerName || 'N/A'}\n` +
+                 `📱 <b>মোবাইল:</b> ${phone || 'N/A'}\n` +
+                 (device ? `🛠️ <b>ডিভাইস:</b> ${device}\n` : '') +
+                 (due > 0 ? `⚠️ <b>বকেয়া পাওনা:</b> ${formatCurrency(due)}\n` : `✅ <b>বিল স্ট্যাটাস:</b> সম্পূর্ণ পরিশোধিত\n`) +
+                 (staffName ? `👨‍🔧 <b>মেরামতকারী:</b> ${staffName}\n` : '') +
+                 `\n🕒 <b>সময়:</b> ${formatNow()}`;
+        } else if (status === 'Delivered') {
+          text = `🚚 <b>ডিভাইস ডেলিভারি সম্পন্ন (Delivered)</b>\n\n` +
+                 `👤 <b>গ্রাহক:</b> ${customerName || 'N/A'}\n` +
+                 `📱 <b>মোবাইল:</b> ${phone || 'N/A'}\n` +
+                 (device ? `🛠️ <b>ডিভাইস:</b> ${device}\n` : '') +
+                 (totalBill ? `💰 <b>মোট বিল:</b> ${formatCurrency(totalBill)}\n` : '') +
+                 (paid ? `💵 <b>পরিশোধিত:</b> ${formatCurrency(paid)}\n` : '') +
+                 (staffName ? `👨‍🔧 <b>ডেলিভারি দিয়েছেন:</b> ${staffName}\n` : '') +
+                 `\n🕒 <b>সময়:</b> ${formatNow()}`;
+        } else if (status === 'Returned (Unrepaired)') {
+          text = `↩️ <b>ডিভাইস ফেরত প্রদান (মেরামত ছাড়া)</b>\n\n` +
+                 `👤 <b>গ্রাহক:</b> ${customerName || 'N/A'}\n` +
+                 `📱 <b>মোবাইল:</b> ${phone || 'N/A'}\n` +
+                 (device ? `🛠️ <b>ডিভাইস:</b> ${device}\n` : '') +
+                 (reason ? `📝 <b>কারণ:</b> ${reason}\n` : '') +
+                 (staffName ? `👨‍🔧 <b>হ্যান্ডেল করেছেন:</b> ${staffName}\n` : '') +
+                 `\n🕒 <b>সময়:</b> ${formatNow()}`;
+        } else {
+          text = `🔄 <b>ডিভাইস স্ট্যাটাস আপডেট: ${status}</b>\n\n` +
+                 `👤 <b>গ্রাহক:</b> ${customerName || 'N/A'}\n` +
+                 (device ? `🛠️ <b>ডিভাইস:</b> ${device}\n` : '') +
+                 (staffName ? `👤 <b>আপডেট করেছেন:</b> ${staffName}\n` : '') +
+                 `\n🕒 <b>সময়:</b> ${formatNow()}`;
+        }
+      } else if (type === 'attendance') {
+        const { eventType, staffName, role, time, date, status, workingHours } = data || {};
+        if (eventType === 'check_in') {
+          text = `👨‍🔧 <b>স্টাফ উপস্থিতি: চেক-ইন (Check-in)</b>\n\n` +
+                 `👤 <b>নাম:</b> ${staffName || 'Staff'} (${role || 'Technician'})\n` +
+                 `⏰ <b>হাজিরার সময়:</b> ${time || ''}\n` +
+                 `📍 <b>স্ট্যাটাস:</b> ${status === 'Late' ? '⚠️ দেরি (Late)' : '✅ সময়মতো (Present)'}\n` +
+                 `📅 <b>তারিখ:</b> ${date || ''}\n` +
+                 `\n🕒 <b>সময়:</b> ${formatNow()}`;
+        } else {
+          text = `🚪 <b>স্টাফ উপস্থিতি: চেক-আউট (Check-out)</b>\n\n` +
+                 `👤 <b>নাম:</b> ${staffName || 'Staff'} (${role || 'Technician'})\n` +
+                 `⏰ <b>প্রস্থানের সময়:</b> ${time || ''}\n` +
+                 `⏱️ <b>মোট কাজের সময়:</b> ${workingHours || 'N/A'}\n` +
+                 `📅 <b>তারিখ:</b> ${date || ''}\n` +
+                 `\n🕒 <b>সময়:</b> ${formatNow()}`;
+        }
+      } else if (type === 'supplier') {
+        const { eventType, supplierName, itemName, quantity, purchasePrice, totalAmount, amount, remainingDue, staffName } = data || {};
+        if (eventType === 'restock') {
+          text = `📦 <b>নতুন পার্টস স্টক-ইন (মহাজন ক্রয়)</b>\n\n` +
+                 `🏢 <b>সাপ্লায়ার:</b> ${supplierName || 'N/A'}\n` +
+                 (itemName ? `🔩 <b>পার্টস:</b> ${itemName} (${quantity || 1} টি)\n` : '') +
+                 (purchasePrice ? `💵 <b>একক ক্রয়মূল্য:</b> ${formatCurrency(purchasePrice)}\n` : '') +
+                 (totalAmount ? `💰 <b>মোট ইনভয়েস:</b> ${formatCurrency(totalAmount)}\n` : '') +
+                 (staffName ? `👤 <b>স্টক-ইন করেছেন:</b> ${staffName}\n` : '') +
+                 `\n🕒 <b>সময়:</b> ${formatNow()}`;
+        } else {
+          text = `💵 <b>সাপ্লায়ারকে পেমেন্ট পরিশোধ</b>\n\n` +
+                 `🏢 <b>সাপ্লায়ার:</b> ${supplierName || 'N/A'}\n` +
+                 `💵 <b>পরিশোধের পরিমাণ:</b> ${formatCurrency(amount)}\n` +
+                 (remainingDue !== undefined ? `⚠️ <b>বর্তমান বকেয়া:</b> ${formatCurrency(remainingDue)}\n` : '') +
+                 (staffName ? `👤 <b>পেমেন্ট দিয়েছেন:</b> ${staffName}\n` : '') +
+                 `\n🕒 <b>সময়:</b> ${formatNow()}`;
+        }
+      } else if (type === 'security') {
+        const { title, details, user: userIdentifier } = data || {};
+        text = `🚨 <b>নিরাপত্তা ও অডিট সতর্কবার্তা (Security Alert)</b>\n\n` +
+               `⚠️ <b>বিষয়:</b> ${title || 'সিস্টেম পরিবর্তন'}\n` +
+               `📝 <b>বিবরণ:</b> ${details || 'N/A'}\n` +
+               (userIdentifier ? `👤 <b>অ্যাকশন নিয়েছেন:</b> ${userIdentifier}\n` : '') +
                `\n🕒 <b>সময়:</b> ${formatNow()}`;
       } else if (type === 'expense') {
         const { title, category, amount, staffName } = data || {};
@@ -125,7 +335,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
     }
 
-    // Call Telegram Bot API
+    // Dispatch to Telegram Bot API
     const telegramEndpoint = `https://api.telegram.org/bot${token}/sendMessage`;
     const tgResponse = await fetch(telegramEndpoint, {
       method: 'POST',
@@ -144,7 +354,7 @@ export async function POST(request: Request) {
       console.error('Telegram API Error:', tgResult);
       return NextResponse.json({ 
         success: false, 
-        error: tgResult?.description || 'টেলিগ্রামে মেসেজ পাঠানো যায়নি। টোকেন বা চ্যাট আইডি সঠিক কিনা নিশ্চিত করুন।' 
+        error: tgResult?.description || 'টেলিগ্রামে মেসেজ পাঠানো যায়নি।' 
       }, { status: 400 });
     }
 

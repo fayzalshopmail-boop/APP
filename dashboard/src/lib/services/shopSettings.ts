@@ -5,10 +5,16 @@ export interface TelegramSettings {
   enabled: boolean;
   botToken: string;
   chatId: string;
+  notifyOnCustomerCreate?: boolean;
   notifyOnSale?: boolean;
   notifyOnPayment?: boolean;
+  notifyOnStatusChange?: boolean;
   notifyOnExpense?: boolean;
   notifyOnLowStock?: boolean;
+  notifyOnAttendance?: boolean;
+  notifyOnSupplier?: boolean;
+  notifyOnSecurity?: boolean;
+  notifyOnDailySummary?: boolean;
 }
 
 export interface ShopSettings {
@@ -35,10 +41,16 @@ export const defaultShopSettings: ShopSettings = {
     enabled: false,
     botToken: '',
     chatId: '',
+    notifyOnCustomerCreate: true,
     notifyOnSale: true,
     notifyOnPayment: true,
+    notifyOnStatusChange: true,
     notifyOnExpense: true,
     notifyOnLowStock: true,
+    notifyOnAttendance: true,
+    notifyOnSupplier: true,
+    notifyOnSecurity: true,
+    notifyOnDailySummary: true,
   }
 };
 

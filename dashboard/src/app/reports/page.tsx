@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FileText, TrendingUp, TrendingDown, Wallet, Package, Search, ArrowDownRight, Scale } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useAppStore } from '@/store/useAppStore';
+import { FileText, TrendingUp, TrendingDown, Wallet, Package, Search, ArrowDownRight, Scale, ShieldAlert } from 'lucide-react';
 import { transactionService, Transaction } from '@/lib/services/transaction';
 import { expenseService, Expense } from '@/lib/services/expense';
 import { customerService, Customer } from '@/lib/services/customer';
@@ -9,10 +11,13 @@ import { inventoryService, InventoryItem } from '@/lib/services/inventory';
 import { formatCurrency } from '@/lib/currency';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { useTranslation } from '@/lib/i18n/useTranslation';
+import toast from 'react-hot-toast';
 
 type TimeFilter = 'today' | 'week' | 'month' | 'all';
 
 export default function ReportsPage() {
+  const { user } = useAppStore();
+  const router = useRouter();
   const { t, language } = useTranslation();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -24,6 +29,16 @@ export default function ReportsPage() {
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // Role authorization guard: Technicians are strictly prohibited
+  const isUnauthorized = user && user.role !== 'Owner' && user.role !== 'Manager';
+
+  useEffect(() => {
+    if (isUnauthorized) {
+      toast.error(language === 'bn' ? 'শুধুমাত্র মালিক ও ম্যানেজার এই পেজ দেখতে পারবেন।' : 'Only Owners and Managers can access Reports.');
+      router.replace('/customers');
+    }
+  }, [isUnauthorized, router, language]);
 
   const getTransactionTypeLabel = (type: string) => {
     if (language === 'en') return type;
@@ -41,6 +56,7 @@ export default function ReportsPage() {
   };
 
   const fetchData = async () => {
+    if (isUnauthorized) return;
     try {
       setLoading(true);
       const [transData, expData, custData, invData] = await Promise.all([
@@ -61,8 +77,10 @@ export default function ReportsPage() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (!isUnauthorized) {
+      fetchData();
+    }
+  }, [isUnauthorized]);
 
   // Filter helpers
   const getFilterDate = (filter: TimeFilter) => {
@@ -164,6 +182,24 @@ export default function ReportsPage() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  if (isUnauthorized) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-center p-6">
+        <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center text-red-400">
+          <ShieldAlert className="w-6 h-6" />
+        </div>
+        <h2 className="text-lg font-bold text-white">
+          {language === 'bn' ? 'প্রবেশাধিকার সংরক্ষিত' : 'Access Restricted'}
+        </h2>
+        <p className="text-sm text-gray-400 max-w-sm">
+          {language === 'bn' 
+            ? 'শুধুমাত্র দোকানের মালিক ও ম্যানেজার আর্থিক হিসাব বিবরণী পেজটি দেখতে পারেন।' 
+            : 'Only Shop Owners and Managers can access Financial Reports.'}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6 max-w-[1600px] mx-auto w-full pb-10">

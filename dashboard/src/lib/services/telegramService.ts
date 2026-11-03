@@ -3,6 +3,17 @@
  * Dispatches asynchronously to /api/telegram to prevent blocking user workflows.
  */
 
+export interface TelegramCustomerData {
+  customerName: string;
+  phone: string;
+  device?: string;
+  problem?: string;
+  advance?: number;
+  totalBill?: number;
+  isBillPending?: boolean;
+  staffName?: string;
+}
+
 export interface TelegramSaleData {
   customerName: string;
   phone: string;
@@ -22,6 +33,46 @@ export interface TelegramPaymentData {
   staffName?: string;
 }
 
+export interface TelegramStatusData {
+  customerName: string;
+  phone: string;
+  device?: string;
+  status: string;
+  due?: number;
+  totalBill?: number;
+  paid?: number;
+  reason?: string;
+  staffName?: string;
+}
+
+export interface TelegramAttendanceData {
+  eventType: 'check_in' | 'check_out';
+  staffName: string;
+  role: string;
+  time: string;
+  date: string;
+  status?: string;
+  workingHours?: string;
+}
+
+export interface TelegramSupplierData {
+  eventType: 'restock' | 'payment';
+  supplierName: string;
+  itemName?: string;
+  quantity?: number;
+  purchasePrice?: number;
+  totalAmount?: number;
+  amount?: number;
+  remainingDue?: number;
+  staffName?: string;
+}
+
+export interface TelegramSecurityData {
+  title: string;
+  details: string;
+  user?: string;
+}
+
 export interface TelegramExpenseData {
   title: string;
   category: string;
@@ -35,17 +86,33 @@ export interface TelegramLowStockData {
   minStock?: number;
 }
 
+async function postToTelegram(body: any): Promise<Response> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  try {
+    const { auth } = await import('../firebase');
+    if (auth?.currentUser) {
+      const token = await auth.currentUser.getIdToken().catch(() => null);
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+    }
+  } catch (err) {
+    console.warn('Could not attach auth token to Telegram request:', err);
+  }
+  return fetch('/api/telegram', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
+  });
+}
+
 export const telegramService = {
   /**
    * Sends a test message to verify Bot Token and Chat ID.
    */
   async sendTestMessage(botToken: string, chatId: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const res = await fetch('/api/telegram', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'test', botToken, chatId })
-      });
+      const res = await postToTelegram({ action: 'test', botToken, chatId });
       const data = await res.json();
       if (!res.ok || !data.success) {
         return { success: false, error: data.error || 'Failed to send test message' };
@@ -57,15 +124,40 @@ export const telegramService = {
   },
 
   /**
+   * Triggers the daily closing summary report to be generated and sent.
+   */
+  async sendDailySummary(): Promise<{ success: boolean; error?: string }> {
+    try {
+      const res = await postToTelegram({ action: 'send_daily_summary' });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        return { success: false, error: data.error || 'Failed to send daily summary' };
+      }
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Network error sending daily summary' };
+    }
+  },
+
+  /**
+   * Triggers a notification for a new customer or repair intake.
+   */
+  notifyCustomerCreate(data: TelegramCustomerData): void {
+    try {
+      postToTelegram({ action: 'notify', type: 'customer_create', data })
+        .catch(err => console.warn('Telegram notifyCustomerCreate error:', err));
+    } catch (e) {
+      console.warn('Telegram notifyCustomerCreate exception:', e);
+    }
+  },
+
+  /**
    * Triggers a notification for a new sale or service invoice.
    */
   notifySale(data: TelegramSaleData): void {
     try {
-      fetch('/api/telegram', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'notify', type: 'sale', data })
-      }).catch(err => console.warn('Telegram notifySale error:', err));
+      postToTelegram({ action: 'notify', type: 'sale', data })
+        .catch(err => console.warn('Telegram notifySale error:', err));
     } catch (e) {
       console.warn('Telegram notifySale exception:', e);
     }
@@ -76,13 +168,58 @@ export const telegramService = {
    */
   notifyPayment(data: TelegramPaymentData): void {
     try {
-      fetch('/api/telegram', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'notify', type: 'payment', data })
-      }).catch(err => console.warn('Telegram notifyPayment error:', err));
+      postToTelegram({ action: 'notify', type: 'payment', data })
+        .catch(err => console.warn('Telegram notifyPayment error:', err));
     } catch (e) {
       console.warn('Telegram notifyPayment exception:', e);
+    }
+  },
+
+  /**
+   * Triggers a notification for repair status transitions (Ready for Delivery, Delivered, etc.).
+   */
+  notifyStatusChange(data: TelegramStatusData): void {
+    try {
+      postToTelegram({ action: 'notify', type: 'status_change', data })
+        .catch(err => console.warn('Telegram notifyStatusChange error:', err));
+    } catch (e) {
+      console.warn('Telegram notifyStatusChange exception:', e);
+    }
+  },
+
+  /**
+   * Triggers an attendance notification (Check-in or Check-out).
+   */
+  notifyAttendance(data: TelegramAttendanceData): void {
+    try {
+      postToTelegram({ action: 'notify', type: 'attendance', data })
+        .catch(err => console.warn('Telegram notifyAttendance error:', err));
+    } catch (e) {
+      console.warn('Telegram notifyAttendance exception:', e);
+    }
+  },
+
+  /**
+   * Triggers a supplier restock or payment notification.
+   */
+  notifySupplier(data: TelegramSupplierData): void {
+    try {
+      postToTelegram({ action: 'notify', type: 'supplier', data })
+        .catch(err => console.warn('Telegram notifySupplier error:', err));
+    } catch (e) {
+      console.warn('Telegram notifySupplier exception:', e);
+    }
+  },
+
+  /**
+   * Triggers a security, fraud prevention, or critical audit alert.
+   */
+  notifySecurity(data: TelegramSecurityData): void {
+    try {
+      postToTelegram({ action: 'notify', type: 'security', data })
+        .catch(err => console.warn('Telegram notifySecurity error:', err));
+    } catch (e) {
+      console.warn('Telegram notifySecurity exception:', e);
     }
   },
 
@@ -91,11 +228,8 @@ export const telegramService = {
    */
   notifyExpense(data: TelegramExpenseData): void {
     try {
-      fetch('/api/telegram', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'notify', type: 'expense', data })
-      }).catch(err => console.warn('Telegram notifyExpense error:', err));
+      postToTelegram({ action: 'notify', type: 'expense', data })
+        .catch(err => console.warn('Telegram notifyExpense error:', err));
     } catch (e) {
       console.warn('Telegram notifyExpense exception:', e);
     }
@@ -106,11 +240,8 @@ export const telegramService = {
    */
   notifyLowStock(data: TelegramLowStockData): void {
     try {
-      fetch('/api/telegram', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'notify', type: 'low_stock', data })
-      }).catch(err => console.warn('Telegram notifyLowStock error:', err));
+      postToTelegram({ action: 'notify', type: 'low_stock', data })
+        .catch(err => console.warn('Telegram notifyLowStock error:', err));
     } catch (e) {
       console.warn('Telegram notifyLowStock exception:', e);
     }
@@ -121,11 +252,8 @@ export const telegramService = {
    */
   notifyGeneral(title: string, message: string): void {
     try {
-      fetch('/api/telegram', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'notify', type: 'general', data: { title, message } })
-      }).catch(err => console.warn('Telegram notifyGeneral error:', err));
+      postToTelegram({ action: 'notify', type: 'general', data: { title, message } })
+        .catch(err => console.warn('Telegram notifyGeneral error:', err));
     } catch (e) {
       console.warn('Telegram notifyGeneral exception:', e);
     }

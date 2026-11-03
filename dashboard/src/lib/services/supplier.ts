@@ -1,5 +1,6 @@
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, getDoc, runTransaction } from 'firebase/firestore';
 import { db } from '../firebase';
+import { telegramService } from './telegramService';
 
 export interface Supplier {
   id: string;
@@ -116,6 +117,18 @@ export const supplierService = {
       });
       
       result = { newPaid, newDue };
+
+      try {
+        telegramService.notifySupplier({
+          eventType: 'payment',
+          supplierName: data.name + (data.company ? ` (${data.company})` : ''),
+          amount: amount,
+          remainingDue: newDue,
+          staffName: userEmail
+        });
+      } catch (tgErr) {
+        console.warn('Failed to notify telegram supplier payment:', tgErr);
+      }
     });
     
     return result;

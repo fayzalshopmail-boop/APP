@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAppStore } from '@/store/useAppStore';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { motion } from 'framer-motion';
-import { Wallet, Plus, Trash2, Calendar, Coffee, Plug, Car, UserCircle, ShoppingBag, Search, Filter, Edit2 } from 'lucide-react';
+import { Wallet, Plus, Trash2, Calendar, Coffee, Plug, Car, UserCircle, ShoppingBag, Search, Filter, Edit2, ShieldAlert } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -26,9 +28,22 @@ const EXPENSE_CATEGORIES = [
 ];
 
 export default function ExpensesPage() {
+  const { user } = useAppStore();
+  const router = useRouter();
   const { t, language } = useTranslation();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Role authorization guard: Technicians are strictly prohibited
+  const isUnauthorized = user && user.role !== 'Owner' && user.role !== 'Manager';
+
+  useEffect(() => {
+    if (isUnauthorized) {
+      toast.error(language === 'bn' ? 'শুধুমাত্র মালিক ও ম্যানেজার খরচ পেজ দেখতে পারবেন।' : 'Only Owners and Managers can access Expenses.');
+      router.replace('/customers');
+    }
+  }, [isUnauthorized, router, language]);
+
   const [confirmModal, setConfirmModal] = useState<{isOpen: boolean, id: string | null}>({isOpen: false, id: null});
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -50,6 +65,7 @@ export default function ExpensesPage() {
   };
 
   const fetchExpenses = async () => {
+    if (isUnauthorized) return;
     try {
       setLoading(true);
       const data = await expenseService.getAll();
@@ -62,8 +78,10 @@ export default function ExpensesPage() {
   };
 
   useEffect(() => {
-    fetchExpenses();
-  }, []);
+    if (!isUnauthorized) {
+      fetchExpenses();
+    }
+  }, [isUnauthorized]);
 
   useEffect(() => {
     const handleOpenAdd = () => {
@@ -198,6 +216,24 @@ export default function ExpensesPage() {
     return (
       <div className="flex justify-center items-center h-[70vh]">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  if (isUnauthorized) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-center p-6">
+        <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center text-red-400">
+          <ShieldAlert className="w-6 h-6" />
+        </div>
+        <h2 className="text-lg font-bold text-white">
+          {language === 'bn' ? 'প্রবেশাধিকার সংরক্ষিত' : 'Access Restricted'}
+        </h2>
+        <p className="text-sm text-gray-400 max-w-sm">
+          {language === 'bn' 
+            ? 'শুধুমাত্র দোকানের মালিক ও ম্যানেজার খরচ পেজটি দেখতে পারেন।' 
+            : 'Only Shop Owners and Managers can access Expenses.'}
+        </p>
       </div>
     );
   }

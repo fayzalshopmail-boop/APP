@@ -20,14 +20,20 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow update: if isManagerOrOwner() || (isAuthenticated() && request.auth.token.email == userId);
+      // Regular users can only update non-sensitive profile fields (e.g. fcmToken, avatar).
+      // They are strictly forbidden from modifying 'role' or 'isActive' to prevent self-privilege escalation.
+      allow update: if isManagerOrOwner() || (
+        isActiveUser() && 
+        request.auth.token.email == userId &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isActive'])
+      );
       allow create, delete: if isManagerOrOwner();
     }
 
     match /settings/{docId} {
       // General settings (shop, dropdowns, loyalty) are readable by active users
-      // SMS configuration credentials are strictly locked to Manager or Owner
-      allow read: if (docId == 'sms') ? isManagerOrOwner() : isActiveUser();
+      // SMS and Telegram configuration credentials are strictly locked to Manager or Owner
+      allow read: if (docId == 'sms' || docId == 'telegram') ? isManagerOrOwner() : isActiveUser();
       allow write: if isManagerOrOwner();
     }
 
@@ -54,9 +60,7 @@ service cloud.firestore {
     }
 
     match /expenses/{expenseId} {
-      allow read: if isActiveUser();
-      allow create: if isActiveUser();
-      allow update, delete: if isManagerOrOwner();
+      allow read, write: if isManagerOrOwner();
     }
 
     match /suppliers/{supplierId} {
@@ -66,9 +70,7 @@ service cloud.firestore {
     }
 
     match /loans/{loanId} {
-      allow read: if isActiveUser();
-      allow create, update: if isManagerOrOwner();
-      allow delete: if isManagerOrOwner();
+      allow read, write: if isManagerOrOwner();
     }
 
     match /mechanics/{mechanicId} {
@@ -84,12 +86,12 @@ service cloud.firestore {
     }
 
     match /payroll/{payrollId} {
-      allow read: if isActiveUser();
+      allow read: if isManagerOrOwner() || (isActiveUser() && resource.data.staffEmail == request.auth.token.email);
       allow create, update, delete: if isManagerOrOwner();
     }
 
     match /salaryConfigs/{userId} {
-      allow read: if isActiveUser();
+      allow read: if isManagerOrOwner() || (isActiveUser() && request.auth.token.email == userId);
       allow write: if isManagerOrOwner();
     }
   }

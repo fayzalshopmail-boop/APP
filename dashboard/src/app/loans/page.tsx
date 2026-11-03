@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
   CreditCard, Plus, ArrowUpRight, ArrowDownRight, Edit2, Trash2, 
   CheckCircle, Coins, CalendarClock, History, MessageSquare, Phone, 
-  Search, X, Filter, ChevronLeft, ChevronRight 
+  Search, X, Filter, ChevronLeft, ChevronRight, ShieldAlert 
 } from 'lucide-react';
 import { loanService, Loan } from '@/lib/services/loan';
 import { formatCurrency } from '@/lib/currency';
@@ -23,6 +24,7 @@ type FilterType = 'all' | 'pending' | 'paid' | 'given' | 'taken';
 
 export default function LoansPage() {
   const { user } = useAppStore();
+  const router = useRouter();
   const { t, language } = useTranslation();
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +32,16 @@ export default function LoansPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Role authorization guard: Technicians are strictly prohibited
+  const isUnauthorized = user && user.role !== 'Owner' && user.role !== 'Manager';
+
+  useEffect(() => {
+    if (isUnauthorized) {
+      toast.error(language === 'bn' ? 'শুধুমাত্র মালিক ও ম্যানেজার এই পেজ দেখতে পারবেন।' : 'Only Owners and Managers can access Loans.');
+      router.replace('/customers');
+    }
+  }, [isUnauthorized, router, language]);
   
   const [editingLoan, setEditingLoan] = useState<Loan | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -72,6 +84,7 @@ export default function LoansPage() {
   };
 
   const fetchLoans = async () => {
+    if (isUnauthorized) return;
     try {
       setLoading(true);
       const data = await loanService.getAll();
@@ -117,8 +130,10 @@ export default function LoansPage() {
   };
 
   useEffect(() => {
-    fetchLoans();
-  }, []);
+    if (!isUnauthorized) {
+      fetchLoans();
+    }
+  }, [isUnauthorized]);
 
   // Topbar "+ Add Record" button integration
   useEffect(() => {
@@ -365,6 +380,24 @@ export default function LoansPage() {
     }
     return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
   };
+
+  if (isUnauthorized) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-center p-6">
+        <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center text-red-400">
+          <ShieldAlert className="w-6 h-6" />
+        </div>
+        <h2 className="text-lg font-bold text-white">
+          {language === 'bn' ? 'প্রবেশাধিকার সংরক্ষিত' : 'Access Restricted'}
+        </h2>
+        <p className="text-sm text-gray-400 max-w-sm">
+          {language === 'bn' 
+            ? 'শুধুমাত্র দোকানের মালিক ও ম্যানেজার ঋণ ও হাওলাত পেজটি দেখতে পারেন।' 
+            : 'Only Shop Owners and Managers can access Loan and Debt records.'}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3 sm:space-y-6 max-w-[1600px] mx-auto w-full pb-6 sm:pb-10 px-1 sm:px-0">

@@ -5,10 +5,17 @@ export const dynamic = 'force-dynamic';
 
 async function handleBalanceCheck(request: Request, passedApiKey?: string | null) {
   try {
-    // 1. Optional session check if authorization header is provided
+    // 1. Mandatory session check: Only Shop Owners and Managers can access SMS balance
     const authHeader = request.headers.get('authorization');
-    if (authHeader?.startsWith('Bearer ')) {
-      const idToken = authHeader.substring(7).trim();
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: "Missing or invalid authorization header. Login required." }, { status: 401 });
+    }
+
+    const idToken = authHeader.substring(7).trim();
+    const isCron = Boolean(process.env.CRON_SECRET && idToken === process.env.CRON_SECRET);
+    let isAuthorized = isCron;
+
+    if (!isAuthorized) {
       try {
         const { adminAuth, adminDb } = await import('@/lib/firebase-admin');
         if (adminAuth) {
@@ -19,15 +26,19 @@ async function handleBalanceCheck(request: Request, passedApiKey?: string | null
             const userDoc = await adminDb.collection('users').doc(email).get();
             if (userDoc.exists) {
               const data = userDoc.data();
-              if (data?.isActive === false || (data?.role !== 'Owner' && data?.role !== 'Manager')) {
-                return NextResponse.json({ error: "Only Shop Owners and Managers can access SMS balance." }, { status: 403 });
+              if (data?.isActive !== false && (data?.role === 'Owner' || data?.role === 'Manager')) {
+                isAuthorized = true;
               }
             }
           }
         }
       } catch (authErr) {
-        console.warn("Authorization verification skipped or failed:", authErr);
+        return NextResponse.json({ error: "Invalid or expired authorization token." }, { status: 401 });
       }
+    }
+
+    if (!isAuthorized) {
+      return NextResponse.json({ error: "Only Shop Owners and Managers can access SMS balance." }, { status: 403 });
     }
 
     // 2. Resolve API Key from passed parameter or fallback to Firestore

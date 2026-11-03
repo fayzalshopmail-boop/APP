@@ -70,6 +70,7 @@ export default function SettingsPage() {
   const [shopForm, setShopForm] = useState<ShopSettings>(globalShop || defaultShopSettings);
   const [savingShop, setSavingShop] = useState(false);
   const [testingTelegram, setTestingTelegram] = useState(false);
+  const [sendingSummary, setSendingSummary] = useState(false);
 
   const handleTestTelegram = async () => {
     const token = shopForm.telegram?.botToken?.trim();
@@ -90,6 +91,22 @@ export default function SettingsPage() {
       toast.error(e?.message || t('settings.telegramCard.testFailed'));
     } finally {
       setTestingTelegram(false);
+    }
+  };
+
+  const handleSendDailySummary = async () => {
+    try {
+      setSendingSummary(true);
+      const res = await telegramService.sendDailySummary();
+      if (res.success) {
+        toast.success(t('settings.telegramCard.summarySuccess'));
+      } else {
+        toast.error(res.error || t('settings.telegramCard.summaryFailed'));
+      }
+    } catch (e: any) {
+      toast.error(e?.message || t('settings.telegramCard.summaryFailed'));
+    } finally {
+      setSendingSummary(false);
     }
   };
 
@@ -701,6 +718,22 @@ export default function SettingsPage() {
                 <label className="flex items-center gap-2.5 p-3 rounded-xl bg-popover/50 border border-gray-800/80 cursor-pointer hover:border-gray-700 transition-colors select-none">
                   <input
                     type="checkbox"
+                    checked={shopForm.telegram?.notifyOnCustomerCreate !== false}
+                    onChange={(e) => {
+                      const currentTg = shopForm.telegram || { enabled: false, botToken: '', chatId: '' };
+                      setShopForm({
+                        ...shopForm,
+                        telegram: { ...currentTg, notifyOnCustomerCreate: e.target.checked }
+                      });
+                    }}
+                    className="w-4 h-4 rounded text-blue-600 bg-gray-900 border-gray-700 focus:ring-0"
+                  />
+                  <span className="text-xs font-medium">{t('settings.telegramCard.notifyOnCustomerCreate')}</span>
+                </label>
+
+                <label className="flex items-center gap-2.5 p-3 rounded-xl bg-popover/50 border border-gray-800/80 cursor-pointer hover:border-gray-700 transition-colors select-none">
+                  <input
+                    type="checkbox"
                     checked={shopForm.telegram?.notifyOnSale !== false}
                     onChange={(e) => {
                       const currentTg = shopForm.telegram || { enabled: false, botToken: '', chatId: '' };
@@ -728,6 +761,22 @@ export default function SettingsPage() {
                     className="w-4 h-4 rounded text-blue-600 bg-gray-900 border-gray-700 focus:ring-0"
                   />
                   <span className="text-xs font-medium">{t('settings.telegramCard.notifyOnPayment')}</span>
+                </label>
+
+                <label className="flex items-center gap-2.5 p-3 rounded-xl bg-popover/50 border border-gray-800/80 cursor-pointer hover:border-gray-700 transition-colors select-none">
+                  <input
+                    type="checkbox"
+                    checked={shopForm.telegram?.notifyOnStatusChange !== false}
+                    onChange={(e) => {
+                      const currentTg = shopForm.telegram || { enabled: false, botToken: '', chatId: '' };
+                      setShopForm({
+                        ...shopForm,
+                        telegram: { ...currentTg, notifyOnStatusChange: e.target.checked }
+                      });
+                    }}
+                    className="w-4 h-4 rounded text-blue-600 bg-gray-900 border-gray-700 focus:ring-0"
+                  />
+                  <span className="text-xs font-medium">{t('settings.telegramCard.notifyOnStatusChange')}</span>
                 </label>
 
                 <label className="flex items-center gap-2.5 p-3 rounded-xl bg-popover/50 border border-gray-800/80 cursor-pointer hover:border-gray-700 transition-colors select-none">
@@ -761,6 +810,70 @@ export default function SettingsPage() {
                   />
                   <span className="text-xs font-medium">{t('settings.telegramCard.notifyOnLowStock')}</span>
                 </label>
+
+                <label className="flex items-center gap-2.5 p-3 rounded-xl bg-popover/50 border border-gray-800/80 cursor-pointer hover:border-gray-700 transition-colors select-none">
+                  <input
+                    type="checkbox"
+                    checked={shopForm.telegram?.notifyOnAttendance !== false}
+                    onChange={(e) => {
+                      const currentTg = shopForm.telegram || { enabled: false, botToken: '', chatId: '' };
+                      setShopForm({
+                        ...shopForm,
+                        telegram: { ...currentTg, notifyOnAttendance: e.target.checked }
+                      });
+                    }}
+                    className="w-4 h-4 rounded text-blue-600 bg-gray-900 border-gray-700 focus:ring-0"
+                  />
+                  <span className="text-xs font-medium">{t('settings.telegramCard.notifyOnAttendance')}</span>
+                </label>
+
+                <label className="flex items-center gap-2.5 p-3 rounded-xl bg-popover/50 border border-gray-800/80 cursor-pointer hover:border-gray-700 transition-colors select-none">
+                  <input
+                    type="checkbox"
+                    checked={shopForm.telegram?.notifyOnSupplier !== false}
+                    onChange={(e) => {
+                      const currentTg = shopForm.telegram || { enabled: false, botToken: '', chatId: '' };
+                      setShopForm({
+                        ...shopForm,
+                        telegram: { ...currentTg, notifyOnSupplier: e.target.checked }
+                      });
+                    }}
+                    className="w-4 h-4 rounded text-blue-600 bg-gray-900 border-gray-700 focus:ring-0"
+                  />
+                  <span className="text-xs font-medium">{t('settings.telegramCard.notifyOnSupplier')}</span>
+                </label>
+
+                <label className="flex items-center gap-2.5 p-3 rounded-xl bg-popover/50 border border-gray-800/80 cursor-pointer hover:border-gray-700 transition-colors select-none">
+                  <input
+                    type="checkbox"
+                    checked={shopForm.telegram?.notifyOnSecurity !== false}
+                    onChange={(e) => {
+                      const currentTg = shopForm.telegram || { enabled: false, botToken: '', chatId: '' };
+                      setShopForm({
+                        ...shopForm,
+                        telegram: { ...currentTg, notifyOnSecurity: e.target.checked }
+                      });
+                    }}
+                    className="w-4 h-4 rounded text-blue-600 bg-gray-900 border-gray-700 focus:ring-0"
+                  />
+                  <span className="text-xs font-medium">{t('settings.telegramCard.notifyOnSecurity')}</span>
+                </label>
+
+                <label className="flex items-center gap-2.5 p-3 rounded-xl bg-popover/50 border border-gray-800/80 cursor-pointer hover:border-gray-700 transition-colors select-none">
+                  <input
+                    type="checkbox"
+                    checked={shopForm.telegram?.notifyOnDailySummary !== false}
+                    onChange={(e) => {
+                      const currentTg = shopForm.telegram || { enabled: false, botToken: '', chatId: '' };
+                      setShopForm({
+                        ...shopForm,
+                        telegram: { ...currentTg, notifyOnDailySummary: e.target.checked }
+                      });
+                    }}
+                    className="w-4 h-4 rounded text-blue-600 bg-gray-900 border-gray-700 focus:ring-0"
+                  />
+                  <span className="text-xs font-medium">{t('settings.telegramCard.notifyOnDailySummary')}</span>
+                </label>
               </div>
             </div>
 
@@ -780,29 +893,50 @@ export default function SettingsPage() {
               </div>
             </details>
 
-            {/* Action Bar: Test Message & Save Notice */}
+            {/* Action Bar: Test Message & Summary Trigger */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-800">
               <p className="text-xs text-gray-500 text-center sm:text-left">
                 {t('settings.telegramCard.saveNotice')}
               </p>
-              <button
-                type="button"
-                onClick={handleTestTelegram}
-                disabled={testingTelegram || !shopForm.telegram?.botToken || !shopForm.telegram?.chatId}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 font-medium text-xs flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {testingTelegram ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>{t('settings.telegramCard.testSending')}</span>
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-3.5 h-3.5" />
-                    <span>{t('settings.telegramCard.testButton')}</span>
-                  </>
-                )}
-              </button>
+              <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={handleSendDailySummary}
+                  disabled={sendingSummary || !shopForm.telegram?.botToken || !shopForm.telegram?.chatId}
+                  className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-medium text-xs flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {sendingSummary ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>{t('settings.telegramCard.summarySending')}</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>{t('settings.telegramCard.summaryButton')}</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleTestTelegram}
+                  disabled={testingTelegram || !shopForm.telegram?.botToken || !shopForm.telegram?.chatId}
+                  className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 font-medium text-xs flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {testingTelegram ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>{t('settings.telegramCard.testSending')}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      <span>{t('settings.telegramCard.testButton')}</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </motion.div>
 

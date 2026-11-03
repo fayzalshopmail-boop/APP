@@ -31,6 +31,7 @@ const PartsUsedModal = dynamic(
 );
 import { customerService, Customer, CustomerStatus, normalizePhone, RepairRecord } from '@/lib/services/customer';
 import { shopTransactionService } from '@/lib/services/shopTransaction';
+import { telegramService } from '@/lib/services/telegramService';
 import { sendSMS } from '@/lib/sms';
 import { smsConfigService } from '@/lib/services/smsConfig';
 import toast from 'react-hot-toast';
@@ -247,6 +248,22 @@ export default function CustomersPage() {
         await customerService.update(editingCustomer.id, updatedData);
         data = updatedData; // so local state gets the new due
 
+        // If financial figures were modified, alert owner for security
+        if (
+          (editingCustomer.totalBill || 0) !== (data.totalBill || 0) || 
+          (editingCustomer.discount || 0) !== (data.discount || 0)
+        ) {
+          try {
+            telegramService.notifySecurity({
+              title: 'কাস্টমার বিল / ছাড় পরিবর্তন (Security Alert)',
+              details: `কাস্টমার ${editingCustomer.name} এর পূর্বের বিল ছিল ৳${editingCustomer.totalBill || 0} (ছাড়: ৳${editingCustomer.discount || 0}), যা পরিবর্তন করে নতুন বিল ৳${data.totalBill || 0} (ছাড়: ৳${data.discount || 0}) করা হয়েছে।`,
+              user: user?.name || user?.email || 'Staff'
+            });
+          } catch (secErr) {
+            console.warn('Failed to notify security change:', secErr);
+          }
+        }
+
         setCustomers(customers.map(c => c.id === editingCustomer.id ? { ...c, ...data } : c));
       } else {
         // Add Atomically
@@ -301,6 +318,20 @@ export default function CustomersPage() {
 
       await customerService.update(customerId, updates);
 
+      try {
+        telegramService.notifySale({
+          customerName: targetCustomer.name || 'Customer',
+          phone: targetCustomer.phone || '',
+          device: [targetCustomer.deviceBrand, targetCustomer.deviceType].filter(Boolean).join(' ') || undefined,
+          totalBill: totalBill,
+          advance: advance,
+          due: calculatedDue,
+          staffName: user?.name || user?.email || 'Admin'
+        });
+      } catch (tgErr) {
+        console.warn('Failed to notify telegram on set bill:', tgErr);
+      }
+
       setCustomers(prev => prev.map(c => c.id === customerId ? { ...c, ...updates } : c));
       if (profileSidebarCustomer?.id === customerId) {
         setProfileSidebarCustomer({ ...profileSidebarCustomer, ...updates });
@@ -348,6 +379,21 @@ export default function CustomersPage() {
       
       if (profileSidebarCustomer?.id === id) {
         setProfileSidebarCustomer(mergedCustomer);
+      }
+
+      try {
+        telegramService.notifyStatusChange({
+          customerName: baseCustomer.name || 'Customer',
+          phone: baseCustomer.phone || '',
+          device: [baseCustomer.deviceBrand, baseCustomer.deviceType].filter(Boolean).join(' ') || undefined,
+          status: newStatus,
+          due: mergedCustomer.due,
+          totalBill: mergedCustomer.totalBill,
+          paid: (mergedCustomer.totalBill || 0) - (mergedCustomer.due || 0),
+          staffName: statusUpdates.servicedByName || user?.name || user?.email
+        });
+      } catch (tgErr) {
+        console.warn('Failed to notify telegram on status update:', tgErr);
       }
       
       // Send SMS if Ready, Delivered, Returned, or Waiting for Parts

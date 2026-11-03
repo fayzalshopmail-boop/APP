@@ -137,6 +137,22 @@ export const shopTransactionService = {
         console.error("Failed to add notification", e);
       }
 
+      try {
+        const deviceStr = [customerData.deviceBrand, customerData.deviceType].filter(Boolean).join(' ');
+        telegramService.notifyCustomerCreate({
+          customerName: `${customerData.name} (পুরাতন কাস্টমার)`,
+          phone: customerData.phone || '',
+          device: deviceStr || undefined,
+          problem: customerData.deviceProblem || undefined,
+          advance: customerData.advance || 0,
+          totalBill: customerData.totalBill || 0,
+          isBillPending: Boolean(customerData.isBillPending),
+          staffName: effectiveStaffName || userEmail
+        });
+      } catch (tgErr) {
+        console.warn('Failed to notify Telegram on repeat customer:', tgErr);
+      }
+
       return existingId;
     }
 
@@ -179,6 +195,22 @@ export const shopTransactionService = {
       });
     } catch (e) {
       console.error("Failed to add notification", e);
+    }
+
+    try {
+      const deviceStr = [customerData.deviceBrand, customerData.deviceType].filter(Boolean).join(' ');
+      telegramService.notifyCustomerCreate({
+        customerName: customerData.name || 'Customer',
+        phone: customerData.phone || '',
+        device: deviceStr || undefined,
+        problem: customerData.deviceProblem || undefined,
+        advance: customerData.advance || 0,
+        totalBill: customerData.totalBill || 0,
+        isBillPending: Boolean(customerData.isBillPending),
+        staffName: effectiveStaffName || userEmail
+      });
+    } catch (tgErr) {
+      console.warn('Failed to notify Telegram on new customer:', tgErr);
     }
 
     return newId;
@@ -542,6 +574,20 @@ export const shopTransactionService = {
       result = { newStock: newQty, avgPurchasePrice: avgPrice };
     });
 
+    try {
+      telegramService.notifySupplier({
+        eventType: 'restock',
+        supplierName: supplierId ? 'Supplier Purchase' : 'Cash Purchase',
+        itemName: params.inventoryId,
+        quantity: params.addQuantity,
+        purchasePrice: params.newPurchasePrice,
+        totalAmount: params.addQuantity * params.newPurchasePrice,
+        staffName: params.userEmail
+      });
+    } catch (tgErr) {
+      console.warn('Failed to notify telegram on restock:', tgErr);
+    }
+
     return result;
   },
 
@@ -651,6 +697,16 @@ export const shopTransactionService = {
     }
 
     await batch.commit();
+
+    try {
+      telegramService.notifySecurity({
+        title: 'কাস্টমার রেকর্ড মুছে ফেলা হয়েছে',
+        details: `কাস্টমার ${customerData.name} (${customerData.phone || 'No phone'}) এর রেকর্ড ডিলিট করা হয়েছে। (পূর্বের মোট বিল: ৳${customerData.totalBill || 0}, বাকি ছিল: ৳${customerData.due || 0})`,
+        user: 'User / Admin'
+      });
+    } catch (tgErr) {
+      console.warn('Failed to notify telegram on customer delete:', tgErr);
+    }
   }
 
 };
