@@ -1,6 +1,16 @@
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
+export interface TelegramSettings {
+  enabled: boolean;
+  botToken: string;
+  chatId: string;
+  notifyOnSale?: boolean;
+  notifyOnPayment?: boolean;
+  notifyOnExpense?: boolean;
+  notifyOnLowStock?: boolean;
+}
+
 export interface ShopSettings {
   shopName: string;
   shopTitle: string;
@@ -10,6 +20,7 @@ export interface ShopSettings {
   ownerName: string;
   lastAutoBackupDate?: number;
   language?: 'bn' | 'en';
+  telegram?: TelegramSettings;
 }
 
 export const defaultShopSettings: ShopSettings = {
@@ -20,6 +31,15 @@ export const defaultShopSettings: ShopSettings = {
   address: '',
   ownerName: 'Owner',
   language: 'bn',
+  telegram: {
+    enabled: false,
+    botToken: '',
+    chatId: '',
+    notifyOnSale: true,
+    notifyOnPayment: true,
+    notifyOnExpense: true,
+    notifyOnLowStock: true,
+  }
 };
 
 export const shopSettingsService = {

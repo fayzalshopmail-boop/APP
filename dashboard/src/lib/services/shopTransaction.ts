@@ -14,6 +14,7 @@ import { db } from '../firebase';
 import { Customer, PartUsed, RepairRecord } from './customer';
 import { InventoryItem } from './inventory';
 import { notificationService } from './notification';
+import { telegramService } from './telegramService';
 import { sanitizeForFirestore } from '../utils';
 
 /**
@@ -200,6 +201,7 @@ export const shopTransactionService = {
 
     const customerRef = doc(db as any, 'customers', customerId);
     const lowStockAlerts: any[] = [];
+    let telegramSalePayload: any = null;
     
     await runTransaction(db, async (transaction) => {
       const customerSnap = await transaction.get(customerRef);
@@ -288,7 +290,21 @@ export const shopTransactionService = {
           createdAt: serverTimestamp()
         });
       }
+
+      telegramSalePayload = {
+        customerName: customerData.name || 'Customer',
+        phone: customerData.phone || '',
+        device: [customerData.deviceBrand, customerData.deviceType].filter(Boolean).join(' ') || undefined,
+        totalBill: finalTotalBill,
+        advance: newAdvance,
+        due: newDue,
+        staffName: userEmail
+      };
     });
+
+    if (telegramSalePayload) {
+      telegramService.notifySale(telegramSalePayload);
+    }
 
     // Dispatch notifications outside transaction
     for (const alert of lowStockAlerts) {
@@ -319,6 +335,7 @@ export const shopTransactionService = {
 
     const customerRef = doc(db, 'customers', customerId);
     let result = { newAdvance: 0, newDue: 0 };
+    let telegramPaymentPayload: any = null;
 
     await runTransaction(db, async (transaction) => {
       const customerSnap = await transaction.get(customerRef);
@@ -353,7 +370,20 @@ export const shopTransactionService = {
       });
 
       result = { newAdvance, newDue };
+
+      telegramPaymentPayload = {
+        customerName: customerData.name || 'Customer',
+        phone: customerData.phone || '',
+        amount: paymentAmount,
+        paymentMethod: 'Cash',
+        remainingDue: newDue,
+        staffName: userEmail
+      };
     });
+
+    if (telegramPaymentPayload) {
+      telegramService.notifyPayment(telegramPaymentPayload);
+    }
 
     return result;
   },
@@ -420,6 +450,16 @@ export const shopTransactionService = {
         console.error("Failed to add low stock notification", e);
       }
     }
+
+    telegramService.notifySale({
+      customerName: customerName || 'Walk-in Customer',
+      phone: '',
+      device: 'Direct Sale / খুচরা বিক্রয়',
+      totalBill: quantity * price,
+      advance: quantity * price,
+      due: 0,
+      staffName: userEmail
+    });
 
     return { newStock: newStockResult };
   },

@@ -1,5 +1,6 @@
 import { collection, doc, addDoc, updateDoc, deleteDoc, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
 import { db } from '../firebase';
+import { telegramService } from './telegramService';
 
 export interface AppNotification {
   id?: string;
@@ -72,6 +73,15 @@ export const notificationService = {
       }).catch(console.error); // Fire and forget
     } catch(e) {
       console.error('Failed to trigger push notification API', e);
+    }
+
+    // Trigger Telegram Notification for Owner if it's an alert or warning
+    if (newNotif.type === 'warning' || newNotif.type === 'alert') {
+      try {
+        telegramService.notifyGeneral(newNotif.title, newNotif.message);
+      } catch (tgErr) {
+        console.warn('Failed to dispatch telegram notification:', tgErr);
+      }
     }
 
     return docRef.id;

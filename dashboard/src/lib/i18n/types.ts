@@ -402,6 +402,30 @@ export interface TranslationDictionary {
       englishSub: string;
       switchedSuccess: string;
     };
+    telegramCard: {
+      title: string;
+      description: string;
+      privacyNotice: string;
+      enableTelegram: string;
+      botToken: string;
+      botTokenPlaceholder: string;
+      chatId: string;
+      chatIdPlaceholder: string;
+      eventsTitle: string;
+      notifyOnSale: string;
+      notifyOnPayment: string;
+      notifyOnExpense: string;
+      notifyOnLowStock: string;
+      testButton: string;
+      testSending: string;
+      testSuccess: string;
+      testFailed: string;
+      guideTitle: string;
+      guideStep1: string;
+      guideStep2: string;
+      guideStep3: string;
+      saveNotice: string;
+    };
     shopInfo: {
       title: string;
       shortName: string;

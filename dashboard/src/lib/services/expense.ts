@@ -1,5 +1,6 @@
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
+import { telegramService } from './telegramService';
 
 export interface Expense {
   id: string;
@@ -34,6 +35,17 @@ export const expenseService = {
       ...expenseData,
       createdAt: serverTimestamp()
     });
+
+    try {
+      telegramService.notifyExpense({
+        title: expenseData.title,
+        category: expenseData.category,
+        amount: expenseData.amount
+      });
+    } catch (e) {
+      console.warn('Failed to notify expense on Telegram:', e);
+    }
+
     return docRef.id;
   },
 
