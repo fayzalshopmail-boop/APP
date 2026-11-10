@@ -29,22 +29,76 @@ function getDhakaDateInfo(offsetDays = 0) {
   return { dateStr, hour };
 }
 
-export async function executeDailySummary(forceDate?: string): Promise<{ success: boolean; messageId?: number; error?: string; skipped?: boolean }> {
-  try {
-    const { adminDb } = await import('@/lib/firebase-admin');
-    if (!adminDb) {
-      return { success: false, error: 'Firebase Admin not initialized' };
+async function fetchCollectionDocs(
+  adminDb: any, 
+  colName: string, 
+  bearerToken?: string
+): Promise<{ id: string; [key: string]: any }[]> {
+  if (adminDb) {
+    try {
+      const snap = await adminDb.collection(colName).get();
+      return snap.docs.map((d: any) => ({
+        id: d.id,
+        ...d.data()
+      }));
+    } catch (e) {
+      console.warn(`adminDb collection fetch error for ${colName}:`, e);
     }
+  }
+
+  // Resilient REST fallback using bearerToken on Vercel Serverless
+  if (bearerToken) {
+    try {
+      const projId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+      if (projId) {
+        const url = `https://firestore.googleapis.com/v1/projects/${projId}/databases/(default)/documents/${colName}?pageSize=300`;
+        const res = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${bearerToken}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const { parseFirestoreFields } = await import('@/lib/serverAuth');
+          return (data.documents || []).map((doc: any) => ({
+            id: doc.name.split('/').pop(),
+            ...parseFirestoreFields(doc.fields)
+          }));
+        }
+      }
+    } catch (restErr) {
+      console.warn(`Firestore REST collection fetch error for ${colName}:`, restErr);
+    }
+  }
+
+  return [];
+}
+
+export async function executeDailySummary(
+  forceDate?: string,
+  overrides?: { token?: string; chatId?: string; bearerToken?: string }
+): Promise<{ success: boolean; messageId?: number; error?: string; skipped?: boolean }> {
+  try {
+    let adminDb: any = null;
+    try {
+      const adminMod = await import('@/lib/firebase-admin');
+      adminDb = adminMod.adminDb;
+    } catch {}
 
     // 1. Load Telegram settings from Firestore or env
-    let token = process.env.TELEGRAM_BOT_TOKEN;
-    let chatId = process.env.TELEGRAM_CHAT_ID;
+    let token = overrides?.token || process.env.TELEGRAM_BOT_TOKEN;
+    let chatId = overrides?.chatId || process.env.TELEGRAM_CHAT_ID;
     let notifyOnDailySummary = true;
     let enabled = true;
     let lastAutoSummaryDate = '';
 
-    const settingsSnap = await adminDb.collection('settings').doc('shop').get();
-    if (settingsSnap.exists) {
+    let settingsSnap: any = null;
+    if (adminDb) {
+      try {
+        settingsSnap = await adminDb.collection('settings').doc('shop').get();
+      } catch (e) {
+        console.warn('Could not get settings from adminDb:', e);
+      }
+    }
+    if (settingsSnap && settingsSnap.exists) {
       const data = settingsSnap.data();
       const tg = data?.telegram;
       if (tg) {
@@ -56,12 +110,40 @@ export async function executeDailySummary(forceDate?: string): Promise<{ success
       }
     }
 
+    // Fallback: If token/chatId still missing, query Firestore REST API
+    if ((!token || !chatId) && overrides?.bearerToken) {
+      try {
+        const projId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+        if (projId) {
+          const docUrl = `https://firestore.googleapis.com/v1/projects/${projId}/databases/(default)/documents/settings/shop`;
+          const fsRes = await fetch(docUrl, {
+            headers: { 'Authorization': `Bearer ${overrides.bearerToken}` }
+          });
+          if (fsRes.ok) {
+            const rawDoc = await fsRes.json();
+            const { parseFirestoreFields } = await import('@/lib/serverAuth');
+            const shopData = parseFirestoreFields(rawDoc.fields);
+            const tg = shopData?.telegram;
+            if (tg) {
+              if (!token && tg.botToken) token = tg.botToken;
+              if (!chatId && tg.chatId) chatId = tg.chatId;
+              if (tg.enabled === false) enabled = false;
+              if (tg.notifyOnDailySummary === false) notifyOnDailySummary = false;
+              lastAutoSummaryDate = tg.lastAutoSummaryDate || '';
+            }
+          }
+        }
+      } catch (restErr) {
+        console.warn('Could not read settings via Firestore REST:', restErr);
+      }
+    }
+
     if (!enabled || !notifyOnDailySummary) {
       return { success: true, skipped: true };
     }
 
     if (!token || !chatId) {
-      return { success: false, error: 'Telegram Bot Token or Chat ID is not configured' };
+      return { success: false, error: 'Telegram Bot Token বা Chat ID সেট করা নেই।' };
     }
 
     // 2. Determine target date
@@ -88,9 +170,8 @@ export async function executeDailySummary(forceDate?: string): Promise<{ success
     let deliveredCount = 0;
 
     // A. Query transactions in that target date
-    const transSnap = await adminDb.collection('transactions').get();
-    transSnap.forEach((doc: any) => {
-      const tData = doc.data();
+    const transactions = await fetchCollectionDocs(adminDb, 'transactions', overrides?.bearerToken);
+    transactions.forEach((tData) => {
       const createdAt = tData.createdAt?.toDate ? tData.createdAt.toDate() : (tData.createdAt ? new Date(tData.createdAt) : null);
       if (createdAt) {
         const timeMs = createdAt.getTime();
@@ -104,9 +185,8 @@ export async function executeDailySummary(forceDate?: string): Promise<{ success
     });
 
     // B. Query expenses in that target date
-    const expenseSnap = await adminDb.collection('expenses').get();
-    expenseSnap.forEach((doc: any) => {
-      const eData = doc.data();
+    const expenses = await fetchCollectionDocs(adminDb, 'expenses', overrides?.bearerToken);
+    expenses.forEach((eData) => {
       const eDate = eData.date || '';
       const createdAt = eData.createdAt?.toDate ? eData.createdAt.toDate() : (eData.createdAt ? new Date(eData.createdAt) : null);
       const isDateMatch = eDate === targetDateStr;
@@ -117,9 +197,8 @@ export async function executeDailySummary(forceDate?: string): Promise<{ success
     });
 
     // C. Query customers created or delivered in that target date
-    const customerSnap = await adminDb.collection('customers').get();
-    customerSnap.forEach((doc: any) => {
-      const cData = doc.data();
+    const customers = await fetchCollectionDocs(adminDb, 'customers', overrides?.bearerToken);
+    customers.forEach((cData) => {
       const createdAt = cData.createdAt?.toDate ? cData.createdAt.toDate() : (cData.createdAt ? new Date(cData.createdAt) : null);
       const deliveredAt = cData.deliveredAt?.toDate ? cData.deliveredAt.toDate() : (cData.deliveredAt ? new Date(cData.deliveredAt) : null);
 
@@ -170,11 +249,17 @@ export async function executeDailySummary(forceDate?: string): Promise<{ success
     }
 
     // Save last summary date to avoid re-triggering for the same day
-    await adminDb.collection('settings').doc('shop').set({
-      telegram: {
-        lastAutoSummaryDate: targetDateStr
+    if (adminDb) {
+      try {
+        await adminDb.collection('settings').doc('shop').set({
+          telegram: {
+            lastAutoSummaryDate: targetDateStr
+          }
+        }, { merge: true });
+      } catch (saveErr) {
+        console.warn('Could not update lastAutoSummaryDate:', saveErr);
       }
-    }, { merge: true });
+    }
 
     return { success: true, messageId: tgResult?.result?.message_id };
   } catch (err: any) {

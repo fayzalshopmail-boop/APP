@@ -6,18 +6,28 @@ export interface VerifiedUser {
   isActive: boolean;
 }
 
-function parseFirestoreFields(fields: any): Record<string, any> {
+export function parseFirestoreValue(val: any): any {
+  if (!val || typeof val !== 'object') return val;
+  if (val.stringValue !== undefined) return val.stringValue;
+  if (val.booleanValue !== undefined) return val.booleanValue;
+  if (val.integerValue !== undefined) return Number(val.integerValue);
+  if (val.doubleValue !== undefined) return Number(val.doubleValue);
+  if (val.timestampValue !== undefined) return val.timestampValue;
+  if (val.nullValue !== undefined) return null;
+  if (val.mapValue !== undefined) {
+    return parseFirestoreFields(val.mapValue.fields);
+  }
+  if (val.arrayValue !== undefined) {
+    return (val.arrayValue.values || []).map(parseFirestoreValue);
+  }
+  return Object.values(val)[0];
+}
+
+export function parseFirestoreFields(fields: any): Record<string, any> {
   const result: Record<string, any> = {};
   if (!fields) return result;
   for (const [key, val] of Object.entries(fields)) {
-    const v: any = val;
-    if (v.stringValue !== undefined) result[key] = v.stringValue;
-    else if (v.booleanValue !== undefined) result[key] = v.booleanValue;
-    else if (v.integerValue !== undefined) result[key] = Number(v.integerValue);
-    else if (v.doubleValue !== undefined) result[key] = Number(v.doubleValue);
-    else if (v.timestampValue !== undefined) result[key] = v.timestampValue;
-    else if (v.nullValue !== undefined) result[key] = null;
-    else result[key] = Object.values(v)[0];
+    result[key] = parseFirestoreValue(val);
   }
   return result;
 }

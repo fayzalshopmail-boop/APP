@@ -65,11 +65,38 @@ export const shopSettingsService = {
       const docRef = doc(db, 'settings', 'shop');
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        return { ...defaultShopSettings, ...docSnap.data() } as ShopSettings;
+        const data = docSnap.data();
+        const mergedTelegram: TelegramSettings = {
+          ...defaultShopSettings.telegram!,
+          ...(data.telegram || {})
+        };
+        const settings: ShopSettings = {
+          ...defaultShopSettings,
+          ...data,
+          telegram: mergedTelegram
+        };
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('cached_shop_settings', JSON.stringify(settings));
+          } catch {}
+        }
+        return settings;
+      }
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('cached_shop_settings');
+        if (cached) {
+          try { return JSON.parse(cached); } catch {}
+        }
       }
       return defaultShopSettings;
     } catch (error) {
       console.error("Failed to fetch shop settings", error);
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('cached_shop_settings');
+        if (cached) {
+          try { return JSON.parse(cached); } catch {}
+        }
+      }
       return defaultShopSettings;
     }
   },
@@ -77,7 +104,13 @@ export const shopSettingsService = {
   async saveSettings(settings: ShopSettings): Promise<void> {
     if (!db) throw new Error("Database not initialized");
     const docRef = doc(db, 'settings', 'shop');
-    await setDoc(docRef, settings);
+    const cleanSettings = JSON.parse(JSON.stringify(settings));
+    await setDoc(docRef, cleanSettings, { merge: true });
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('cached_shop_settings', JSON.stringify(cleanSettings));
+      } catch {}
+    }
   }
 };
 

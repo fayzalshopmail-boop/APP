@@ -65,8 +65,8 @@ export async function POST(request: Request) {
     let token = process.env.TELEGRAM_BOT_TOKEN;
     let chatId = process.env.TELEGRAM_CHAT_ID;
 
-    // Direct token and chat ID override is ONLY permitted for Owners/Managers in test mode
-    if (action === 'test' && (isServerCron || userRole === 'Owner' || userRole === 'Manager')) {
+    // Direct token and chat ID override is permitted for Owners/Managers in test mode or daily summary
+    if ((action === 'test' || action === 'send_daily_summary') && (isServerCron || userRole === 'Owner' || userRole === 'Manager')) {
       if (directToken) token = directToken;
       if (directChatId) chatId = directChatId;
     }
@@ -80,36 +80,62 @@ export async function POST(request: Request) {
         if (settingsSnap.exists) {
           const settings = settingsSnap.data();
           tgSettings = settings?.telegram || null;
-          if (tgSettings) {
-            if (!token && tgSettings.botToken) token = tgSettings.botToken;
-            if (!chatId && tgSettings.chatId) chatId = tgSettings.chatId;
-
-            // If not explicit test and disabled globally, skip
-            if (action !== 'test' && tgSettings.enabled === false) {
-              return NextResponse.json({ success: true, skipped: true, reason: 'Telegram disabled in settings' });
-            }
-
-            // Check granular notification toggles
-            if (action === 'notify') {
-              if (type === 'customer_create' && tgSettings.notifyOnCustomerCreate === false) return NextResponse.json({ success: true, skipped: true });
-              if (type === 'sale' && tgSettings.notifyOnSale === false) return NextResponse.json({ success: true, skipped: true });
-              if (type === 'payment' && tgSettings.notifyOnPayment === false) return NextResponse.json({ success: true, skipped: true });
-              if (type === 'status_change' && tgSettings.notifyOnStatusChange === false) return NextResponse.json({ success: true, skipped: true });
-              if (type === 'expense' && tgSettings.notifyOnExpense === false) return NextResponse.json({ success: true, skipped: true });
-              if (type === 'low_stock' && tgSettings.notifyOnLowStock === false) return NextResponse.json({ success: true, skipped: true });
-              if (type === 'attendance' && tgSettings.notifyOnAttendance === false) return NextResponse.json({ success: true, skipped: true });
-              if (type === 'supplier' && tgSettings.notifyOnSupplier === false) return NextResponse.json({ success: true, skipped: true });
-              if (type === 'security' && tgSettings.notifyOnSecurity === false) return NextResponse.json({ success: true, skipped: true });
-              if (type === 'loan' && tgSettings.notifyOnLoan === false) return NextResponse.json({ success: true, skipped: true });
-              if (type === 'backup' && tgSettings.notifyOnBackup === false) return NextResponse.json({ success: true, skipped: true });
-            } else if (action === 'send_daily_summary') {
-              if (tgSettings.notifyOnDailySummary === false) return NextResponse.json({ success: true, skipped: true });
-            }
-          }
         }
       }
     } catch (dbErr) {
-      console.warn('Could not read Telegram settings from Firestore:', dbErr);
+      console.warn('Could not read Telegram settings from Firestore adminDb:', dbErr);
+    }
+
+    // Fallback: If adminDb is not available (e.g. on Vercel serverless without service account keys), query Firestore REST API
+    if ((!token || !chatId || !tgSettings) && bearerToken) {
+      try {
+        const projId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+        if (projId) {
+          const docUrl = `https://firestore.googleapis.com/v1/projects/${projId}/databases/(default)/documents/settings/shop`;
+          const fsRes = await fetch(docUrl, {
+            headers: { 'Authorization': `Bearer ${bearerToken}` }
+          });
+          if (fsRes.ok) {
+            const rawDoc = await fsRes.json();
+            const { parseFirestoreFields } = await import('@/lib/serverAuth');
+            const shopData = parseFirestoreFields(rawDoc.fields);
+            if (shopData?.telegram) {
+              if (!tgSettings) tgSettings = shopData.telegram;
+              if (!token && shopData.telegram.botToken) token = shopData.telegram.botToken;
+              if (!chatId && shopData.telegram.chatId) chatId = shopData.telegram.chatId;
+            }
+          }
+        }
+      } catch (restErr) {
+        console.warn('Could not read Telegram settings via Firestore REST:', restErr);
+      }
+    }
+
+    if (tgSettings) {
+      if (!token && tgSettings.botToken) token = tgSettings.botToken;
+      if (!chatId && tgSettings.chatId) chatId = tgSettings.chatId;
+
+      // If not explicit test and disabled globally, skip
+      if (action !== 'test' && tgSettings.enabled === false) {
+        return NextResponse.json({ success: true, skipped: true, reason: 'Telegram disabled in settings' });
+      }
+
+      // Check granular notification toggles
+      if (action === 'notify') {
+        if (type === 'customer_create' && tgSettings.notifyOnCustomerCreate === false) return NextResponse.json({ success: true, skipped: true });
+        if (type === 'sale' && tgSettings.notifyOnSale === false) return NextResponse.json({ success: true, skipped: true });
+        if (type === 'payment' && tgSettings.notifyOnPayment === false) return NextResponse.json({ success: true, skipped: true });
+        if (type === 'status_change' && tgSettings.notifyOnStatusChange === false) return NextResponse.json({ success: true, skipped: true });
+        if (type === 'expense' && tgSettings.notifyOnExpense === false) return NextResponse.json({ success: true, skipped: true });
+        if (type === 'low_stock' && tgSettings.notifyOnLowStock === false) return NextResponse.json({ success: true, skipped: true });
+        if (type === 'attendance' && tgSettings.notifyOnAttendance === false) return NextResponse.json({ success: true, skipped: true });
+        if (type === 'supplier' && tgSettings.notifyOnSupplier === false) return NextResponse.json({ success: true, skipped: true });
+        if (type === 'security' && tgSettings.notifyOnSecurity === false) return NextResponse.json({ success: true, skipped: true });
+        if (type === 'loan' && tgSettings.notifyOnLoan === false) return NextResponse.json({ success: true, skipped: true });
+        if (type === 'backup' && tgSettings.notifyOnBackup === false) return NextResponse.json({ success: true, skipped: true });
+      } else if (action === 'send_daily_summary') {
+        if (tgSettings.notifyOnDailySummary === false) return NextResponse.json({ success: true, skipped: true });
+      }
     }
 
     if (!token || !chatId) {
@@ -129,7 +155,7 @@ export async function POST(request: Request) {
     } else if (action === 'send_daily_summary') {
       const { executeDailySummary } = await import('@/app/api/cron/daily-summary/route');
       const todayStr = getTodayDhakaDateStr();
-      const summaryResult = await executeDailySummary(todayStr);
+      const summaryResult = await executeDailySummary(todayStr, { token, chatId, bearerToken });
       if (!summaryResult.success) {
         return NextResponse.json({ 
           success: false, 

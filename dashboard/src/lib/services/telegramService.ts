@@ -170,9 +170,9 @@ export const telegramService = {
   /**
    * Triggers the daily closing summary report to be generated and sent.
    */
-  async sendDailySummary(): Promise<{ success: boolean; error?: string }> {
+  async sendDailySummary(botToken?: string, chatId?: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const res = await postToTelegram({ action: 'send_daily_summary' });
+      const res = await postToTelegram({ action: 'send_daily_summary', botToken, chatId });
       const data = await res.json();
       if (!res.ok || !data.success) {
         return { success: false, error: data.error || 'Failed to send daily summary' };

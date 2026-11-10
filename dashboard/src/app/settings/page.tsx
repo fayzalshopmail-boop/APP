@@ -69,8 +69,22 @@ export default function SettingsPage() {
   // Shop State
   const [shopForm, setShopForm] = useState<ShopSettings>(globalShop || defaultShopSettings);
   const [savingShop, setSavingShop] = useState(false);
+  const [savingTelegram, setSavingTelegram] = useState(false);
   const [testingTelegram, setTestingTelegram] = useState(false);
   const [sendingSummary, setSendingSummary] = useState(false);
+
+  const handleSaveTelegram = async () => {
+    try {
+      setSavingTelegram(true);
+      await shopSettingsService.saveSettings(shopForm);
+      setGlobalShop(shopForm);
+      toast.success('টেলিগ্রাম সেটিংস সফলভাবে সংরক্ষিত হয়েছে!');
+    } catch (err: any) {
+      toast.error(err?.message || 'টেলিগ্রাম সেটিংস সংরক্ষণ করতে সমস্যা হয়েছে।');
+    } finally {
+      setSavingTelegram(false);
+    }
+  };
 
   const handleTestTelegram = async () => {
     const token = shopForm.telegram?.botToken?.trim();
@@ -81,6 +95,10 @@ export default function SettingsPage() {
     }
     try {
       setTestingTelegram(true);
+      // Auto-save to Firestore and LocalStorage
+      await shopSettingsService.saveSettings(shopForm);
+      setGlobalShop(shopForm);
+
       const res = await telegramService.sendTestMessage(token, chat);
       if (res.success) {
         toast.success(t('settings.telegramCard.testSuccess'));
@@ -95,9 +113,19 @@ export default function SettingsPage() {
   };
 
   const handleSendDailySummary = async () => {
+    const token = shopForm.telegram?.botToken?.trim();
+    const chat = shopForm.telegram?.chatId?.trim();
+    if (!token || !chat) {
+      toast.error('অনুগ্রহ করে টেলিগ্রাম বট টোকেন এবং চ্যাট আইডি প্রদান করুন।');
+      return;
+    }
     try {
       setSendingSummary(true);
-      const res = await telegramService.sendDailySummary();
+      // Auto-save to Firestore and LocalStorage
+      await shopSettingsService.saveSettings(shopForm);
+      setGlobalShop(shopForm);
+
+      const res = await telegramService.sendDailySummary(token, chat);
       if (res.success) {
         toast.success(t('settings.telegramCard.summarySuccess'));
       } else {
@@ -928,9 +956,28 @@ export default function SettingsPage() {
             {/* Action Bar: Test Message & Summary Trigger */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-800">
               <p className="text-xs text-gray-500 text-center sm:text-left">
-                {t('settings.telegramCard.saveNotice')}
+                {language === 'bn' ? 'টোকেন ও আইডি লিখে নিচের সেভ বাটনে ক্লিক করুন। টেস্ট বা সামারি পাঠালেও তা স্বয়ংক্রিয়ভাবে সেভ হয়ে যাবে।' : 'Click Save Settings below to store credentials. Sending test or summary also auto-saves.'}
               </p>
               <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={handleSaveTelegram}
+                  disabled={savingTelegram}
+                  className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-blue-500/20 disabled:opacity-50"
+                >
+                  {savingTelegram ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>{language === 'bn' ? 'সংরক্ষণ হচ্ছে...' : 'Saving...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-3.5 h-3.5" />
+                      <span>{language === 'bn' ? 'টেলিগ্রাম সেটিংস সেভ করুন' : 'Save Telegram Settings'}</span>
+                    </>
+                  )}
+                </button>
+
                 <button
                   type="button"
                   onClick={handleSendDailySummary}
