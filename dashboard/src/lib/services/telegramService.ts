@@ -114,6 +114,13 @@ async function postToTelegram(body: any): Promise<Response> {
   } catch (err) {
     console.warn('Could not attach auth token to Telegram request:', err);
   }
+  if (!headers['Authorization']) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'আপনার ফায়ারবেস লগইন সেশন পাওয়া যায়নি। অনুগ্রহ করে সাইডবার থেকে একবার লগআউট (Logout) করে পুনরায় লগইন করুন।'
+    }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+  }
+
   return fetch('/api/telegram', {
     method: 'POST',
     headers,
