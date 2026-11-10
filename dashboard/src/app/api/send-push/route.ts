@@ -28,32 +28,12 @@ export async function POST(request: Request) {
     const expectedCronSecret = process.env.CRON_SECRET;
     const isServerCron = Boolean(expectedCronSecret && token && token === expectedCronSecret);
 
-    let isUserAuthorized = false;
-    if (!isServerCron && adminAuth && token) {
-      try {
-        const decoded = await adminAuth.verifyIdToken(token);
-        const email = (decoded.email || '').toLowerCase().trim();
-        const uid = decoded.uid;
-
-        let userDoc = null;
-        if (email) {
-          const byEmail = await adminDb.collection('users').doc(email).get();
-          if (byEmail.exists) userDoc = byEmail;
-        }
-        if ((!userDoc || !userDoc.exists) && uid) {
-          const byUid = await adminDb.collection('users').doc(uid).get();
-          if (byUid.exists) userDoc = byUid;
-        }
-        if ((!userDoc || !userDoc.exists) && email) {
-          const qSnap = await adminDb.collection('users').where('email', '==', email).limit(1).get();
-          if (!qSnap.empty) userDoc = qSnap.docs[0];
-        }
-
-        if (userDoc && userDoc.exists && userDoc.data()?.isActive !== false) {
-          isUserAuthorized = true;
-        }
-      } catch (authErr) {
-        // Token invalid or expired
+    let isUserAuthorized = isServerCron;
+    if (!isServerCron && token) {
+      const { verifyUserToken } = await import('@/lib/serverAuth');
+      const authRes = await verifyUserToken(token);
+      if (authRes.success) {
+        isUserAuthorized = true;
       }
     }
 

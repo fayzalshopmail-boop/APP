@@ -34,59 +34,22 @@ export async function POST(request: Request) {
     const expectedCronSecret = process.env.CRON_SECRET;
     const isServerCron = Boolean(expectedCronSecret && bearerToken && bearerToken === expectedCronSecret);
 
-    let isUserAuthorized = false;
-    let userRole = '';
+    let isUserAuthorized = isServerCron;
+    let userRole = isServerCron ? 'Owner' : '';
     let authErrorMessage = '';
 
     if (!isServerCron) {
-      if (!bearerToken) {
-        authErrorMessage = 'অ্যাকাউন্ট ভেরিফিকেশন টোকেন পাওয়া যায়নি। অনুগ্রহ করে পেজ রিফ্রেশ করে আবার চেষ্টা করুন।';
+      const { verifyUserToken } = await import('@/lib/serverAuth');
+      const authResult = await verifyUserToken(bearerToken);
+      if (authResult.success && authResult.user) {
+        isUserAuthorized = true;
+        userRole = authResult.user.role;
       } else {
-        try {
-          const { adminAuth, adminDb } = await import('@/lib/firebase-admin');
-          if (!adminAuth || !adminDb) {
-            console.error('Firebase Admin credentials not configured on server (missing FIREBASE_CLIENT_EMAIL or FIREBASE_PRIVATE_KEY).');
-            authErrorMessage = 'সার্ভারে Firebase Admin কনফিগার করা নেই। Vercel Environment Variables চেক করুন।';
-          } else {
-            const decoded = await adminAuth.verifyIdToken(bearerToken);
-            const email = (decoded.email || '').toLowerCase().trim();
-            const uid = decoded.uid;
-
-            let userDoc = null;
-            if (email) {
-              const byEmail = await adminDb.collection('users').doc(email).get();
-              if (byEmail.exists) userDoc = byEmail;
-            }
-            if ((!userDoc || !userDoc.exists) && uid) {
-              const byUid = await adminDb.collection('users').doc(uid).get();
-              if (byUid.exists) userDoc = byUid;
-            }
-            if ((!userDoc || !userDoc.exists) && email) {
-              const qSnap = await adminDb.collection('users').where('email', '==', email).limit(1).get();
-              if (!qSnap.empty) userDoc = qSnap.docs[0];
-            }
-
-            if (userDoc && userDoc.exists) {
-              const uData = userDoc.data();
-              if (uData?.isActive !== false) {
-                isUserAuthorized = true;
-                userRole = uData?.role || '';
-              } else {
-                authErrorMessage = 'আপনার অ্যাকাউন্টটি নিষ্ক্রিয় (Disabled) অবস্থায় রয়েছে।';
-              }
-            } else {
-              console.warn(`User ${email} (uid: ${uid}) not found in users collection.`);
-              authErrorMessage = `ইউজার (${email || uid}) ডাটাবেসের অনুমোদিত তালিকায় নেই।`;
-            }
-          }
-        } catch (authErr: any) {
-          console.error('Telegram verifyIdToken error:', authErr?.message || authErr);
-          authErrorMessage = `টোকেন যাচাইকরণ ব্যর্থ: ${authErr?.message || 'Invalid or expired token'}`;
-        }
+        authErrorMessage = authResult.error || 'Unauthorized Telegram request';
       }
     }
 
-    if (!isServerCron && !isUserAuthorized) {
+    if (!isUserAuthorized) {
       return NextResponse.json({ success: false, error: authErrorMessage || 'Unauthorized Telegram request' }, { status: 401 });
     }
 

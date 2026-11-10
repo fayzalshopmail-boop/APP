@@ -48,36 +48,12 @@ export async function POST(request: Request) {
     let isAuthorized = isCron;
 
     if (!isAuthorized) {
-      try {
-        const { adminAuth, adminDb } = await import('@/lib/firebase-admin');
-        if (adminAuth) {
-          const decodedToken = await adminAuth.verifyIdToken(token);
-          const callerEmail = (decodedToken.email || '').toLowerCase().trim();
-          const uid = decodedToken.uid;
-          if (adminDb && (callerEmail || uid)) {
-            let userDoc = null;
-            if (callerEmail) {
-              const byEmail = await adminDb.collection('users').doc(callerEmail).get();
-              if (byEmail.exists) userDoc = byEmail;
-            }
-            if ((!userDoc || !userDoc.exists) && uid) {
-              const byUid = await adminDb.collection('users').doc(uid).get();
-              if (byUid.exists) userDoc = byUid;
-            }
-            if ((!userDoc || !userDoc.exists) && callerEmail) {
-              const qSnap = await adminDb.collection('users').where('email', '==', callerEmail).limit(1).get();
-              if (!qSnap.empty) userDoc = qSnap.docs[0];
-            }
-
-            if (userDoc && userDoc.exists && userDoc.data()?.isActive !== false) {
-              isAuthorized = true;
-            } else {
-              return NextResponse.json({ error: "Your account is disabled or unauthorized to dispatch SMS." }, { status: 403 });
-            }
-          }
-        }
-      } catch (authErr: any) {
-        return NextResponse.json({ error: "Invalid or expired authorization token." }, { status: 401 });
+      const { verifyUserToken } = await import('@/lib/serverAuth');
+      const authRes = await verifyUserToken(token);
+      if (authRes.success) {
+        isAuthorized = true;
+      } else {
+        return NextResponse.json({ error: authRes.error || "Your account is disabled or unauthorized to dispatch SMS." }, { status: 403 });
       }
     }
 

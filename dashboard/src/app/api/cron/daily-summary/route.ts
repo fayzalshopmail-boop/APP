@@ -193,36 +193,10 @@ async function verifyCronOrOwnerAuth(req: NextRequest): Promise<boolean> {
     return true;
   }
 
-  try {
-    const { adminAuth, adminDb } = await import('@/lib/firebase-admin');
-    if (adminAuth && adminDb) {
-      const decoded = await adminAuth.verifyIdToken(token);
-      const email = (decoded.email || '').toLowerCase().trim();
-      const uid = decoded.uid;
-
-      let userDoc = null;
-      if (email) {
-        const byEmail = await adminDb.collection('users').doc(email).get();
-        if (byEmail.exists) userDoc = byEmail;
-      }
-      if ((!userDoc || !userDoc.exists) && uid) {
-        const byUid = await adminDb.collection('users').doc(uid).get();
-        if (byUid.exists) userDoc = byUid;
-      }
-      if ((!userDoc || !userDoc.exists) && email) {
-        const qSnap = await adminDb.collection('users').where('email', '==', email).limit(1).get();
-        if (!qSnap.empty) userDoc = qSnap.docs[0];
-      }
-
-      if (userDoc && userDoc.exists) {
-        const data = userDoc.data();
-        if (data?.isActive !== false && (data?.role === 'Owner' || data?.role === 'Manager')) {
-          return true;
-        }
-      }
-    }
-  } catch {
-    return false;
+  const { verifyUserToken } = await import('@/lib/serverAuth');
+  const res = await verifyUserToken(token);
+  if (res.success && res.user && (res.user.role === 'Owner' || res.user.role === 'Manager')) {
+    return true;
   }
 
   return false;

@@ -16,38 +16,12 @@ async function handleBalanceCheck(request: Request, passedApiKey?: string | null
     let isAuthorized = isCron;
 
     if (!isAuthorized) {
-      try {
-        const { adminAuth, adminDb } = await import('@/lib/firebase-admin');
-        if (adminAuth) {
-          const decoded = await adminAuth.verifyIdToken(idToken);
-          const email = (decoded.email || '').toLowerCase().trim();
-          const uid = decoded.uid;
-
-          if (adminDb && (email || uid)) {
-            let userDoc = null;
-            if (email) {
-              const byEmail = await adminDb.collection('users').doc(email).get();
-              if (byEmail.exists) userDoc = byEmail;
-            }
-            if ((!userDoc || !userDoc.exists) && uid) {
-              const byUid = await adminDb.collection('users').doc(uid).get();
-              if (byUid.exists) userDoc = byUid;
-            }
-            if ((!userDoc || !userDoc.exists) && email) {
-              const qSnap = await adminDb.collection('users').where('email', '==', email).limit(1).get();
-              if (!qSnap.empty) userDoc = qSnap.docs[0];
-            }
-
-            if (userDoc && userDoc.exists) {
-              const data = userDoc.data();
-              if (data?.isActive !== false && (data?.role === 'Owner' || data?.role === 'Manager')) {
-                isAuthorized = true;
-              }
-            }
-          }
-        }
-      } catch (authErr) {
-        return NextResponse.json({ error: "Invalid or expired authorization token." }, { status: 401 });
+      const { verifyUserToken } = await import('@/lib/serverAuth');
+      const authRes = await verifyUserToken(idToken);
+      if (authRes.success && authRes.user && (authRes.user.role === 'Owner' || authRes.user.role === 'Manager')) {
+        isAuthorized = true;
+      } else {
+        return NextResponse.json({ error: authRes.error || "Unauthorized" }, { status: 401 });
       }
     }
 
