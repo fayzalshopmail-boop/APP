@@ -4,9 +4,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
-  CreditCard, Plus, ArrowUpRight, ArrowDownRight, Edit2, Trash2, 
+  CreditCard, ArrowUpRight, ArrowDownRight, Edit2, Trash2, 
   CheckCircle, Coins, CalendarClock, History, MessageSquare, Phone, 
-  Search, X, Filter, ChevronLeft, ChevronRight, ShieldAlert 
+  Search, X, ChevronLeft, ChevronRight, ShieldAlert 
 } from 'lucide-react';
 import { loanService, Loan } from '@/lib/services/loan';
 import { formatCurrency } from '@/lib/currency';

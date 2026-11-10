@@ -10,7 +10,7 @@ import {
  DialogHeader,
  DialogTitle,
 } from "@/components/ui/dialog";
-import { inventoryService, inventorySettingsService, InventoryItem } from '@/lib/services/inventory';
+import { inventoryService, InventoryItem } from '@/lib/services/inventory';
 import { PartUsed, Customer } from '@/lib/services/customer';
 import { 
  Search, 

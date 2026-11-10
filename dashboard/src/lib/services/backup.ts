@@ -54,47 +54,8 @@ export const backupService = {
   },
 
   exportAllData: async () => {
-    if (!db) throw new Error('Firebase DB is not initialized');
-    
-    const [
-      customers,
-      inventory,
-      transactions,
-      expenses,
-      suppliers,
-      mechanics,
-      loans,
-      attendance,
-      payroll,
-      settingsDocs
-    ] = await Promise.all([
-      customerService.getAll(),
-      inventoryService.getAll(),
-      transactionService.getAll(),
-      expenseService.getAll(),
-      supplierService.getAll(),
-      mechanicService.getAll(),
-      loanService.getAll(),
-      getDocs(collection(db, 'attendance')).then(s => s.docs.map(d => ({ id: d.id, ...d.data() }))).catch(() => []),
-      getDocs(collection(db, 'payroll')).then(s => s.docs.map(d => ({ id: d.id, ...d.data() }))).catch(() => []),
-      getDocs(collection(db, 'settings')).then(s => s.docs.map(d => ({ id: d.id, ...d.data() }))).catch(() => [])
-    ]);
-
-    const data = {
-      customers,
-      inventory,
-      transactions,
-      expenses,
-      suppliers,
-      mechanics,
-      loans,
-      attendance,
-      payroll,
-      settings: settingsDocs,
-      exportDate: new Date().toISOString()
-    };
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const jsonStr = await backupService.generateFullBackupJSON();
+    const blob = new Blob([jsonStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;

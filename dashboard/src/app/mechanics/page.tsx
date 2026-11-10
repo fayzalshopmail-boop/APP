@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Wrench, Plus, Edit2, Trash2, Coins, Phone, MapPin, Calculator, Briefcase, Search } from 'lucide-react';
+import { Wrench, Edit2, Trash2, Coins, Phone, MapPin, Calculator, Briefcase, Search } from 'lucide-react';
 import { mechanicService, Mechanic } from '@/lib/services/mechanic';
 import { formatCurrency } from '@/lib/currency';
 import { Button } from '@/components/ui/button';

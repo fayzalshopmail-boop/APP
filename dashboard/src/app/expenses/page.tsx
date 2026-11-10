@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { motion } from 'framer-motion';
-import { Wallet, Plus, Trash2, Calendar, Coffee, Plug, Car, UserCircle, ShoppingBag, Search, Filter, Edit2, ShieldAlert } from 'lucide-react';
+import { Wallet, Trash2, Calendar, Coffee, Plug, Car, UserCircle, ShoppingBag, Search, Edit2, ShieldAlert } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';

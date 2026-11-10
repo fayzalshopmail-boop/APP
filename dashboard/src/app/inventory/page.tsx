@@ -3,10 +3,9 @@ import { shopTransactionService } from '@/lib/services/shopTransaction';
 
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/currency';
-import { Box, Plus, Search, Edit2, Trash2, Loader2, AlertCircle, Settings, Settings2, X, Package, Tag, Layers, PlusCircle, ShoppingCart, Coins } from 'lucide-react';
+import { Box, Plus, Search, Edit2, Trash2, Loader2, AlertCircle, Settings2, X, Package, Tag, Layers, PlusCircle, ShoppingCart, Coins } from 'lucide-react';
 import { supplierService, Supplier } from '@/lib/services/supplier';
 import { inventoryService, inventorySettingsService, InventoryItem, InventorySettings } from '@/lib/services/inventory';
 import { transactionService } from '@/lib/services/transaction';
@@ -20,7 +19,6 @@ import { DirectSaleReceiptModal, DirectSaleReceiptData } from "@/components/ui/D
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import toast from "react-hot-toast";
 
-const formatNumber = (num: number) => num.toLocaleString('en-IN');
 
 export default function InventoryPage() {
   const { t, language } = useTranslation();

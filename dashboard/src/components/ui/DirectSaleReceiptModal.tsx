@@ -5,7 +5,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { formatEnglishCurrency } from '@/lib/currency';
 import { useAppStore } from '@/store/useAppStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
-import { Printer, X, ShoppingBag, Phone, MapPin } from 'lucide-react';
+import { Printer, X, ShoppingBag } from 'lucide-react';
 import { useRef } from 'react';
 
 export interface DirectSaleReceiptData {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { LayoutDashboard, Users, Coins, Tv, Wrench, Loader2, UserPlus, ShoppingCart, Receipt, TrendingUp, ArrowUpRight, Plus } from 'lucide-react';
+import { Users, Coins, Tv, Wrench, Loader2, TrendingUp, ArrowUpRight, Plus } from 'lucide-react';
 import { StatCard } from '@/components/ui/StatCard';
 import { QuickAlerts } from '@/components/ui/QuickAlerts';
 import { RevenueChart } from '@/components/ui/RevenueChart';

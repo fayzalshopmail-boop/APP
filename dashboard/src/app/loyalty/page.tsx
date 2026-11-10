@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { Star, Settings, Users, Gift, Save, Award, Search } from 'lucide-react';
 import { loyaltyConfigService, LoyaltyConfig } from '@/lib/services/loyaltyConfig';
 import { customerService, Customer } from '@/lib/services/customer';

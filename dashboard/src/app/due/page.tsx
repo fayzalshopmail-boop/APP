@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { Customer, customerService } from '@/lib/services/customer';
 import { shopTransactionService } from '@/lib/services/shopTransaction';

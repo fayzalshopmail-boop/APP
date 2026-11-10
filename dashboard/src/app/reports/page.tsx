@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
-import { FileText, TrendingUp, TrendingDown, Wallet, Package, Search, ArrowDownRight, Scale, ShieldAlert } from 'lucide-react';
+import { FileText, TrendingUp, TrendingDown, Wallet, Search, ArrowDownRight, Scale, ShieldAlert } from 'lucide-react';
 import { transactionService, Transaction } from '@/lib/services/transaction';
 import { expenseService, Expense } from '@/lib/services/expense';
 import { customerService, Customer } from '@/lib/services/customer';

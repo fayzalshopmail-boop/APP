@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Customer } from '@/lib/services/customer';
 import { formatCurrency } from '@/lib/currency';
-import { Tv, Phone, Coins, Loader2, MessageCircle, CheckCircle, Calendar, AlertCircle } from 'lucide-react';
+import { Tv, Phone, Coins, Loader2, MessageCircle, CheckCircle } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
 interface SetBillModalProps {

@@ -132,76 +132,16 @@ export async function POST(request: Request) {
              `আপনার শপ ম্যানেজমেন্ট অ্যাপের সকল জরুরি নোটিফিকেশন এখন থেকে সরাসরি শুধুমাত্র আপনার এই অ্যাকাউন্টে চলে আসবে।\n\n` +
              `🕒 <b>সময়:</b> ${formatNow()}`;
     } else if (action === 'send_daily_summary') {
-      // Build daily closing summary from database
+      const { executeDailySummary } = await import('@/app/api/cron/daily-summary/route');
       const todayStr = getTodayDhakaDateStr();
-      const startOfDay = new Date(`${todayStr}T00:00:00+06:00`);
-      const startOfDayMs = startOfDay.getTime();
-
-      let cashCollected = 0;
-      let totalExpenses = 0;
-      let totalBilled = 0;
-      let newCustomersCount = 0;
-      let deliveredCount = 0;
-
-      try {
-        const { adminDb } = await import('@/lib/firebase-admin');
-        if (adminDb) {
-          // 1. Transactions today
-          const transSnap = await adminDb.collection('transactions').get();
-          transSnap.forEach((doc: any) => {
-            const tData = doc.data();
-            const createdAt = tData.createdAt?.toDate ? tData.createdAt.toDate() : (tData.createdAt ? new Date(tData.createdAt) : null);
-            if (createdAt && createdAt.getTime() >= startOfDayMs) {
-              const amt = Number(tData.amount) || 0;
-              if (amt > 0 && tData.type !== 'Supplier Payment') {
-                cashCollected += amt;
-              }
-            }
-          });
-
-          // 2. Expenses today
-          const expenseSnap = await adminDb.collection('expenses').get();
-          expenseSnap.forEach((doc: any) => {
-            const eData = doc.data();
-            const eDate = eData.date || '';
-            const createdAt = eData.createdAt?.toDate ? eData.createdAt.toDate() : (eData.createdAt ? new Date(eData.createdAt) : null);
-            if (eDate === todayStr || (createdAt && createdAt.getTime() >= startOfDayMs)) {
-              totalExpenses += Number(eData.amount) || 0;
-            }
-          });
-
-          // 3. Customers created or delivered today
-          const customerSnap = await adminDb.collection('customers').get();
-          customerSnap.forEach((doc: any) => {
-            const cData = doc.data();
-            const createdAt = cData.createdAt?.toDate ? cData.createdAt.toDate() : (cData.createdAt ? new Date(cData.createdAt) : null);
-            const deliveredAt = cData.deliveredAt?.toDate ? cData.deliveredAt.toDate() : (cData.deliveredAt ? new Date(cData.deliveredAt) : null);
-            
-            if (createdAt && createdAt.getTime() >= startOfDayMs) {
-              newCustomersCount++;
-              totalBilled += Number(cData.totalBill) || 0;
-            }
-            if (cData.status === 'Delivered' && deliveredAt && deliveredAt.getTime() >= startOfDayMs) {
-              deliveredCount++;
-            }
-          });
-        }
-      } catch (sumErr) {
-        console.warn('Error calculating daily summary:', sumErr);
+      const summaryResult = await executeDailySummary(todayStr);
+      if (!summaryResult.success) {
+        return NextResponse.json({ 
+          success: false, 
+          error: summaryResult.error || 'দৈনিক হিসাব বিবরণী পাঠানো যায়নি।' 
+        }, { status: 400 });
       }
-
-      const netCash = cashCollected - totalExpenses;
-
-      text = `📊 <b>আজকের ব্যবসায়িক হিসাব বিবরণী (Daily Summary)</b>\n` +
-             `📅 <b>তারিখ:</b> ${todayStr}\n\n` +
-             `💵 <b>মোট নগদ ক্যাশ জমা:</b> ${formatCurrency(cashCollected)}\n` +
-             `💸 <b>মোট দোকানের খরচ:</b> ${formatCurrency(totalExpenses)}\n` +
-             `📈 <b>আজকের নেট ক্যাশ ব্যালেন্স:</b> ${formatCurrency(netCash)}\n\n` +
-             `🛒 <b>মোট সার্ভিসিং ও সেলস বিল:</b> ${formatCurrency(totalBilled)}\n` +
-             `📱 <b>নতুন ডিভাইস গ্রহণ:</b> ${newCustomersCount} টি\n` +
-             `🚚 <b>ডেলিভারি সম্পন্ন:</b> ${deliveredCount} টি\n\n` +
-             `🕒 <b>রিপোর্ট তৈরির সময়:</b> ${formatNow()}\n` +
-             `✨ <i>আজকের দিনের হিসাব ক্লোজিং সম্পন্ন হয়েছে।</i>`;
+      return NextResponse.json({ success: true, messageId: summaryResult.messageId });
     } else if (action === 'notify') {
       if (type === 'customer_create') {
         const { customerName, phone, device, problem, advance, totalBill, isBillPending, staffName } = data || {};
