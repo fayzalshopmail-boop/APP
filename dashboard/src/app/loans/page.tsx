@@ -156,7 +156,7 @@ export default function LoansPage() {
         setLoans(prev => prev.map(l => l.id === editingLoan.id ? { ...l, ...formData } as Loan : l));
         toast.success(language === 'bn' ? 'রেকর্ড আপডেট করা হয়েছে!' : 'Loan updated!');
       } else {
-        const newId = await loanService.add(formData);
+        const newId = await loanService.add(formData, user?.name || user?.email || 'Staff');
         const newLoan: Loan = { 
           id: newId, 
           ...formData, 

@@ -874,6 +874,38 @@ export default function SettingsPage() {
                   />
                   <span className="text-xs font-medium">{t('settings.telegramCard.notifyOnDailySummary')}</span>
                 </label>
+
+                <label className="flex items-center gap-2.5 p-3 rounded-xl bg-popover/50 border border-gray-800/80 cursor-pointer hover:border-gray-700 transition-colors select-none">
+                  <input
+                    type="checkbox"
+                    checked={shopForm.telegram?.notifyOnLoan !== false}
+                    onChange={(e) => {
+                      const currentTg = shopForm.telegram || { enabled: false, botToken: '', chatId: '' };
+                      setShopForm({
+                        ...shopForm,
+                        telegram: { ...currentTg, notifyOnLoan: e.target.checked }
+                      });
+                    }}
+                    className="w-4 h-4 rounded text-blue-600 bg-gray-900 border-gray-700 focus:ring-0"
+                  />
+                  <span className="text-xs font-medium">{t('settings.telegramCard.notifyOnLoan')}</span>
+                </label>
+
+                <label className="flex items-center gap-2.5 p-3 rounded-xl bg-popover/50 border border-gray-800/80 cursor-pointer hover:border-gray-700 transition-colors select-none">
+                  <input
+                    type="checkbox"
+                    checked={shopForm.telegram?.notifyOnBackup !== false}
+                    onChange={(e) => {
+                      const currentTg = shopForm.telegram || { enabled: false, botToken: '', chatId: '' };
+                      setShopForm({
+                        ...shopForm,
+                        telegram: { ...currentTg, notifyOnBackup: e.target.checked }
+                      });
+                    }}
+                    className="w-4 h-4 rounded text-blue-600 bg-gray-900 border-gray-700 focus:ring-0"
+                  />
+                  <span className="text-xs font-medium">{t('settings.telegramCard.notifyOnBackup')}</span>
+                </label>
               </div>
             </div>
 

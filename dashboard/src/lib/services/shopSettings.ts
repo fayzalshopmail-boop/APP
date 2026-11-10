@@ -15,6 +15,8 @@ export interface TelegramSettings {
   notifyOnSupplier?: boolean;
   notifyOnSecurity?: boolean;
   notifyOnDailySummary?: boolean;
+  notifyOnLoan?: boolean;
+  notifyOnBackup?: boolean;
 }
 
 export interface ShopSettings {
@@ -51,6 +53,8 @@ export const defaultShopSettings: ShopSettings = {
     notifyOnSupplier: true,
     notifyOnSecurity: true,
     notifyOnDailySummary: true,
+    notifyOnLoan: true,
+    notifyOnBackup: true,
   }
 };
 

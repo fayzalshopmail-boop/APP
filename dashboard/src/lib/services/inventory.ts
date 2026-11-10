@@ -115,10 +115,43 @@ export const inventoryService = {
     if (!db) throw new Error('Database not initialized');
     try {
       const docRef = doc(db, COLLECTION_NAME, id);
-      await updateDoc(docRef, {
-        stock: increment(delta),
-        updatedAt: serverTimestamp()
-      });
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const itemData = snap.data() as InventoryItem;
+        const newStock = Math.max(0, (itemData.stock || 0) + delta);
+        await updateDoc(docRef, {
+          stock: newStock,
+          updatedAt: serverTimestamp()
+        });
+
+        const minLevel = itemData.minStockLevel || 5;
+        if (delta < 0 && newStock <= minLevel) {
+          try {
+            const { telegramService } = await import('./telegramService');
+            telegramService.notifyLowStock({
+              itemName: itemData.name,
+              currentStock: newStock,
+              minStock: minLevel
+            });
+
+            const { notificationService } = await import('./notification');
+            await notificationService.add({
+              title: 'Low Stock Alert',
+              message: `${itemData.name} stock has dropped to ${newStock} (Min: ${minLevel}). Please restock!`,
+              type: 'warning',
+              targetRole: 'Owner',
+              link: `/inventory?search=${encodeURIComponent(itemData.name)}`
+            });
+          } catch (notifErr) {
+            console.warn('Failed to send low stock notification:', notifErr);
+          }
+        }
+      } else {
+        await updateDoc(docRef, {
+          stock: increment(delta),
+          updatedAt: serverTimestamp()
+        });
+      }
     } catch (error) {
       console.error('Error adjusting stock:', error);
       throw error;
@@ -128,6 +161,9 @@ export const inventoryService = {
     if (!db) throw new Error('Database not initialized');
     try {
       const docRef = doc(db, COLLECTION_NAME, id);
+      const snap = await getDoc(docRef);
+      const prevData = snap.exists() ? (snap.data() as InventoryItem) : null;
+
       const updateData = { ...item };
       delete updateData.id; // Don't update the ID field
       
@@ -135,6 +171,32 @@ export const inventoryService = {
         ...updateData,
         updatedAt: serverTimestamp()
       });
+
+      // Check if stock decreased to low level
+      if (typeof item.stock === 'number' && prevData) {
+        const minLevel = typeof item.minStockLevel === 'number' ? item.minStockLevel : (prevData.minStockLevel || 5);
+        if (item.stock < prevData.stock && item.stock <= minLevel) {
+          try {
+            const { telegramService } = await import('./telegramService');
+            telegramService.notifyLowStock({
+              itemName: item.name || prevData.name,
+              currentStock: item.stock,
+              minStock: minLevel
+            });
+
+            const { notificationService } = await import('./notification');
+            await notificationService.add({
+              title: 'Low Stock Alert',
+              message: `${item.name || prevData.name} stock has dropped to ${item.stock} (Min: ${minLevel}). Please restock!`,
+              type: 'warning',
+              targetRole: 'Owner',
+              link: `/inventory?search=${encodeURIComponent(item.name || prevData.name)}`
+            });
+          } catch (notifErr) {
+            console.warn('Failed to send low stock notification:', notifErr);
+          }
+        }
+      }
     } catch (error) {
       console.error('Error updating inventory item:', error);
       throw error;

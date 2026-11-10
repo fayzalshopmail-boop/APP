@@ -422,6 +422,8 @@ export const bn: TranslationDictionary = {
       notifyOnSupplier: 'সাপ্লায়ার ও মহাজন লেনদেন (Supplier Transactions)',
       notifyOnSecurity: 'নিরাপত্তা ও বিল পরিবর্তন অ্যালার্ট (Security & Fraud Alert)',
       notifyOnDailySummary: 'দিনশেষে দৈনিক হিসাব রিপোর্ট (Daily Closing Summary)',
+      notifyOnLoan: 'ঋণ ও ধার-দেনা লেনদেন (Loan & Borrowing)',
+      notifyOnBackup: 'ডাটাবেস ব্যাকআপ স্ট্যাটাস (Database Backup Alerts)',
       testButton: 'টেস্ট নোটিফিকেশন পাঠান',
       testSending: 'পাঠানো হচ্ছে...',
       testSuccess: 'অভিনন্দন! আপনার টেলিগ্রামে সফলভাবে টেস্ট মেসেজ পাঠানো হয়েছে।',

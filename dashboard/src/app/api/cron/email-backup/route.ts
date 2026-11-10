@@ -135,9 +135,97 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // 7. Dispatch Telegram Confirmation Notification to Owner
+    const fileSizeStr = backupBuffer.length > 1024 * 1024
+      ? (backupBuffer.length / (1024 * 1024)).toFixed(2) + ' MB'
+      : (backupBuffer.length / 1024).toFixed(1) + ' KB';
+
+    await sendTelegramBackupNotification(adminDb, 'success', {
+      email,
+      filename,
+      fileSize: fileSizeStr,
+      shopName
+    });
+
     return NextResponse.json({ success: true, message: 'Backup email sent successfully!' });
   } catch (error: any) {
     console.error('Email backup error:', error?.message || error);
+    try {
+      await sendTelegramBackupNotification(null, 'failure', {
+        email: process.env.EMAIL_BACKUP_USER,
+        error: error?.message || 'Failed to send backup email'
+      });
+    } catch {}
     return NextResponse.json({ error: error.message || 'Failed to send backup email' }, { status: 500 });
+  }
+}
+
+async function sendTelegramBackupNotification(
+  adminDb: any, 
+  status: 'success' | 'failure', 
+  payload: { email?: string; filename?: string; fileSize?: string; shopName?: string; error?: string }
+) {
+  try {
+    let token = process.env.TELEGRAM_BOT_TOKEN;
+    let chatId = process.env.TELEGRAM_CHAT_ID;
+    let enabled = true;
+    let notifyOnBackup = true;
+
+    if (adminDb) {
+      try {
+        const snap = await adminDb.collection('settings').doc('shop').get();
+        if (snap.exists) {
+          const tg = snap.data()?.telegram;
+          if (tg) {
+            if (tg.botToken) token = tg.botToken;
+            if (tg.chatId) chatId = tg.chatId;
+            if (tg.enabled === false) enabled = false;
+            if (tg.notifyOnBackup === false) notifyOnBackup = false;
+          }
+        }
+      } catch (err) {
+        console.warn('Could not read Telegram settings for backup notification:', err);
+      }
+    }
+
+    if (!enabled || !notifyOnBackup || !token || !chatId) return;
+
+    const timeStr = new Intl.DateTimeFormat('bn-BD', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+      timeZone: 'Asia/Dhaka'
+    }).format(new Date());
+
+    let text = '';
+    if (status === 'success') {
+      text = `💾 <b>অটো ডাটাবেস ব্যাকআপ সম্পন্ন (Backup Success)</b>\n\n` +
+             `✅ আপনার শপের সম্পূর্ণ ডাটাবেস ব্যাকআপ ফাইল সফলভাবে জিমেইলে পাঠানো হয়েছে।\n\n` +
+             (payload.shopName ? `🏢 <b>দোকান:</b> ${payload.shopName}\n` : '') +
+             `📧 <b>প্রাপক ইমেইল:</b> ${payload.email || 'Owner Email'}\n` +
+             (payload.filename ? `📁 <b>ফাইল:</b> <code>${payload.filename}</code>\n` : '') +
+             (payload.fileSize ? `📦 <b>ফাইলের আকার:</b> ${payload.fileSize}\n` : '') +
+             `\n🔒 আপনার সকল কাস্টমার, স্টক, পার্টস ও হিসাবের ডাটা নিরাপদে সংরক্ষিত রয়েছে।\n` +
+             `\n🕒 <b>সময়:</b> ${timeStr}`;
+    } else {
+      text = `🚨 <b>ডাটাবেস ব্যাকআপ ব্যর্থ (Backup Failed)</b>\n\n` +
+             `⚠️ আপনার শপের সাপ্তাহিক স্বয়ংক্রিয় ব্যাকআপ ইমেইল পাঠানো সম্ভব হয়নি।\n\n` +
+             `📝 <b>ত্রুটি:</b> ${payload.error || 'অজানা ত্রুটি'}\n` +
+             (payload.email ? `📧 <b>টার্গেট ইমেইল:</b> ${payload.email}\n` : '') +
+             `\nঅনুগ্রহ করে সেটিংস থেকে জিমেইল অ্যাপ পাসওয়ার্ড ও ব্যাকআপ কনফিগারেশন চেক করুন।\n` +
+             `\n🕒 <b>সময়:</b> ${timeStr}`;
+    }
+
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: 'HTML',
+        disable_web_page_preview: true
+      })
+    }).catch(e => console.warn('Telegram backup fetch failed:', e));
+  } catch (err) {
+    console.warn('sendTelegramBackupNotification exception:', err);
   }
 }

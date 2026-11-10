@@ -100,6 +100,8 @@ export async function POST(request: Request) {
               if (type === 'attendance' && tgSettings.notifyOnAttendance === false) return NextResponse.json({ success: true, skipped: true });
               if (type === 'supplier' && tgSettings.notifyOnSupplier === false) return NextResponse.json({ success: true, skipped: true });
               if (type === 'security' && tgSettings.notifyOnSecurity === false) return NextResponse.json({ success: true, skipped: true });
+              if (type === 'loan' && tgSettings.notifyOnLoan === false) return NextResponse.json({ success: true, skipped: true });
+              if (type === 'backup' && tgSettings.notifyOnBackup === false) return NextResponse.json({ success: true, skipped: true });
             } else if (action === 'send_daily_summary') {
               if (tgSettings.notifyOnDailySummary === false) return NextResponse.json({ success: true, skipped: true });
             }
@@ -258,6 +260,60 @@ export async function POST(request: Request) {
                `🚨 <b>বর্তমান স্টক:</b> মাত্র ${currentStock ?? 0} টি অবশিষ্ট!\n` +
                (minStock ? `📊 <b>সর্বনিম্ন সীমা:</b> ${minStock} টি\n` : '') +
                `\n🕒 <b>সময়:</b> ${formatNow()}`;
+      } else if (type === 'loan') {
+        const { eventType, personName, phone, loanType, amount, paidAmount, remainingDue, paymentAmount, note, staffName } = data || {};
+        const loanTypeLabel = loanType === 'Taken' ? 'ঋণ গ্রহণ (দেনা)' : 'ধার প্রদান (পাওনা)';
+
+        if (eventType === 'new_loan') {
+          text = `🤝 <b>নতুন ঋণ / ধার এন্ট্রি (Loan Recorded)</b>\n\n` +
+                 `👤 <b>ব্যক্তি/প্রতিষ্ঠান:</b> ${personName || 'N/A'}\n` +
+                 (phone ? `📱 <b>মোবাইল:</b> ${phone}\n` : '') +
+                 `🔄 <b>লেনদেনের ধরন:</b> ${loanTypeLabel}\n` +
+                 `💰 <b>টাকার পরিমাণ:</b> ${formatCurrency(amount)}\n` +
+                 (note ? `📝 <b>নোট:</b> ${note}\n` : '') +
+                 (staffName ? `👤 <b>এন্ট্রি করেছেন:</b> ${staffName}\n` : '') +
+                 `\n🕒 <b>সময়:</b> ${formatNow()}`;
+        } else if (eventType === 'payment') {
+          const actionLabel = loanType === 'Taken' ? 'দেনা পরিশোধ' : 'পাওনা আদায়';
+          text = `💵 <b>ধারের টাকা লেনদেন (${actionLabel})</b>\n\n` +
+                 `👤 <b>ব্যক্তি:</b> ${personName || 'N/A'}\n` +
+                 (phone ? `📱 <b>মোবাইল:</b> ${phone}\n` : '') +
+                 `💸 <b>টাকার পরিমাণ:</b> ${formatCurrency(paymentAmount || 0)}\n` +
+                 `📊 <b>মোট ঋণ হিসাব:</b> ${formatCurrency(amount || 0)}\n` +
+                 `✅ <b>মোট পরিশোধিত:</b> ${formatCurrency(paidAmount || 0)}\n` +
+                 (remainingDue !== undefined ? `⚠️ <b>অবশিষ্ট বাকি:</b> ${formatCurrency(remainingDue)}\n` : '') +
+                 (note ? `📝 <b>নোট:</b> ${note}\n` : '') +
+                 (staffName ? `👤 <b>হ্যান্ডেল করেছেন:</b> ${staffName}\n` : '') +
+                 `\n🕒 <b>সময়:</b> ${formatNow()}`;
+        } else {
+          text = `✅ <b>ধার সম্পূর্ণ পরিশোধিত / ক্লোজড (Settled)</b>\n\n` +
+                 `👤 <b>ব্যক্তি:</b> ${personName || 'N/A'}\n` +
+                 (phone ? `📱 <b>মোবাইল:</b> ${phone}\n` : '') +
+                 `🔄 <b>ধরন:</b> ${loanTypeLabel}\n` +
+                 `💰 <b>সম্পূর্ণ পরিশোধিত:</b> ${formatCurrency(amount || 0)}\n` +
+                 (staffName ? `👤 <b>সম্পন্ন করেছেন:</b> ${staffName}\n` : '') +
+                 `\n🎉 এই ধার-দেনার হিসাব সফলভাবে সমাপ্ত হয়েছে।\n` +
+                 `\n🕒 <b>সময়:</b> ${formatNow()}`;
+        }
+      } else if (type === 'backup') {
+        const { status, email: targetEmail, filename, fileSize, shopName, error: errDetail } = data || {};
+        if (status === 'success') {
+          text = `💾 <b>অটো ডাটাবেস ব্যাকআপ সম্পন্ন (Backup Success)</b>\n\n` +
+                 `✅ আপনার শপের সম্পূর্ণ ডাটাবেস ব্যাকআপ ফাইল সফলভাবে জিমেইলে পাঠানো হয়েছে।\n\n` +
+                 (shopName ? `🏢 <b>দোকান:</b> ${shopName}\n` : '') +
+                 `📧 <b>প্রাপক ইমেইল:</b> ${targetEmail || 'Owner Email'}\n` +
+                 (filename ? `📁 <b>ফাইল:</b> <code>${filename}</code>\n` : '') +
+                 (fileSize ? `📦 <b>ফাইলের আকার:</b> ${fileSize}\n` : '') +
+                 `\n🔒 আপনার সকল কাস্টমার, স্টক ও হিসাবের ডাটা নিরাপদে সংরক্ষিত রয়েছে।\n` +
+                 `\n🕒 <b>সময়:</b> ${formatNow()}`;
+        } else {
+          text = `🚨 <b>ডাটাবেস ব্যাকআপ ব্যর্থ (Backup Failed)</b>\n\n` +
+                 `⚠️ আপনার শপের সাপ্তাহিক স্বয়ংক্রিয় ব্যাকআপ পাঠানো সম্ভব হয়নি।\n\n` +
+                 `📝 <b>ত্রুটি:</b> ${errDetail || 'অজানা ত্রুটি'}\n` +
+                 (targetEmail ? `📧 <b>টার্গেট ইমেইল:</b> ${targetEmail}\n` : '') +
+                 `\nঅনুগ্রহ করে সেটিংস থেকে ইমেইল কনফিগারেশন চেক করুন।\n` +
+                 `\n🕒 <b>সময়:</b> ${formatNow()}`;
+        }
       } else {
         const { title, message } = data || {};
         text = `📢 <b>${title || 'অ্যাপ নোটিফিকেশন'}</b>\n\n` +

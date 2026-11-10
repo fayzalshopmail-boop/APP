@@ -422,6 +422,8 @@ export const en: TranslationDictionary = {
       notifyOnSupplier: 'Supplier Transactions & Purchases',
       notifyOnSecurity: 'Security & Audit Alerts',
       notifyOnDailySummary: 'Daily Closing Business Summary',
+      notifyOnLoan: 'Loan & Borrowing Alerts',
+      notifyOnBackup: 'Database Backup Alerts',
       testButton: 'Send Test Notification',
       testSending: 'Sending...',
       testSuccess: 'Success! Test message delivered to your Telegram.',

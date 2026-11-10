@@ -422,6 +422,8 @@ export interface TranslationDictionary {
       notifyOnSupplier: string;
       notifyOnSecurity: string;
       notifyOnDailySummary: string;
+      notifyOnLoan: string;
+      notifyOnBackup: string;
       testButton: string;
       testSending: string;
       testSuccess: string;

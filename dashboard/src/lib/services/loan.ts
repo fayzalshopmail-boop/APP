@@ -2,6 +2,7 @@ import {
   collection, 
   doc, 
   getDocs,
+  getDoc,
   addDoc, 
   updateDoc, 
   deleteDoc,
@@ -12,6 +13,7 @@ import {
   runTransaction
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { telegramService } from './telegramService';
 
 export interface LoanHistoryEntry {
   amount: number;
@@ -54,7 +56,7 @@ export const loanService = {
     }
   },
 
-  add: async (loan: Omit<Loan, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> => {
+  add: async (loan: Omit<Loan, 'id' | 'createdAt' | 'updatedAt'>, staffName?: string): Promise<string> => {
     if (!db) throw new Error('Firebase DB is not initialized');
     const historyEntry: LoanHistoryEntry = {
       amount: loan.amount,
@@ -70,6 +72,34 @@ export const loanService = {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
+
+    try {
+      telegramService.notifyLoan({
+        eventType: 'new_loan',
+        personName: loan.personName,
+        phone: loan.phone,
+        loanType: loan.type,
+        amount: loan.amount,
+        note: loan.notes,
+        staffName
+      });
+    } catch (e) {
+      console.warn('Telegram notifyLoan exception:', e);
+    }
+
+    try {
+      const { notificationService } = await import('./notification');
+      await notificationService.add({
+        title: loan.type === 'Given' ? 'নতুন ধার প্রদান (Loan Given)' : 'নতুন ঋণ গ্রহণ (Loan Taken)',
+        message: `${loan.personName} কে ৳${loan.amount} ${loan.type === 'Given' ? 'ধার দেওয়া হয়েছে' : 'ঋণ নেওয়া হয়েছে'}।`,
+        type: 'info',
+        targetRole: 'Owner',
+        link: '/loans'
+      });
+    } catch (e) {
+      console.warn('Failed to add in-app loan notification:', e);
+    }
+
     return docRef.id;
   },
 
@@ -88,14 +118,32 @@ export const loanService = {
     await deleteDoc(docRef);
   },
   
-  markAsPaid: async (id: string): Promise<void> => {
+  markAsPaid: async (id: string, staffName?: string): Promise<void> => {
     if (!db) throw new Error('Firebase DB is not initialized');
     const docRef = doc(db, COLLECTION_NAME, id);
+    const snap = await getDoc(docRef);
+    const loanData = snap.exists() ? (snap.data() as Loan) : null;
+
     await updateDoc(docRef, {
       status: 'Paid',
       nextPaymentDate: null,
       updatedAt: serverTimestamp()
     });
+
+    if (loanData) {
+      try {
+        telegramService.notifyLoan({
+          eventType: 'settled',
+          personName: loanData.personName,
+          phone: loanData.phone,
+          loanType: loanData.type,
+          amount: loanData.amount,
+          staffName
+        });
+      } catch (e) {
+        console.warn('Telegram notifyLoan exception:', e);
+      }
+    }
   },
 
   addPayment: async (
@@ -157,6 +205,37 @@ export const loanService = {
         createdAt: serverTimestamp()
       });
     });
+
+    const remaining = Math.max(0, totalAmount - newPaid);
+
+    try {
+      telegramService.notifyLoan({
+        eventType: newStatus === 'Paid' ? 'settled' : 'payment',
+        personName: personName || '',
+        loanType: loanType || 'Given',
+        amount: totalAmount,
+        paidAmount: newPaid,
+        paymentAmount: payment,
+        remainingDue: remaining,
+        note: defaultNote,
+        staffName: receivedBy
+      });
+    } catch (e) {
+      console.warn('Telegram notifyLoan exception:', e);
+    }
+
+    try {
+      const { notificationService } = await import('./notification');
+      await notificationService.add({
+        title: newStatus === 'Paid' ? 'ধার সম্পূর্ণ পরিশোধিত' : (loanType === 'Taken' ? 'ঋণ পরিশোধ সম্পন্ন' : 'ধারের কিস্তি আদায়'),
+        message: `${personName || 'ব্যক্তি'} এর ৳${payment} ${loanType === 'Taken' ? 'পরিশোধ করা হয়েছে' : 'আদায় হয়েছে'}${newStatus === 'Paid' ? ' (সকল হিসাব পরিশোধিত)' : ` (বাকি: ৳${remaining})`}।`,
+        type: newStatus === 'Paid' ? 'success' : 'info',
+        targetRole: 'Owner',
+        link: '/loans'
+      });
+    } catch (e) {
+      console.warn('Failed to add in-app loan payment notification:', e);
+    }
 
     return { newPaid, status: newStatus };
   }

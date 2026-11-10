@@ -86,6 +86,28 @@ export interface TelegramLowStockData {
   minStock?: number;
 }
 
+export interface TelegramLoanData {
+  eventType: 'new_loan' | 'payment' | 'settled';
+  personName: string;
+  phone?: string;
+  loanType: 'Given' | 'Taken';
+  amount: number;
+  paidAmount?: number;
+  remainingDue?: number;
+  paymentAmount?: number;
+  note?: string;
+  staffName?: string;
+}
+
+export interface TelegramBackupData {
+  status: 'success' | 'failure';
+  email?: string;
+  filename?: string;
+  fileSize?: string;
+  shopName?: string;
+  error?: string;
+}
+
 async function postToTelegram(body: any): Promise<Response> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   try {
@@ -266,6 +288,30 @@ export const telegramService = {
         .catch(err => console.warn('Telegram notifyLowStock error:', err));
     } catch (e) {
       console.warn('Telegram notifyLowStock exception:', e);
+    }
+  },
+
+  /**
+   * Triggers a notification for loan and borrowing events (New loan, payment, settled).
+   */
+  notifyLoan(data: TelegramLoanData): void {
+    try {
+      postToTelegram({ action: 'notify', type: 'loan', data })
+        .catch(err => console.warn('Telegram notifyLoan error:', err));
+    } catch (e) {
+      console.warn('Telegram notifyLoan exception:', e);
+    }
+  },
+
+  /**
+   * Triggers a notification for database backup status (Success/Failure).
+   */
+  notifyBackup(data: TelegramBackupData): void {
+    try {
+      postToTelegram({ action: 'notify', type: 'backup', data })
+        .catch(err => console.warn('Telegram notifyBackup error:', err));
+    } catch (e) {
+      console.warn('Telegram notifyBackup exception:', e);
     }
   },
 

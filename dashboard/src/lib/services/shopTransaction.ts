@@ -341,6 +341,11 @@ export const shopTransactionService = {
     // Dispatch notifications outside transaction
     for (const alert of lowStockAlerts) {
       try {
+        telegramService.notifyLowStock({
+          itemName: alert.name,
+          currentStock: alert.stock,
+          minStock: alert.min
+        });
         await notificationService.add({
           title: 'Low Stock Alert',
           message: `${alert.name} stock has dropped to ${alert.stock} (Min: ${alert.min}). Please restock!`,
@@ -471,6 +476,11 @@ export const shopTransactionService = {
 
     if (lowStockAlert) {
       try {
+        telegramService.notifyLowStock({
+          itemName: lowStockAlert.name,
+          currentStock: lowStockAlert.stock,
+          minStock: lowStockAlert.min
+        });
         await notificationService.add({
           title: 'Low Stock Alert',
           message: `${lowStockAlert.name} stock has dropped to ${lowStockAlert.stock} (Min: ${lowStockAlert.min}). Please restock!`,
