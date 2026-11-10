@@ -53,9 +53,23 @@ export async function POST(request: Request) {
         if (adminAuth) {
           const decodedToken = await adminAuth.verifyIdToken(token);
           const callerEmail = (decodedToken.email || '').toLowerCase().trim();
-          if (callerEmail && adminDb) {
-            const userDoc = await adminDb.collection('users').doc(callerEmail).get();
-            if (userDoc.exists && userDoc.data()?.isActive !== false) {
+          const uid = decodedToken.uid;
+          if (adminDb && (callerEmail || uid)) {
+            let userDoc = null;
+            if (callerEmail) {
+              const byEmail = await adminDb.collection('users').doc(callerEmail).get();
+              if (byEmail.exists) userDoc = byEmail;
+            }
+            if ((!userDoc || !userDoc.exists) && uid) {
+              const byUid = await adminDb.collection('users').doc(uid).get();
+              if (byUid.exists) userDoc = byUid;
+            }
+            if ((!userDoc || !userDoc.exists) && callerEmail) {
+              const qSnap = await adminDb.collection('users').where('email', '==', callerEmail).limit(1).get();
+              if (!qSnap.empty) userDoc = qSnap.docs[0];
+            }
+
+            if (userDoc && userDoc.exists && userDoc.data()?.isActive !== false) {
               isAuthorized = true;
             } else {
               return NextResponse.json({ error: "Your account is disabled or unauthorized to dispatch SMS." }, { status: 403 });

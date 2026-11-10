@@ -90,10 +90,25 @@ async function postToTelegram(body: any): Promise<Response> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   try {
     const { auth } = await import('../firebase');
-    if (auth?.currentUser) {
-      const token = await auth.currentUser.getIdToken().catch(() => null);
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+    if (auth) {
+      if (typeof auth.authStateReady === 'function') {
+        await auth.authStateReady();
+      }
+      let currentUser = auth.currentUser;
+      if (!currentUser) {
+        currentUser = await new Promise((resolve) => {
+          const unsub = auth.onAuthStateChanged((u) => {
+            unsub();
+            resolve(u);
+          });
+          setTimeout(() => resolve(null), 1500);
+        });
+      }
+      if (currentUser) {
+        const token = await currentUser.getIdToken();
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
       }
     }
   } catch (err) {
