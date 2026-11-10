@@ -6,9 +6,25 @@ export interface VerifiedUser {
   isActive: boolean;
 }
 
+function parseFirestoreFields(fields: any): Record<string, any> {
+  const result: Record<string, any> = {};
+  if (!fields) return result;
+  for (const [key, val] of Object.entries(fields)) {
+    const v: any = val;
+    if (v.stringValue !== undefined) result[key] = v.stringValue;
+    else if (v.booleanValue !== undefined) result[key] = v.booleanValue;
+    else if (v.integerValue !== undefined) result[key] = Number(v.integerValue);
+    else if (v.doubleValue !== undefined) result[key] = Number(v.doubleValue);
+    else if (v.timestampValue !== undefined) result[key] = v.timestampValue;
+    else if (v.nullValue !== undefined) result[key] = null;
+    else result[key] = Object.values(v)[0];
+  }
+  return result;
+}
+
 export async function verifyUserToken(bearerToken: string): Promise<{ success: boolean; user?: VerifiedUser; error?: string }> {
   if (!bearerToken) {
-    return { success: false, error: 'অথেনটিকেশন টোকেন পাওয়া যায়নি। অনুগ্রহ করে রিলোড দিয়ে আবার চেষ্টা করুন।' };
+    return { success: false, error: 'অথেনটিকেশন টোকেন পাওয়া যায়নি। অনুগ্রহ করে পেজ রিফ্রেশ করে আবার চেষ্টা করুন।' };
   }
 
   let verifiedEmail = '';
@@ -59,6 +75,9 @@ export async function verifyUserToken(bearerToken: string): Promise<{ success: b
   }
 
   // 3. User permission lookup from Firestore
+  let userDocData: any = null;
+
+  // 3A. Primary: Firebase Admin SDK
   try {
     const { adminDb } = await import('@/lib/firebase-admin');
     if (adminDb) {
@@ -76,29 +95,58 @@ export async function verifyUserToken(bearerToken: string): Promise<{ success: b
         if (!qSnap.empty) userDoc = qSnap.docs[0];
       }
 
-      if (!userDoc || !userDoc.exists) {
-        return { success: false, error: `ইউজার (${verifiedEmail}) ডাটাবেসে অনুমোদিত তালিকায় পাওয়া যায়নি।` };
+      if (userDoc && userDoc.exists) {
+        userDocData = userDoc.data();
       }
-
-      const uData = userDoc.data();
-      if (uData?.isActive === false) {
-        return { success: false, error: 'আপনার অ্যাকাউন্টটি নিষ্ক্রিয় করা আছে।' };
-      }
-
-      return {
-        success: true,
-        user: {
-          email: verifiedEmail,
-          uid: verifiedUid,
-          role: uData?.role || 'Technician',
-          name: uData?.name || '',
-          isActive: true
-        }
-      };
     }
-  } catch (dbErr: any) {
-    console.error('Firestore user lookup error in serverAuth:', dbErr);
+  } catch (adminDbErr: any) {
+    console.warn('adminDb user lookup error, falling back to Firestore REST:', adminDbErr?.message || adminDbErr);
   }
 
-  return { success: false, error: 'ডাটাবেস কানেকশন ত্রুটি। সার্ভার লগ চেক করুন।' };
+  // 3B. Resilient Fallback: Firestore REST API with Authenticated User Token
+  // Runs if Firebase Admin credentials are not set in Vercel or if adminDb is unavailable
+  if (!userDocData) {
+    try {
+      const projId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+      if (projId && (verifiedEmail || verifiedUid)) {
+        const docIdsToTry = [verifiedEmail, verifiedUid].filter(Boolean);
+        for (const docId of docIdsToTry) {
+          const docUrl = `https://firestore.googleapis.com/v1/projects/${projId}/databases/(default)/documents/users/${encodeURIComponent(docId)}`;
+          const fsRes = await fetch(docUrl, {
+            headers: {
+              'Authorization': `Bearer ${bearerToken}`
+            }
+          });
+          if (fsRes.ok) {
+            const rawDoc = await fsRes.json();
+            if (rawDoc.fields) {
+              userDocData = parseFirestoreFields(rawDoc.fields);
+              break;
+            }
+          }
+        }
+      }
+    } catch (fsRestErr: any) {
+      console.warn('Firestore REST fallback user lookup error:', fsRestErr?.message || fsRestErr);
+    }
+  }
+
+  if (!userDocData) {
+    return { success: false, error: `ইউজার (${verifiedEmail}) ডাটাবেসের অনুমোদিত তালিকায় পাওয়া যায়নি।` };
+  }
+
+  if (userDocData.isActive === false) {
+    return { success: false, error: 'আপনার অ্যাকাউন্টটি নিষ্ক্রিয় (Disabled) করা আছে।' };
+  }
+
+  return {
+    success: true,
+    user: {
+      email: verifiedEmail,
+      uid: verifiedUid,
+      role: userDocData.role || 'Technician',
+      name: userDocData.name || '',
+      isActive: true
+    }
+  };
 }
