@@ -14,6 +14,7 @@ export interface PartUsed {
 
 export interface RepairRecord {
   id: string;
+  customId?: number;
   deviceBrand?: string;
   deviceType?: string;
   deviceProblem?: string;
@@ -48,6 +49,7 @@ export const normalizePhone = (p: string) => {
 
 export interface Customer {
   id: string;
+  customId?: number;
   name: string;
   phone: string;
   address: string;

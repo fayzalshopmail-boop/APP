@@ -68,6 +68,14 @@ export const en: TranslationDictionary = {
     logoutConfirmMessage: 'Are you sure you want to log out from this device?',
     logoutButton: 'Yes, Log Out',
   },
+  bottomNav: {
+    dashboard: 'Dashboard',
+    customers: 'Customers',
+    inventory: 'Inventory',
+    due: 'Due',
+    menu: 'Menu',
+    attendance: 'Attendance',
+  },
   topbar: {
     dashboardWelcome: 'Welcome back to your dashboard.',
     customersSubtitle: 'Manage your TV repair customers and their records.',

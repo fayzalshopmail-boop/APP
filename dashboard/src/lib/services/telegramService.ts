@@ -4,6 +4,7 @@
  */
 
 export interface TelegramCustomerData {
+  customId?: number;
   customerName: string;
   phone: string;
   device?: string;

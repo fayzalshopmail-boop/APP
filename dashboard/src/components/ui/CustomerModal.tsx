@@ -293,7 +293,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  <DialogHeader className="mb-4 sm:mb-6 text-left">
  <DialogTitle className="text-lg sm:text-xl font-bold tracking-tight">
  {initialData 
-   ? (language === 'bn' ? 'কাস্টমারের তথ্য সম্পাদনা' : 'Edit Customer Details') 
+   ? (language === 'bn' ? `কাস্টমারের তথ্য সম্পাদনা ${initialData.customId ? `(#${initialData.customId})` : ''}` : `Edit Customer Details ${initialData.customId ? `(#${initialData.customId})` : ''}`) 
    : (language === 'bn' ? 'নতুন কাস্টমার যুক্ত করুন' : 'Add New Customer')}
  </DialogTitle>
  <DialogDescription className="text-gray-400 mt-1 text-xs sm:text-sm">

@@ -138,7 +138,17 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
               
               {/* Profile Card */}
               <div className="bg-secondary rounded-xl p-5 border border-gray-800">
-                <h3 className="text-2xl font-bold text-white mb-4">{customer.name}</h3>
+                <div className="flex items-center gap-2.5 mb-4 flex-wrap">
+                  <h3 className="text-2xl font-bold text-white">{customer.name}</h3>
+                  {customer.customId && (
+                    <span 
+                      className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-400 border border-blue-500/25 select-all" 
+                      title="সার্ভিস / প্রোডাক্ট আইডি"
+                    >
+                      #{customer.customId}
+                    </span>
+                  )}
+                </div>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-3 text-gray-300">
                     <div className="flex items-center gap-3">
@@ -202,9 +212,14 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
                       
                       <div className="flex justify-between items-start mb-3">
                         <div>
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <Tv className="w-4 h-4 text-gray-400" />
                             <span className="font-bold text-gray-200">{job.deviceBrand || 'Unknown'} {job.deviceType}</span>
+                            {job.customId && (
+                              <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-500/25 select-all" title="সার্ভিস / প্রোডাক্ট আইডি">
+                                #{job.customId}
+                              </span>
+                            )}
                           </div>
                           <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
                             <span className="bg-gray-800 px-2 py-0.5 rounded text-orange-400">{job.deviceProblem}</span>

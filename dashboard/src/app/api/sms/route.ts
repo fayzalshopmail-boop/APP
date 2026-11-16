@@ -46,12 +46,16 @@ export async function POST(request: Request) {
     const token = authHeader.substring(7).trim();
     const isCron = Boolean(process.env.CRON_SECRET && token === process.env.CRON_SECRET);
     let isAuthorized = isCron;
+    let userRole = isCron ? 'Owner' : '';
+    let userEmail = isCron ? 'cron@system' : '';
 
     if (!isAuthorized) {
       const { verifyUserToken } = await import('@/lib/serverAuth');
       const authRes = await verifyUserToken(token);
-      if (authRes.success) {
+      if (authRes.success && authRes.user) {
         isAuthorized = true;
+        userRole = authRes.user.role;
+        userEmail = authRes.user.email;
       } else {
         return NextResponse.json({ error: authRes.error || "Your account is disabled or unauthorized to dispatch SMS." }, { status: 403 });
       }
@@ -62,7 +66,52 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { number, message } = body;
+    const { number, message, isBulkCampaign } = body;
+
+    const isOwnerOrManager = userRole === 'Owner' || userRole === 'Manager';
+    const isCampaignMode = Boolean(isBulkCampaign || (Array.isArray(number) && number.length > 1));
+
+    // SEC-05: Restrict Bulk SMS and Campaign dispatching to Owner & Manager only
+    if (isCampaignMode && !isOwnerOrManager && !isCron) {
+      return NextResponse.json(
+        { error: "টেকনিশিয়ান অ্যাকাউন্ট থেকে বাল্ক বা ক্যাম্পেইন এসএমএস পাঠানো অনুমোদিত নয়।" },
+        { status: 403 }
+      );
+    }
+
+    // Rate Limiting Enforcement:
+    // Bulk SMS and Follow-up SMS campaigns executed by Shop Owner/Manager have NO rate limit,
+    // allowing the shop owner to broadcast promotions and follow-ups to all customers without 429 throttling.
+    let rateLimitResult: any = null;
+    const shouldBypassRateLimit = isCron || (isCampaignMode && isOwnerOrManager);
+
+    if (!shouldBypassRateLimit) {
+      const { checkRateLimit, getClientIp } = await import('@/lib/rateLimit');
+      const clientIp = getClientIp(request);
+      const rateLimitKey = userEmail ? `sms:${userEmail}` : `sms:ip:${clientIp}`;
+
+      // Regular staff / standard dispatch: Technicians max 5 SMS/min; Owners max 20 standard SMS/min
+      const maxLimit = isOwnerOrManager ? 20 : 5;
+      const rl = checkRateLimit(rateLimitKey, maxLimit, 60 * 1000);
+      rateLimitResult = rl;
+
+      if (!rl.allowed) {
+        return NextResponse.json(
+          {
+            error: `খুব দ্রুত এসএমএস পাঠানো হচ্ছে (Rate limit exceeded)। অনুগ্রহ করে ${rl.retryAfterSec} সেকেন্ড অপেক্ষা করুন।`
+          },
+          {
+            status: 429,
+            headers: {
+              'Retry-After': String(rl.retryAfterSec),
+              'X-RateLimit-Limit': String(rl.limit),
+              'X-RateLimit-Remaining': '0',
+              'X-RateLimit-Reset': String(rl.resetTime),
+            }
+          }
+        );
+      }
+    }
 
     if (!number || (Array.isArray(number) && number.length === 0)) {
       return NextResponse.json({ error: "No recipient phone number provided." }, { status: 400 });
@@ -70,6 +119,14 @@ export async function POST(request: Request) {
 
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return NextResponse.json({ error: "Message content cannot be empty." }, { status: 400 });
+    }
+
+    // Restrict single multi-number payload to max 500 recipients per batch
+    if (Array.isArray(number) && number.length > 500) {
+      return NextResponse.json(
+        { error: "একবারে সর্বোচ্চ ৫০০ জন কাস্টমারকে এসএমএস পাঠানো যাবে।" },
+        { status: 400 }
+      );
     }
 
     // 2. Resolve SMS credentials safely
@@ -154,7 +211,14 @@ export async function POST(request: Request) {
       result = JSON.parse(resultText);
     } catch {}
 
-    return NextResponse.json({ success: true, result });
+    const responseHeaders: Record<string, string> = {};
+    if (rateLimitResult) {
+      responseHeaders['X-RateLimit-Limit'] = String(rateLimitResult.limit);
+      responseHeaders['X-RateLimit-Remaining'] = String(rateLimitResult.remaining);
+      responseHeaders['X-RateLimit-Reset'] = String(rateLimitResult.resetTime);
+    }
+
+    return NextResponse.json({ success: true, result }, { headers: responseHeaders });
   } catch (error: any) {
     if (error?.name === 'AbortError') {
       return NextResponse.json({ error: "SMS gateway request timed out. Please try again." }, { status: 504 });

@@ -14,12 +14,14 @@ async function handleBalanceCheck(request: Request, passedApiKey?: string | null
     const idToken = authHeader.substring(7).trim();
     const isCron = Boolean(process.env.CRON_SECRET && idToken === process.env.CRON_SECRET);
     let isAuthorized = isCron;
+    let userEmail = isCron ? 'cron@system' : '';
 
     if (!isAuthorized) {
       const { verifyUserToken } = await import('@/lib/serverAuth');
       const authRes = await verifyUserToken(idToken);
       if (authRes.success && authRes.user && (authRes.user.role === 'Owner' || authRes.user.role === 'Manager')) {
         isAuthorized = true;
+        userEmail = authRes.user.email;
       } else {
         return NextResponse.json({ error: authRes.error || "Unauthorized" }, { status: 401 });
       }
@@ -29,8 +31,22 @@ async function handleBalanceCheck(request: Request, passedApiKey?: string | null
       return NextResponse.json({ error: "Only Shop Owners and Managers can access SMS balance." }, { status: 403 });
     }
 
-    // 2. Resolve API Key from passed parameter or fallback to Firestore
-    let resolvedApiKey = (passedApiKey || '').trim();
+    // Rate limit balance checks: max 10 requests per minute
+    if (!isCron) {
+      const { checkRateLimit, getClientIp } = await import('@/lib/rateLimit');
+      const clientIp = getClientIp(request);
+      const rlKey = userEmail ? `sms-balance:${userEmail}` : `sms-balance:ip:${clientIp}`;
+      const rl = checkRateLimit(rlKey, 10, 60000);
+      if (!rl.allowed) {
+        return NextResponse.json(
+          { error: `খুব ঘনঘন ব্যালেন্স চেক করা হচ্ছে। অনুগ্রহ করে ${rl.retryAfterSec} সেকেন্ড অপেক্ষা করুন।` },
+          { status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) } }
+        );
+      }
+    }
+
+    // 2. Resolve API Key safely from Server Settings or env (never rely on URL query params)
+    let resolvedApiKey = (passedApiKey || process.env.BULKSMSBD_API_KEY || '').trim();
 
     if (!resolvedApiKey) {
       try {
@@ -38,7 +54,7 @@ async function handleBalanceCheck(request: Request, passedApiKey?: string | null
         if (adminDb) {
           const docSnap = await adminDb.collection('settings').doc('sms').get();
           if (docSnap.exists) {
-            resolvedApiKey = docSnap.data()?.apiKey || '';
+            resolvedApiKey = (docSnap.data()?.apiKey || '').trim();
           }
         }
       } catch (dbErr) {
@@ -80,12 +96,12 @@ async function handleBalanceCheck(request: Request, passedApiKey?: string | null
   }
 }
 
+// In GET, NEVER read apiKey from URL searchParams to prevent credential leak in logs/browser history (SEC-06)
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const apiKey = searchParams.get('apiKey');
-  return handleBalanceCheck(request, apiKey);
+  return handleBalanceCheck(request, null);
 }
 
+// In POST, apiKey is optional in JSON body (or resolved from server settings/sms)
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   return handleBalanceCheck(request, body.apiKey);

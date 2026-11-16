@@ -79,7 +79,7 @@ export function InvoiceModal({ isOpen, onClose, customer }: InvoiceModalProps) {
                 {language === 'bn' ? 'ইনভয়েস / রসিদ' : 'INVOICE'}
               </h2>
               <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                {language === 'bn' ? 'ইনভয়েস নং:' : 'Invoice No:'} #{customer.id.substring(0, 6).toUpperCase()}
+                {language === 'bn' ? 'সার্ভিস / ইনভয়েস নং:' : 'Job / Invoice No:'} #{customer.customId || customer.id.substring(0, 6).toUpperCase()}
               </p>
               <p className="text-xs sm:text-sm text-gray-500">
                 {language === 'bn' ? 'তারিখ:' : 'Date:'} {new Date().toLocaleDateString(language === 'bn' ? 'bn-BD' : 'en-GB')}

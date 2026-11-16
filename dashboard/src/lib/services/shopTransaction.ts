@@ -8,7 +8,10 @@ import {
   getDoc,
   getDocs,
   query,
-  where
+  where,
+  setDoc,
+  orderBy,
+  limit
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Customer, PartUsed, RepairRecord } from './customer';
@@ -18,17 +21,66 @@ import { telegramService } from './telegramService';
 import { sanitizeForFirestore } from '../utils';
 
 /**
+ * Atomically generates a unique numeric Job / Tracking ID (starting at 1001)
+ */
+async function getNextCustomId(): Promise<number> {
+  if (!db) return Math.floor(1001 + Math.random() * 8999);
+  const counterRef = doc(db, 'counters', 'customers');
+  try {
+    const nextId = await runTransaction(db, async (tx) => {
+      const snap = await tx.get(counterRef);
+      let val = 1000;
+      if (snap.exists() && typeof snap.data()?.lastId === 'number') {
+        val = snap.data().lastId;
+      } else {
+        const q = query(collection(db, 'customers'), orderBy('customId', 'desc'), limit(1));
+        const maxSnap = await getDocs(q).catch(() => null);
+        if (maxSnap && !maxSnap.empty) {
+          const maxVal = maxSnap.docs[0].data()?.customId;
+          if (typeof maxVal === 'number' && maxVal >= 1000) {
+            val = maxVal;
+          }
+        }
+      }
+      const generated = val + 1;
+      tx.set(counterRef, { lastId: generated }, { merge: true });
+      return generated;
+    });
+    return nextId;
+  } catch (error) {
+    console.warn("Atomic counter transaction failed, using direct counter fallback:", error);
+    try {
+      const snap = await getDoc(counterRef);
+      let val = 1000;
+      if (snap.exists() && typeof snap.data()?.lastId === 'number') {
+        val = snap.data().lastId;
+      }
+      const generated = val + 1;
+      await setDoc(counterRef, { lastId: generated }, { merge: true });
+      return generated;
+    } catch {
+      return 1001;
+    }
+  }
+}
+
+/**
  * Service for compound, atomic financial and inventory operations.
  */
 export const shopTransactionService = {
   /**
    * Atomically creates a customer or adds a new repair job to an existing customer's history.
    */
-  async createCustomer(customerData: Omit<Customer, 'id' | 'createdAt' | 'points'>, userEmail: string, userName?: string): Promise<string> {
+  async createCustomer(
+    customerData: Omit<Customer, 'id' | 'createdAt' | 'points'>, 
+    userEmail: string, 
+    userName?: string
+  ): Promise<{ id: string; customId: number }> {
     if (!db) throw new Error('Firebase DB is not initialized');
 
     const effectiveStaffName = customerData.receivedByName || userName || userEmail;
     const effectiveStaffEmail = customerData.receivedBy || userEmail;
+    const nextCustomId = await getNextCustomId();
 
     // 1. Check if customer already exists by phone number
     const cleanDigits = customerData.phone ? customerData.phone.replace(/\D/g, '') : '';
@@ -67,6 +119,7 @@ export const shopTransactionService = {
       if (prevData.deviceBrand || prevData.deviceType || prevData.totalBill) {
         const archivedRecord: RepairRecord = {
           id: `${existingId}_${prevHistory.length}_${Date.now()}`,
+          customId: prevData.customId,
           deviceBrand: prevData.deviceBrand || '',
           deviceType: prevData.deviceType || '',
           deviceProblem: prevData.deviceProblem || '',
@@ -98,6 +151,7 @@ export const shopTransactionService = {
       
       const updatePayload = sanitizeForFirestore({
         ...customerData,
+        customId: nextCustomId,
         receivedBy: effectiveStaffEmail,
         receivedByName: effectiveStaffName,
         name: customerData.name || prevData.name || '',
@@ -140,6 +194,7 @@ export const shopTransactionService = {
       try {
         const deviceStr = [customerData.deviceBrand, customerData.deviceType].filter(Boolean).join(' ');
         telegramService.notifyCustomerCreate({
+          customId: nextCustomId,
           customerName: `${customerData.name} (পুরাতন কাস্টমার)`,
           phone: customerData.phone || '',
           device: deviceStr || undefined,
@@ -153,7 +208,7 @@ export const shopTransactionService = {
         console.warn('Failed to notify Telegram on repeat customer:', tgErr);
       }
 
-      return existingId;
+      return { id: existingId, customId: nextCustomId };
     }
 
     // Brand new customer
@@ -163,6 +218,7 @@ export const shopTransactionService = {
     const batch = writeBatch(db);
     const newCustomerPayload = sanitizeForFirestore({
       ...customerData,
+      customId: nextCustomId,
       receivedBy: effectiveStaffEmail,
       receivedByName: effectiveStaffName,
       status: 'Received',
@@ -200,6 +256,7 @@ export const shopTransactionService = {
     try {
       const deviceStr = [customerData.deviceBrand, customerData.deviceType].filter(Boolean).join(' ');
       telegramService.notifyCustomerCreate({
+        customId: nextCustomId,
         customerName: customerData.name || 'Customer',
         phone: customerData.phone || '',
         device: deviceStr || undefined,
@@ -213,7 +270,7 @@ export const shopTransactionService = {
       console.warn('Failed to notify Telegram on new customer:', tgErr);
     }
 
-    return newId;
+    return { id: newId, customId: nextCustomId };
   },
 
   

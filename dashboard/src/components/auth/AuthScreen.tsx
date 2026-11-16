@@ -7,6 +7,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { auth, googleProvider } from '@/lib/firebase';
 import { signInWithPopup } from 'firebase/auth';
 import { userService } from '@/lib/services/user';
+import { securitySettingsService } from '@/lib/services/securitySettings';
 import { requestNotificationPermission } from '@/lib/services/fcm';
 import { useRouter } from 'next/navigation';
 import { VaultDoorLock } from './VaultDoorLock';
@@ -166,16 +167,36 @@ export function AuthScreen() {
             expectedPin={pin}
             onUnlock={() => setUnlocked(true)}
             isSetupMode={!pin}
-            onPinSet={(newPin) => {
+            onPinSet={async (newPin) => {
               setPin(newPin);
               setUnlocked(true);
+              try {
+                await securitySettingsService.savePinHash(newPin, user.email);
+              } catch (err) {
+                console.error('Failed to sync PIN hash to Firestore:', err);
+              }
             }}
             userName={user.name}
-            onResetPin={() => setPin(null)}
-            onSignOut={async () => { 
+            onResetPin={async () => {
+              const confirmed = window.confirm(
+                'নিরাপত্তার স্বার্থে পিন রিসেট করতে আপনাকে পুনরায় গুগল বা পাসওয়ার্ড দিয়ে লগইন করে পরিচয় নিশ্চিত করতে হবে। আপনি কি এগিয়ে যেতে চান?'
+              );
+              if (!confirmed) return;
+              try {
+                await securitySettingsService.clearPinHash();
+              } catch (err) {
+                console.warn('Failed clearing pinHash in Firestore:', err);
+              }
               if (auth) await auth.signOut();
               setUser(null); 
               setPin(null); 
+              setUnlocked(false);
+              router.push('/');
+            }}
+            onSignOut={async () => { 
+              if (auth) await auth.signOut();
+              setUser(null); 
+              setUnlocked(false);
               router.push('/');
             }}
           />

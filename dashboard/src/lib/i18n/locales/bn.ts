@@ -68,6 +68,14 @@ export const bn: TranslationDictionary = {
     logoutConfirmMessage: 'আপনি কি নিশ্চিতভাবে এই ডিভাইস থেকে লগআউট করতে চান?',
     logoutButton: 'হ্যাঁ, লগআউট করুন',
   },
+  bottomNav: {
+    dashboard: 'ড্যাশবোর্ড',
+    customers: 'কাস্টমার',
+    inventory: 'ইনভেন্টরি',
+    due: 'বাকি',
+    menu: 'মেনু',
+    attendance: 'হাজিরা',
+  },
   topbar: {
     dashboardWelcome: 'আপনার ড্যাশবোর্ডে স্বাগতম।',
     customersSubtitle: 'টিভি মেরামত কাস্টমার এবং কাজের হিসাব পরিচালনা করুন।',

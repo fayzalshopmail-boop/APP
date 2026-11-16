@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, Shield, Lock, Trash2, Mail, Loader2, UserX, Store, Building, Phone, Image as ImageIcon, Save, MapPin, Settings, Download, Upload, Database, FileText, ArrowUpRight, Clock, CreditCard, Award, Globe, Check, Send, Info } from 'lucide-react';
+import { AlertTriangle, Shield, Lock, Trash2, Mail, Loader2, UserX, Store, Building, Phone, Image as ImageIcon, Save, MapPin, Settings, Download, Upload, Database, FileText, ArrowUpRight, Clock, CreditCard, Award, Globe, Check, Send, Info, ShieldCheck, KeyRound } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { AppUser, UserRole, userService } from '@/lib/services/user';
 import { ShopSettings, shopSettingsService, defaultShopSettings } from '@/lib/services/shopSettings';
+import { securitySettingsService } from '@/lib/services/securitySettings';
+import { hashPin, verifyPin } from '@/lib/security';
 import { telegramService } from '@/lib/services/telegramService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -15,8 +17,62 @@ import { StaffManagementSection } from '@/components/settings/StaffManagementSec
 import toast from 'react-hot-toast';
 
 export default function SettingsPage() {
-  const { user: currentUser, shop: globalShop, setShop: setGlobalShop } = useAppStore();
+  const { user: currentUser, shop: globalShop, setShop: setGlobalShop, pin, setPin } = useAppStore();
   const { t, language, setLanguage } = useTranslation();
+
+  // SEC-02: Vault PIN Management State
+  const [isChangingPin, setIsChangingPin] = useState(false);
+  const [currentPinInput, setCurrentPinInput] = useState('');
+  const [newPinInput, setNewPinInput] = useState('');
+  const [confirmPinInput, setConfirmPinInput] = useState('');
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [savingPin, setSavingPin] = useState(false);
+
+  const handleUpdatePin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPinError(null);
+
+    // If there is an existing pin, verify the current pin first
+    if (pin) {
+      if (!currentPinInput) {
+        setPinError('বর্তমান পিন কোড লিখুন');
+        return;
+      }
+      const check = await verifyPin(currentPinInput, pin);
+      if (!check.valid) {
+        setPinError('বর্তমান পিন কোডটি সঠিক নয়');
+        return;
+      }
+    }
+
+    // Validate new pin
+    const cleanNewPin = newPinInput.trim();
+    if (!/^\d{4,6}$/.test(cleanNewPin)) {
+      setPinError('নতুন পিন কোডটি অবশ্যই ৪ থেকে ৬ ডিজিটের সংখ্যা হতে হবে');
+      return;
+    }
+
+    if (cleanNewPin !== confirmPinInput.trim()) {
+      setPinError('নতুন পিন কোড দুটি মিলছে না!');
+      return;
+    }
+
+    try {
+      setSavingPin(true);
+      const hashedPin = await hashPin(cleanNewPin);
+      await securitySettingsService.savePinHash(hashedPin, currentUser?.email);
+      setPin(hashedPin);
+      toast.success('ভল্ট পিন সফলভাবে পরিবর্তন ও ক্লাউডে সুরক্ষিত করা হয়েছে!');
+      setIsChangingPin(false);
+      setCurrentPinInput('');
+      setNewPinInput('');
+      setConfirmPinInput('');
+    } catch (err: any) {
+      setPinError(err?.message || 'পিন সংরক্ষণ করতে সমস্যা হয়েছে');
+    } finally {
+      setSavingPin(false);
+    }
+  };
 
   const handleLanguageChange = async (newLang: 'bn' | 'en') => {
     if (newLang === language) return;
@@ -1018,6 +1074,143 @@ export default function SettingsPage() {
               </div>
             </div>
           </motion.div>
+
+          {/* SEC-02: Vault PIN Security Card (Owner Only) */}
+          {currentUser?.role === 'Owner' && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-gray-800 rounded-2xl p-6 lg:p-8">
+              <div className="flex items-center justify-between border-b border-gray-800 pb-4 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-blue-500/10 rounded-xl text-blue-400 border border-blue-500/20">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-white">ভল্ট পিন ও কাউন্টার নিরাপত্তা</h2>
+                    <p className="text-xs text-gray-400 mt-0.5">পিসিতে ক্যাশ কাউন্টার ও ওনার স্ক্রিন লক করার জন্য ৪-৬ ডিজিটের পিন কোড (SHA-256 এনক্রিপ্টেড)</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+                    pin ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                  }`}>
+                    {pin ? '✓ সক্রিয় ও সুরক্ষিত' : '⚠ পিন সেট করা নেই'}
+                  </span>
+                </div>
+              </div>
+
+              {!isChangingPin ? (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-[#1b1f30] border border-gray-800">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-gray-200">
+                      {pin ? 'আপনার অ্যাকাউন্টে একটি মাস্টার ভল্ট পিন সক্রিয় রয়েছে।' : 'আপনার অ্যাকাউন্টে এখনো কোনো ভল্ট পিন সেট করা হয়নি।'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      ডেস্কটপ ব্রাউজারে ক্যাশ কাউন্টার ছেড়ে যাওয়ার আগে সাইডবার থেকে "Lock Screen" চাপলেই এই পিন দিয়ে স্ক্রিন লক থাকবে।
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsChangingPin(true);
+                      setPinError(null);
+                      setCurrentPinInput('');
+                      setNewPinInput('');
+                      setConfirmPinInput('');
+                    }}
+                    className="shrink-0 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-md shadow-blue-500/20 flex items-center gap-2"
+                  >
+                    <KeyRound className="w-4 h-4" />
+                    {pin ? 'পিন পরিবর্তন করুন' : 'নতুন পিন সেট করুন'}
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleUpdatePin} className="space-y-4 p-5 rounded-2xl bg-[#1b1f30] border border-gray-800">
+                  <div className="flex items-center justify-between pb-3 border-b border-gray-800/80">
+                    <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                      <KeyRound className="w-4 h-4 text-blue-400" />
+                      {pin ? 'ভল্ট পিন পরিবর্তন' : 'নতুন ভল্ট পিন সেট'}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setIsChangingPin(false)}
+                      className="text-xs text-gray-400 hover:text-gray-200"
+                    >
+                      বাতিল
+                    </button>
+                  </div>
+
+                  {pinError && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-xs sm:text-sm flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 shrink-0" />
+                      <span>{pinError}</span>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {pin && (
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">বর্তমান পিন</label>
+                        <input
+                          type="password"
+                          inputMode="numeric"
+                          maxLength={6}
+                          required
+                          value={currentPinInput}
+                          onChange={(e) => setCurrentPinInput(e.target.value.replace(/\D/g, ''))}
+                          placeholder="বর্তমান পিন"
+                          className="w-full bg-popover border border-gray-800 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500/50"
+                        />
+                      </div>
+                    )}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">নতুন পিন (৪-৬ ডিজিট)</label>
+                      <input
+                        type="password"
+                        inputMode="numeric"
+                        maxLength={6}
+                        required
+                        value={newPinInput}
+                        onChange={(e) => setNewPinInput(e.target.value.replace(/\D/g, ''))}
+                        placeholder="৪-৬ ডিজিট"
+                        className="w-full bg-popover border border-gray-800 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500/50"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">নতুন পিন নিশ্চিত করুন</label>
+                      <input
+                        type="password"
+                        inputMode="numeric"
+                        maxLength={6}
+                        required
+                        value={confirmPinInput}
+                        onChange={(e) => setConfirmPinInput(e.target.value.replace(/\D/g, ''))}
+                        placeholder="পুনরায় লিখুন"
+                        className="w-full bg-popover border border-gray-800 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500/50"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsChangingPin(false)}
+                      disabled={savingPin}
+                      className="px-4 py-2 rounded-xl text-xs sm:text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                    >
+                      বাতিল
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={savingPin}
+                      className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-md shadow-blue-500/20 flex items-center gap-2 disabled:opacity-50"
+                    >
+                      {savingPin ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                      পিন সংরক্ষণ করুন
+                    </button>
+                  </div>
+                </form>
+              )}
+            </motion.div>
+          )}
 
           {/* Language Selection Card */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-gray-800 rounded-2xl p-6 lg:p-8">

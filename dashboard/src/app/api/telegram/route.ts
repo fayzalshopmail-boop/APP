@@ -36,6 +36,7 @@ export async function POST(request: Request) {
 
     let isUserAuthorized = isServerCron;
     let userRole = isServerCron ? 'Owner' : '';
+    let userEmail = isServerCron ? 'cron@system' : '';
     let authErrorMessage = '';
 
     if (!isServerCron) {
@@ -44,6 +45,7 @@ export async function POST(request: Request) {
       if (authResult.success && authResult.user) {
         isUserAuthorized = true;
         userRole = authResult.user.role;
+        userEmail = authResult.user.email;
       } else {
         authErrorMessage = authResult.error || 'Unauthorized Telegram request';
       }
@@ -51,6 +53,38 @@ export async function POST(request: Request) {
 
     if (!isUserAuthorized) {
       return NextResponse.json({ success: false, error: authErrorMessage || 'Unauthorized Telegram request' }, { status: 401 });
+    }
+
+    // SEC-05: Rate Limiting Enforcement
+    // Prevents automated script abuse and Telegram Bot flood limits
+    let rateLimitResult: any = null;
+    if (!isServerCron) {
+      const { checkRateLimit, getClientIp } = await import('@/lib/rateLimit');
+      const clientIp = getClientIp(request);
+      const rateLimitKey = userEmail ? `tg:${userEmail}` : `tg:ip:${clientIp}`;
+
+      // Technicians: max 10 notifications/min; Owners/Managers: max 30 notifications/min
+      const maxLimit = (userRole === 'Owner' || userRole === 'Manager') ? 30 : 10;
+      const rl = checkRateLimit(rateLimitKey, maxLimit, 60 * 1000);
+      rateLimitResult = rl;
+
+      if (!rl.allowed) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `খুব দ্রুত টেলিগ্রাম মেসেজ পাঠানো হচ্ছে (Rate limit exceeded)। অনুগ্রহ করে ${rl.retryAfterSec} সেকেন্ড অপেক্ষা করুন।`
+          },
+          {
+            status: 429,
+            headers: {
+              'Retry-After': String(rl.retryAfterSec),
+              'X-RateLimit-Limit': String(rl.limit),
+              'X-RateLimit-Remaining': '0',
+              'X-RateLimit-Reset': String(rl.resetTime),
+            }
+          }
+        );
+      }
     }
 
     const body = await request.json().catch(() => ({}));
@@ -76,10 +110,17 @@ export async function POST(request: Request) {
     try {
       const { adminDb } = await import('@/lib/firebase-admin');
       if (adminDb) {
-        const settingsSnap = await adminDb.collection('settings').doc('shop').get();
-        if (settingsSnap.exists) {
-          const settings = settingsSnap.data();
-          tgSettings = settings?.telegram || null;
+        // Query isolated telegram document first
+        const tgSnap = await adminDb.collection('settings').doc('telegram').get();
+        if (tgSnap.exists) {
+          tgSettings = tgSnap.data() || null;
+        } else {
+          // Fallback to legacy settings/shop
+          const settingsSnap = await adminDb.collection('settings').doc('shop').get();
+          if (settingsSnap.exists) {
+            const settings = settingsSnap.data();
+            tgSettings = settings?.telegram || null;
+          }
         }
       }
     } catch (dbErr) {
@@ -91,18 +132,36 @@ export async function POST(request: Request) {
       try {
         const projId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
         if (projId) {
-          const docUrl = `https://firestore.googleapis.com/v1/projects/${projId}/databases/(default)/documents/settings/shop`;
-          const fsRes = await fetch(docUrl, {
+          const { parseFirestoreFields } = await import('@/lib/serverAuth');
+          // Try settings/telegram first
+          const tgUrl = `https://firestore.googleapis.com/v1/projects/${projId}/databases/(default)/documents/settings/telegram`;
+          const tgRes = await fetch(tgUrl, {
             headers: { 'Authorization': `Bearer ${bearerToken}` }
           });
-          if (fsRes.ok) {
-            const rawDoc = await fsRes.json();
-            const { parseFirestoreFields } = await import('@/lib/serverAuth');
-            const shopData = parseFirestoreFields(rawDoc.fields);
-            if (shopData?.telegram) {
-              if (!tgSettings) tgSettings = shopData.telegram;
-              if (!token && shopData.telegram.botToken) token = shopData.telegram.botToken;
-              if (!chatId && shopData.telegram.chatId) chatId = shopData.telegram.chatId;
+          if (tgRes.ok) {
+            const rawTg = await tgRes.json();
+            const data = parseFirestoreFields(rawTg.fields);
+            if (data) {
+              tgSettings = data;
+              if (!token && data.botToken) token = data.botToken;
+              if (!chatId && data.chatId) chatId = data.chatId;
+            }
+          }
+
+          // Fallback to settings/shop if still missing
+          if (!token || !chatId || !tgSettings) {
+            const docUrl = `https://firestore.googleapis.com/v1/projects/${projId}/databases/(default)/documents/settings/shop`;
+            const fsRes = await fetch(docUrl, {
+              headers: { 'Authorization': `Bearer ${bearerToken}` }
+            });
+            if (fsRes.ok) {
+              const rawDoc = await fsRes.json();
+              const shopData = parseFirestoreFields(rawDoc.fields);
+              if (shopData?.telegram) {
+                if (!tgSettings) tgSettings = shopData.telegram;
+                if (!token && shopData.telegram.botToken) token = shopData.telegram.botToken;
+                if (!chatId && shopData.telegram.chatId) chatId = shopData.telegram.chatId;
+              }
             }
           }
         }
@@ -165,8 +224,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, messageId: summaryResult.messageId });
     } else if (action === 'notify') {
       if (type === 'customer_create') {
-        const { customerName, phone, device, problem, advance, totalBill, isBillPending, staffName } = data || {};
+        const { customId, customerName, phone, device, problem, advance, totalBill, isBillPending, staffName } = data || {};
         text = `📱 <b>নতুন কাস্টমার / সার্ভিস রিসিভ</b>\n\n` +
+               (customId ? `🔖 <b>সার্ভিস আইডি:</b> #${customId}\n` : '') +
                `👤 <b>গ্রাহক:</b> ${customerName || 'N/A'}\n` +
                `📱 <b>মোবাইল:</b> ${phone || 'N/A'}\n` +
                (device ? `🛠️ <b>ডিভাইস:</b> ${device}\n` : '') +

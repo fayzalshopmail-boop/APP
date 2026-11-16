@@ -4,7 +4,7 @@ import { formatCurrency } from '@/lib/currency';
 
 
 import { useState, useEffect } from 'react';
-import { Save, Loader2, ToggleLeft, ToggleRight, Settings, FileText, Users, Clock, Send, Wallet, Shield, MessageSquare, CheckCircle } from 'lucide-react';
+import { Save, Loader2, ToggleLeft, ToggleRight, Settings, FileText, Users, Clock, Send, Wallet, Shield, MessageSquare, CheckCircle, Copy, Sparkles, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import { smsConfigService, SmsSettings, defaultSmsSettings } from '@/lib/services/smsConfig';
@@ -169,7 +169,7 @@ export default function SmsMarketingPage() {
       setSendProgress({ current: 0, total: validCustomers.length });
 
       // Check if message contains variables
-      const hasVariables = /{name}|{brand}|{type}|{due}|{total}|{advance}|{problem}/.test(bulkMessage);
+      const hasVariables = /{id}|{name}|{brand}|{type}|{due}|{total}|{advance}|{problem}/.test(bulkMessage);
 
       if (hasVariables) {
         // Send individually to resolve variables
@@ -179,6 +179,7 @@ export default function SmsMarketingPage() {
           setSendProgress({ current: i + 1, total: validCustomers.length });
           
           const personalizedMsg = bulkMessage
+            .replace(/{id}/g, c.customId ? String(c.customId) : '')
             .replace(/{name}/g, c.name || '')
             .replace(/{brand}/g, c.deviceBrand || '')
             .replace(/{type}/g, c.deviceType || '')
@@ -187,7 +188,7 @@ export default function SmsMarketingPage() {
             .replace(/{advance}/g, c.advance?.toString() || '0')
             .replace(/{due}/g, c.due?.toString() || '0');
 
-          const result = await sendSMS(c.phone, personalizedMsg, settings.apiKey, settings.senderId, settings.apiUrl);
+          const result = await sendSMS(c.phone, personalizedMsg, settings.apiKey, settings.senderId, settings.apiUrl, true);
           if (result.success) successCount++; else console.error("Bulk SMS individual error:", result.error);
         }
         toast.success(language === 'bn' 
@@ -197,7 +198,7 @@ export default function SmsMarketingPage() {
       } else {
         // Send as a single bulk request
         const validNumbers = validCustomers.map(c => c.phone);
-        const result = await sendSMS(validNumbers, bulkMessage, settings.apiKey, settings.senderId, settings.apiUrl);
+        const result = await sendSMS(validNumbers, bulkMessage, settings.apiKey, settings.senderId, settings.apiUrl, true);
         if (result.success) {
           toast.success(language === 'bn' 
             ? `সফলভাবে ${validNumbers.length} জন কাস্টমারকে বাল্ক SMS পাঠানো হয়েছে!` 
@@ -240,11 +241,12 @@ export default function SmsMarketingPage() {
         setSendProgress({ current: i + 1, total: eligible.length });
         
         const personalizedMsg = followupMessage
+          .replace(/{id}/g, c.customId ? String(c.customId) : '')
           .replace(/{name}/g, c.name || '')
           .replace(/{brand}/g, c.deviceBrand || '')
           .replace(/{type}/g, c.deviceType || '');
 
-        const result = await sendSMS(c.phone, personalizedMsg, settings.apiKey, settings.senderId, settings.apiUrl);
+        const result = await sendSMS(c.phone, personalizedMsg, settings.apiKey, settings.senderId, settings.apiUrl, true);
         if (result.success) successCount++; else console.error("Bulk SMS individual error:", result.error);
       }
       
@@ -456,13 +458,75 @@ export default function SmsMarketingPage() {
 
         {activeTab === 'templates' && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+            {/* Dynamic Tokens Guide Card */}
+            <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-blue-900/20 via-[#1b1f30] to-[#141824] border border-blue-500/20 shadow-xl">
+              <div className="flex items-start gap-3.5 mb-4">
+                <div className="p-2.5 bg-blue-500/10 text-blue-400 rounded-xl border border-blue-500/20 shrink-0 mt-0.5">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                    {language === 'bn' ? 'ডায়নামিক টোকেন ও ভ্যারিয়েবল নির্দেশিকা' : 'Dynamic SMS Tokens & Variable Guide'}
+                    <span className="text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                      {language === 'bn' ? 'নতুন: {id} টোকেন' : 'New: {id} Token'}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-gray-300 mt-1 leading-relaxed">
+                    {language === 'bn' 
+                      ? 'মেসেজ টেমপ্লেটে নিচের টোকেনগুলো লিখলে সিস্টেম স্বয়ংক্রিয়ভাবে সংশ্লিষ্ট কাস্টমারের আসল তথ্য ও সার্ভিস আইডি নম্বর বসিয়ে মেসেজ পাঠাবে। যেকোনো টোকেনের উপর ট্যাপ করলেই তা কপি হয়ে যাবে:'
+                      : 'Insert these tokens into templates; the system will automatically inject customer details and unique Job IDs. Click any token to copy:'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 pt-1">
+                {[
+                  { tag: '{id}', desc: language === 'bn' ? 'সার্ভিস আইডি (যেমন: 1001)' : 'Job / Service ID (1001)', highlight: true },
+                  { tag: '{name}', desc: language === 'bn' ? 'কাস্টমারের নাম' : 'Customer Name' },
+                  { tag: '{brand}', desc: language === 'bn' ? 'ডিভাইসের ব্র্যান্ড (Samsung)' : 'Device Brand' },
+                  { tag: '{type}', desc: language === 'bn' ? 'ডিভাইসের ধরন (LED TV)' : 'Device Type' },
+                  { tag: '{problem}', desc: language === 'bn' ? 'সমস্যার বিবরণ' : 'Problem Description' },
+                  { tag: '{total}', desc: language === 'bn' ? 'মোট বিল (টাকা)' : 'Total Bill' },
+                  { tag: '{advance}', desc: language === 'bn' ? 'অগ্রিম জমা (টাকা)' : 'Advance Payment' },
+                  { tag: '{due}', desc: language === 'bn' ? 'বর্তমান বকেয়া (টাকা)' : 'Current Due Amount' },
+                  { tag: '{shop}', desc: language === 'bn' ? 'দোকানের নাম' : 'Shop Name' },
+                  { tag: '{points}', desc: language === 'bn' ? 'লয়্যালটি পয়েন্ট' : 'Loyalty Points' },
+                ].map((item) => (
+                  <button
+                    key={item.tag}
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(item.tag);
+                      toast.success(`${item.tag} ${language === 'bn' ? 'কপি হয়েছে' : 'copied'}`);
+                    }}
+                    className={`p-2.5 rounded-xl text-left border transition-all active:scale-95 group ${
+                      item.highlight 
+                        ? 'bg-blue-600/15 border-blue-500/50 hover:bg-blue-600/25 shadow-sm shadow-blue-500/20' 
+                        : 'bg-[#151928] border-gray-800 hover:border-gray-700 hover:bg-gray-800/40'
+                    }`}
+                    title={language === 'bn' ? 'কপি করতে ক্লিক করুন' : 'Click to copy'}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className={`font-mono text-xs font-bold ${item.highlight ? 'text-blue-300' : 'text-blue-400'}`}>
+                        {item.tag}
+                      </span>
+                      <Copy className="w-3 h-3 text-gray-500 group-hover:text-gray-300 opacity-60 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                    <p className="text-[10px] text-gray-400 mt-1 line-clamp-1 leading-tight">
+                      {item.desc}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
               <div className="space-y-3">
                 <h2 className="text-lg font-bold text-white">
                   {language === 'bn' ? 'পেন্ডিং রিসিভ টেমপ্লেট' : 'Received Template'}
                 </h2>
                 <p className="text-xs text-gray-400">
-                  {language === 'bn' ? 'কাস্টমার যোগ করার সময় পাঠানো হবে। ভ্যারিয়েবল:' : 'When added to pending. Variables:'} {'{name}, {brand}, {type}, {problem}, {total}, {advance}'}
+                  {language === 'bn' ? 'কাস্টমার যোগ করার সময় পাঠানো হবে। ভ্যারিয়েবল:' : 'When added to pending. Variables:'} {'{id}, {name}, {brand}, {type}, {problem}, {total}, {advance}'}
                 </p>
                 <textarea 
                   value={settings.welcomeTemplate}
@@ -475,7 +539,7 @@ export default function SmsMarketingPage() {
                   {language === 'bn' ? 'মেরামত সম্পন্ন টেমপ্লেট' : 'Ready Template'}
                 </h2>
                 <p className="text-xs text-gray-400">
-                  {language === 'bn' ? 'স্ট্যাটাস Ready হলে পাঠানো হবে। ভ্যারিয়েবল:' : 'When status marked as Ready. Variables:'} {'{name}, {brand}, {type}, {due}'}
+                  {language === 'bn' ? 'স্ট্যাটাস Ready হলে পাঠানো হবে। ভ্যারিয়েবল:' : 'When status marked as Ready. Variables:'} {'{id}, {name}, {brand}, {type}, {due}'}
                 </p>
                 <textarea 
                   value={settings.readyTemplate}
@@ -488,7 +552,7 @@ export default function SmsMarketingPage() {
                   {language === 'bn' ? 'ডেলিভারি টেমপ্লেট' : 'Delivered Template'}
                 </h2>
                 <p className="text-xs text-gray-400">
-                  {language === 'bn' ? 'স্ট্যাটাস Delivered হলে পাঠানো হবে। ভ্যারিয়েবল:' : 'When status marked as Delivered. Variables:'} {'{name}, {brand}, {type}'}
+                  {language === 'bn' ? 'স্ট্যাটাস Delivered হলে পাঠানো হবে। ভ্যারিয়েবল:' : 'When status marked as Delivered. Variables:'} {'{id}, {name}, {brand}, {type}'}
                 </p>
                 <textarea 
                   value={settings.deliveredTemplate || ''}
@@ -501,7 +565,7 @@ export default function SmsMarketingPage() {
                   {language === 'bn' ? 'হোয়াটসঅ্যাপ ইনভয়েস টেমপ্লেট' : 'WhatsApp Invoice Template'}
                 </h2>
                 <p className="text-xs text-gray-400">
-                  {language === 'bn' ? 'হোয়াটসঅ্যাপে ইনভয়েস পাঠানোর জন্য। ভ্যারিয়েবল:' : 'For sending invoice via WhatsApp. Variables:'} {'{name}, {brand}, {type}, {total}, {advance}, {due}'}
+                  {language === 'bn' ? 'হোয়াটসঅ্যাপে ইনভয়েস পাঠানোর জন্য। ভ্যারিয়েবল:' : 'For sending invoice via WhatsApp. Variables:'} {'{id}, {name}, {brand}, {type}, {total}, {advance}, {due}'}
                 </p>
                 <textarea 
                   value={settings.whatsappTemplate || ''}
@@ -514,7 +578,7 @@ export default function SmsMarketingPage() {
                   {language === 'bn' ? 'বাকি তাগাদা টেমপ্লেট' : 'Due Reminder Template'}
                 </h2>
                 <p className="text-xs text-gray-400">
-                  {language === 'bn' ? 'বাকি পেজ বা বাল্ক SMS থেকে পাঠানো হবে। ভ্যারিয়েবল:' : 'Sent from Due Page or Bulk SMS. Variables:'} {'{name}, {brand}, {type}, {due}'}
+                  {language === 'bn' ? 'বাকি পেজ বা বাল্ক SMS থেকে পাঠানো হবে। ভ্যারিয়েবল:' : 'Sent from Due Page or Bulk SMS. Variables:'} {'{id}, {name}, {brand}, {type}, {due}'}
                 </p>
                 <textarea 
                   value={settings.paymentReminderTemplate || ''}
@@ -527,7 +591,7 @@ export default function SmsMarketingPage() {
                   {language === 'bn' ? 'ফলো-আপ রিমাইন্ডার টেমপ্লেট' : 'Follow-up Template'}
                 </h2>
                 <p className="text-xs text-gray-400">
-                  {language === 'bn' ? '৬ মাসের সার্ভিস ফলো-আপ। ভ্যারিয়েবল:' : '6-Month Reminder. Variables:'} {'{name}, {brand}, {type}'}
+                  {language === 'bn' ? '৬ মাসের সার্ভিস ফলো-আপ। ভ্যারিয়েবল:' : '6-Month Reminder. Variables:'} {'{id}, {name}, {brand}, {type}'}
                 </p>
                 <textarea 
                   value={settings.followupTemplate || ''}
@@ -540,7 +604,7 @@ export default function SmsMarketingPage() {
                   {language === 'bn' ? 'ফেরত (অনমেরামতকৃত) টেমপ্লেট' : 'Returned (Unrepaired) Template'}
                 </h2>
                 <p className="text-xs text-gray-400">
-                  {language === 'bn' ? 'স্ট্যাটাস Returned হলে পাঠানো হবে। ভ্যারিয়েবল:' : 'When status marked as Returned. Variables:'} {'{name}, {brand}, {type}'}
+                  {language === 'bn' ? 'স্ট্যাটাস Returned হলে পাঠানো হবে। ভ্যারিয়েবল:' : 'When status marked as Returned. Variables:'} {'{id}, {name}, {brand}, {type}'}
                 </p>
                 <textarea 
                   value={settings.returnedTemplate || ''}
@@ -553,7 +617,7 @@ export default function SmsMarketingPage() {
                   {language === 'bn' ? 'পার্টসের অপেক্ষা টেমপ্লেট' : 'Waiting for Parts Template'}
                 </h2>
                 <p className="text-xs text-gray-400">
-                  {language === 'bn' ? 'পার্টসের অপেক্ষায় থাকাকালীন পাঠানো হবে। ভ্যারিয়েবল:' : 'When status marked as Waiting for Parts. Variables:'} {'{name}, {brand}, {type}, {problem}, {total}, {advance}, {due}'}
+                  {language === 'bn' ? 'পার্টসের অপেক্ষায় থাকাকালীন পাঠানো হবে। ভ্যারিয়েবল:' : 'When status marked as Waiting for Parts. Variables:'} {'{id}, {name}, {brand}, {type}, {problem}, {total}, {advance}, {due}'}
                 </p>
                 <textarea 
                   value={settings.waitingForPartsTemplate || ''}
@@ -685,9 +749,15 @@ export default function SmsMarketingPage() {
                 placeholder={language === 'bn' ? 'আপনার অফার, ঈদের শুভেচ্ছা ইত্যাদির মেসেজ লিখুন...' : 'Write your promotional offer, Eid greetings, etc. here...'}
                 className="w-full bg-popover border border-gray-800 text-gray-200 rounded-xl p-4 text-sm focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all min-h-[160px] resize-none leading-relaxed"
               />
-              <p className="text-xs text-gray-500 text-right">
-                {bulkMessage.length} {language === 'bn' ? 'টি অক্ষর' : 'characters'}
-              </p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-gray-500">
+                <span>
+                  {language === 'bn' ? 'ব্যবহারযোগ্য ভ্যারিয়েবল:' : 'Available variables:'}{' '}
+                  <span className="text-blue-400 font-mono">{'{id}, {name}, {brand}, {type}, {problem}, {total}, {advance}, {due}'}</span>
+                </span>
+                <span className="text-right">
+                  {bulkMessage.length} {language === 'bn' ? 'টি অক্ষর' : 'characters'}
+                </span>
+              </div>
             </div>
 
             <div className="pt-4 border-t border-gray-800 flex justify-end">
@@ -759,7 +829,8 @@ export default function SmsMarketingPage() {
                 className="w-full bg-popover border border-gray-800 text-gray-200 rounded-xl p-4 text-sm focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all min-h-[120px] resize-none leading-relaxed"
               />
               <p className="text-xs text-gray-500 text-right">
-                {language === 'bn' ? 'ব্যবহারযোগ্য ভ্যারিয়েবল:' : 'Available variables:'} {'{name}, {brand}, {type}'}
+                {language === 'bn' ? 'ব্যবহারযোগ্য ভ্যারিয়েবল:' : 'Available variables:'}{' '}
+                <span className="text-blue-400 font-mono">{'{id}, {name}, {brand}, {type}'}</span>
               </p>
             </div>
 

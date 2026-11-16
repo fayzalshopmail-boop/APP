@@ -301,11 +301,12 @@ export function Topbar() {
     try {
       const staffName = data.receivedByName || user.name || user.email || 'Unknown';
       const staffEmail = data.receivedBy || user.email || user.name || 'Unknown';
-      await shopTransactionService.createCustomer({
+      const res = await shopTransactionService.createCustomer({
         ...data,
         receivedBy: staffEmail,
         receivedByName: staffName
       }, staffEmail, staffName);
+      const generatedCustomId = res.customId;
       handleCloseCustomerModal();
       
       // Send Welcome SMS
@@ -314,7 +315,8 @@ export function Topbar() {
       
       const smsSettings = await smsConfigService.getSettings();
       if (smsSettings.enabled && smsSettings.apiKey && smsSettings.senderId && data.phone) {
-        const msg = smsSettings.welcomeTemplate
+        let msg = smsSettings.welcomeTemplate
+          .replace(/{id}/g, `${generatedCustomId}`)
           .replace(/{name}/g, data.name || '')
           .replace(/{phone}/g, data.phone || '')
           .replace(/{brand}/g, data.deviceBrand || '')
@@ -324,6 +326,14 @@ export function Topbar() {
           .replace(/{advance}/g, `${data.advance || 0}`)
           .replace(/{due}/g, (data as any).isBillPending ? 'পেন্ডিং' : `${data.due || 0}`);
           
+        if (!smsSettings.welcomeTemplate.includes('{id}')) {
+          if (msg.includes('হয়েছে।')) {
+            msg = msg.replace('হয়েছে।', `হয়েছে। সার্ভিস আইডি: #${generatedCustomId}।`);
+          } else {
+            msg = `[আইডি: #${generatedCustomId}] ` + msg;
+          }
+        }
+
         await sendSMS(data.phone, msg, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
       }
       

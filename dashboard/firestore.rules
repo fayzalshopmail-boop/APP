@@ -32,8 +32,8 @@ service cloud.firestore {
 
     match /settings/{docId} {
       // General settings (shop, dropdowns, loyalty) are readable by active users
-      // SMS and Telegram configuration credentials are strictly locked to Manager or Owner
-      allow read: if (docId == 'sms' || docId == 'telegram') ? isManagerOrOwner() : isActiveUser();
+      // SMS, Telegram, and Security (Owner PIN) configuration are strictly locked to Manager or Owner
+      allow read: if (docId == 'sms' || docId == 'telegram' || docId == 'security') ? isManagerOrOwner() : isActiveUser();
       allow write: if isManagerOrOwner();
     }
 

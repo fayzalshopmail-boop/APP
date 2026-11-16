@@ -173,9 +173,13 @@ async function sendTelegramBackupNotification(
 
     if (adminDb) {
       try {
-        const snap = await adminDb.collection('settings').doc('shop').get();
+        let snap = await adminDb.collection('settings').doc('telegram').get();
+        if (!snap.exists) {
+          snap = await adminDb.collection('settings').doc('shop').get();
+        }
         if (snap.exists) {
-          const tg = snap.data()?.telegram;
+          const data = snap.data();
+          const tg = data?.botToken ? data : data?.telegram;
           if (tg) {
             if (tg.botToken) token = tg.botToken;
             if (tg.chatId) chatId = tg.chatId;

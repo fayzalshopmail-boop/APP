@@ -269,21 +269,26 @@ export default function CustomersPage() {
         // Add Atomically
         const staffName = data.receivedByName || user?.name || user?.email || 'Unknown';
         const staffEmail = data.receivedBy || user?.email || user?.name || 'Unknown';
-        const newId = await shopTransactionService.createCustomer({
+        const res = await shopTransactionService.createCustomer({
           ...data,
           receivedBy: staffEmail,
           receivedByName: staffName
         }, staffEmail, staffName);
+        const newId = res.id;
+        const generatedCustomId = res.customId;
         await fetchCustomers();
 
         if (instantDelivery) {
           setPartsModalCustomer({ id: newId, name: data.name, pendingStatus: 'Delivered' });
         }
 
+        toast.success(isBangla ? `কাস্টমার সফলভাবে যোগ হয়েছে! সার্ভিস আইডি: #${generatedCustomId}` : `Customer added! Service ID: #${generatedCustomId}`);
+
         // Send Welcome SMS
         const smsSettings = await smsConfigService.getSettings();
         if (smsSettings.enabled && smsSettings.apiKey && smsSettings.senderId) {
-          const msg = smsSettings.welcomeTemplate
+          let msg = smsSettings.welcomeTemplate
+            .replace(/{id}/g, `${generatedCustomId}`)
             .replace(/{name}/g, data.name || '')
             .replace(/{phone}/g, data.phone || '')
             .replace(/{brand}/g, data.deviceBrand || '')
@@ -292,6 +297,14 @@ export default function CustomersPage() {
             .replace(/{total}/g, data.isBillPending ? 'চেক করে জানানো হবে' : `${data.totalBill || 0}`)
             .replace(/{advance}/g, `${data.advance || 0}`)
             .replace(/{due}/g, data.isBillPending ? 'পেন্ডিং' : `${data.due || 0}`);
+
+          if (!smsSettings.welcomeTemplate.includes('{id}')) {
+            if (msg.includes('হয়েছে।')) {
+              msg = msg.replace('হয়েছে।', `হয়েছে। সার্ভিস আইডি: #${generatedCustomId}।`);
+            } else {
+              msg = `[আইডি: #${generatedCustomId}] ` + msg;
+            }
+          }
             
           sendSMS(data.phone, msg, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
         }
@@ -414,6 +427,7 @@ export default function CustomersPage() {
 
             if (template) {
               const msg = template
+                .replace(/{id}/g, `${mergedCustomer.customId || ''}`)
                 .replace(/{name}/g, mergedCustomer.name || '')
                 .replace(/{phone}/g, mergedCustomer.phone || '')
                 .replace(/{brand}/g, mergedCustomer.deviceBrand || '')
@@ -610,6 +624,7 @@ export default function CustomersPage() {
         const template = smsSettings.returnedTemplate;
         if (template) {
           const msg = template
+            .replace(/{id}/g, `${c.customId || ''}`)
             .replace(/{name}/g, c.name || '')
             .replace(/{phone}/g, c.phone || '')
             .replace(/{brand}/g, c.deviceBrand || '')
@@ -686,7 +701,10 @@ export default function CustomersPage() {
   const displayCustomers = Array.from(uniqueCustomersMap.values());
 
   const filteredCustomers = displayCustomers.filter(c => {
-    const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) || 
+    const cleanSearch = search.trim().replace(/^#/, '');
+    const matchesId = Boolean(cleanSearch && c.customId && String(c.customId).includes(cleanSearch));
+    const matchesSearch = matchesId ||
+                          c.name.toLowerCase().includes(search.toLowerCase()) || 
                           c.phone.includes(search) ||
                           c.deviceBrand?.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === 'All' 
@@ -869,12 +887,24 @@ export default function CustomersPage() {
                 ) : paginatedCustomers.map((customer) => (
                 <tr key={customer.id} className="hover:bg-gray-800/20 transition-colors group">
                   <td className="px-4 py-3.5">
-                    <Button variant="link" onClick={() => setProfileSidebarCustomer(customer)} className="p-0 h-auto font-semibold text-gray-200 hover:text-blue-400 transition-colors text-left block hover:no-underline"
-                      title="View Customer Profile & History"
-                    >
-                      {customer.name}
-                    </Button>
-                    <div className="text-xs text-gray-500 mt-0.5 truncate max-w-[200px]">{customer.address || 'No Address'}</div>
+                    <div className="space-y-0.5">
+                      <Button variant="link" onClick={() => setProfileSidebarCustomer(customer)} className="p-0 h-auto font-semibold text-gray-200 hover:text-blue-400 transition-colors text-left block hover:no-underline"
+                        title="View Customer Profile & History"
+                      >
+                        {customer.name}
+                      </Button>
+                      <div className="flex items-center gap-1.5">
+                        {customer.customId && (
+                          <span 
+                            className="font-mono text-[11px] font-bold px-1.5 py-0.2 rounded bg-blue-500/15 text-blue-400 border border-blue-500/25 shrink-0 select-all" 
+                            title="সার্ভিস / প্রোডাক্ট আইডি"
+                          >
+                            #{customer.customId}
+                          </span>
+                        )}
+                        <span className="text-xs text-gray-500 truncate max-w-[180px]">{customer.address || 'No Address'}</span>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-1.5">
@@ -1098,6 +1128,14 @@ export default function CustomersPage() {
                   >
                     {customer.name}
                   </button>
+                  {customer.customId && (
+                    <span 
+                      className="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-500/25 shrink-0 select-all" 
+                      title="সার্ভিস / প্রোডাক্ট আইডি"
+                    >
+                      #{customer.customId}
+                    </span>
+                  )}
                   {customer.warrantyMonths ? (
                     <span className="text-[10px] font-semibold text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.2 rounded shrink-0">
                       {customer.warrantyMonths}

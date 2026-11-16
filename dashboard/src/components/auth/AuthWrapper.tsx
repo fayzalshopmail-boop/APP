@@ -1,6 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { userService } from '@/lib/services/user';
+import { securitySettingsService } from '@/lib/services/securitySettings';
 import { useAppStore } from '@/store/useAppStore';
 import { AuthScreen } from './AuthScreen';
 import { Sidebar } from '@/components/layout/Sidebar';
@@ -56,6 +60,75 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
     
     return () => unsubscribe();
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // SEC-02: Cryptographic & Firestore Role Verification
+  // Synchronizes client-side state with Firebase Authentication & Firestore users collection.
+  // Prevents localStorage tampering (e.g. changing role to 'Owner' or bypassing lock).
+  useEffect(() => {
+    if (!auth) return;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (fbUser) => {
+      if (!fbUser || !fbUser.email) {
+        // Firebase has no active session. Never trust untrusted localStorage credentials!
+        const currentUser = useAppStore.getState().user;
+        if (currentUser) {
+          useAppStore.getState().setUser(null);
+          useAppStore.getState().setUnlocked(false);
+        }
+        return;
+      }
+
+      try {
+        const normalizedEmail = fbUser.email.toLowerCase().trim();
+        const dbUser = await userService.getUserByEmail(normalizedEmail);
+
+        if (!dbUser || !dbUser.isActive) {
+          console.warn('[Security] Unauthorized or inactive user detected:', normalizedEmail);
+          if (auth) await signOut(auth);
+          useAppStore.getState().setUser(null);
+          useAppStore.getState().setUnlocked(false);
+          return;
+        }
+
+        // Force overwrite store user with authenticated, verified Firestore record
+        // This completely prevents client-side localStorage privilege escalation
+        const verifiedUser = {
+          name: dbUser.name,
+          role: dbUser.role,
+          avatar: dbUser.avatar || fbUser.photoURL || 'AD',
+          email: normalizedEmail,
+        };
+
+        const storeUser = useAppStore.getState().user;
+        if (
+          !storeUser ||
+          storeUser.role !== verifiedUser.role ||
+          storeUser.email !== verifiedUser.email ||
+          storeUser.name !== verifiedUser.name
+        ) {
+          useAppStore.getState().setUser(verifiedUser);
+        }
+
+        // For Owner and Manager, ensure PIN hash is synchronized from Firestore settings/security
+        if (dbUser.role === 'Owner' || dbUser.role === 'Manager') {
+          const remotePinHash = await securitySettingsService.getPinHash();
+          if (remotePinHash) {
+            useAppStore.getState().setPin(remotePinHash);
+          } else {
+            // Backward-compatible migration: If store has a valid 64-char hash, push it to Firestore
+            const localPin = useAppStore.getState().pin;
+            if (localPin && localPin.length === 64) {
+              await securitySettingsService.savePinHash(localPin, normalizedEmail);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('[Security] Error verifying user authentication state:', err);
+      }
+    });
+
+    return () => unsubscribeAuth();
   }, []);
 
   useEffect(() => {

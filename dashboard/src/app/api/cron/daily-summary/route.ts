@@ -93,14 +93,17 @@ export async function executeDailySummary(
     let settingsSnap: any = null;
     if (adminDb) {
       try {
-        settingsSnap = await adminDb.collection('settings').doc('shop').get();
+        settingsSnap = await adminDb.collection('settings').doc('telegram').get();
+        if (!settingsSnap.exists) {
+          settingsSnap = await adminDb.collection('settings').doc('shop').get();
+        }
       } catch (e) {
         console.warn('Could not get settings from adminDb:', e);
       }
     }
     if (settingsSnap && settingsSnap.exists) {
       const data = settingsSnap.data();
-      const tg = data?.telegram;
+      const tg = data?.botToken ? data : data?.telegram;
       if (tg) {
         if (tg.botToken) token = tg.botToken;
         if (tg.chatId) chatId = tg.chatId;
@@ -115,21 +118,41 @@ export async function executeDailySummary(
       try {
         const projId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
         if (projId) {
-          const docUrl = `https://firestore.googleapis.com/v1/projects/${projId}/databases/(default)/documents/settings/shop`;
-          const fsRes = await fetch(docUrl, {
+          const { parseFirestoreFields } = await import('@/lib/serverAuth');
+          // Try settings/telegram first
+          const tgUrl = `https://firestore.googleapis.com/v1/projects/${projId}/databases/(default)/documents/settings/telegram`;
+          const tgRes = await fetch(tgUrl, {
             headers: { 'Authorization': `Bearer ${overrides.bearerToken}` }
           });
-          if (fsRes.ok) {
-            const rawDoc = await fsRes.json();
-            const { parseFirestoreFields } = await import('@/lib/serverAuth');
-            const shopData = parseFirestoreFields(rawDoc.fields);
-            const tg = shopData?.telegram;
+          if (tgRes.ok) {
+            const rawTg = await tgRes.json();
+            const tg = parseFirestoreFields(rawTg.fields);
             if (tg) {
               if (!token && tg.botToken) token = tg.botToken;
               if (!chatId && tg.chatId) chatId = tg.chatId;
               if (tg.enabled === false) enabled = false;
               if (tg.notifyOnDailySummary === false) notifyOnDailySummary = false;
               lastAutoSummaryDate = tg.lastAutoSummaryDate || '';
+            }
+          }
+
+          // Fallback to settings/shop if still missing
+          if (!token || !chatId) {
+            const docUrl = `https://firestore.googleapis.com/v1/projects/${projId}/databases/(default)/documents/settings/shop`;
+            const fsRes = await fetch(docUrl, {
+              headers: { 'Authorization': `Bearer ${overrides.bearerToken}` }
+            });
+            if (fsRes.ok) {
+              const rawDoc = await fsRes.json();
+              const shopData = parseFirestoreFields(rawDoc.fields);
+              const tg = shopData?.telegram;
+              if (tg) {
+                if (!token && tg.botToken) token = tg.botToken;
+                if (!chatId && tg.chatId) chatId = tg.chatId;
+                if (tg.enabled === false) enabled = false;
+                if (tg.notifyOnDailySummary === false) notifyOnDailySummary = false;
+                lastAutoSummaryDate = tg.lastAutoSummaryDate || '';
+              }
             }
           }
         }

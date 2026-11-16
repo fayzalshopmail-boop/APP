@@ -2,7 +2,14 @@ import toast from 'react-hot-toast';
 import { offlineSyncService } from './services/offlineSync';
 import { auth } from './firebase';
 
-export const sendSMS = async (number: string | string[], message: string, apiKey?: string, senderId?: string, apiUrl?: string) => {
+export const sendSMS = async (
+  number: string | string[], 
+  message: string, 
+  apiKey?: string, 
+  senderId?: string, 
+  apiUrl?: string,
+  isBulkCampaign?: boolean
+) => {
   // Check if browser is offline
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     offlineSyncService.queueSMS({ number, message });
@@ -30,6 +37,7 @@ export const sendSMS = async (number: string | string[], message: string, apiKey
       body: JSON.stringify({ 
         number, 
         message, 
+        ...(isBulkCampaign ? { isBulkCampaign: true } : {}),
         ...(apiKey ? { apiKey } : {}), 
         ...(senderId ? { senderId } : {}), 
         ...(apiUrl ? { apiUrl } : {}) 

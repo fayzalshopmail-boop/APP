@@ -68,6 +68,14 @@ export interface TranslationDictionary {
     logoutConfirmMessage: string;
     logoutButton: string;
   };
+  bottomNav: {
+    dashboard: string;
+    customers: string;
+    inventory: string;
+    due: string;
+    menu: string;
+    attendance: string;
+  };
   topbar: {
     dashboardWelcome: string;
     customersSubtitle: string;

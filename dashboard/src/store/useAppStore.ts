@@ -148,10 +148,16 @@ export const useAppStore = create<AppState>()(
         const migratedBrands = Array.isArray(state?.deviceBrands) ? {} : state?.deviceBrands || {};
         const migratedProblems = Array.isArray(state?.deviceProblems) ? {} : state?.deviceProblems || {};
         
+        // Never allow unhashed or legacy cleartext PINs; only accept verified 64-character SHA-256 hex strings
+        const cleanPin = (typeof state?.pin === 'string' && state.pin.length === 64 && /^[0-9a-f]{64}$/i.test(state.pin))
+          ? state.pin
+          : null;
+
         return {
           ...currentState,
           ...(persistedState as any),
-          isUnlocked: state?.isUnlocked ?? false,
+          pin: cleanPin,
+          isUnlocked: false, // Strictly force locked state on cold reload to prevent localStorage tampering
           deviceBrands: migratedBrands,
           deviceProblems: migratedProblems,
           language: (state?.language === 'en' || state?.language === 'bn') ? state.language : (state?.shop?.language || 'bn')
@@ -160,8 +166,9 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({ 
         user: state.user,
         shop: state.shop,
-        pin: state.pin,
-        isUnlocked: state.isUnlocked,
+        // Only persist PIN if it is a cryptographically hashed 64-character SHA-256 string; NEVER plaintext
+        pin: (state.pin && state.pin.length === 64 && /^[0-9a-f]{64}$/i.test(state.pin)) ? state.pin : null,
+        // isUnlocked is intentionally OMITTED to prevent bypassing vault lock via localStorage manipulation
         deviceBrands: state.deviceBrands,
         deviceTypes: state.deviceTypes,
         deviceProblems: state.deviceProblems,
