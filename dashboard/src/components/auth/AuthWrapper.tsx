@@ -156,6 +156,11 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
 
   const isPhone = isPhoneDevice();
 
+  // Public Routes (Allow customer self-tracking without authentication or dashboard layout)
+  if (pathname.startsWith('/track')) {
+    return <>{children}</>;
+  }
+
   // If not logged in AT ALL, show AuthScreen (email/password login).
   // If Owner on PC/desktop is locked, show AuthScreen (Vault PIN).
   // On phone/mobile, the lock screen is bypassed.

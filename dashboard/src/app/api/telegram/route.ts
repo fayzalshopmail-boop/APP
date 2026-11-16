@@ -400,6 +400,26 @@ export async function POST(request: Request) {
                  `\nঅনুগ্রহ করে সেটিংস থেকে ইমেইল কনফিগারেশন চেক করুন।\n` +
                  `\n🕒 <b>সময়:</b> ${formatNow()}`;
         }
+      } else if (type === 'cash_closing') {
+        const { date, expectedCash, actualCash, difference, totalIn, totalOut, note, staffName } = data || {};
+        const isMatched = Number(difference) === 0;
+        const diffText = isMatched 
+          ? '✅ সম্পূর্ণ মিলে গেছে (৳০)' 
+          : Number(difference) > 0 
+          ? `🔵 ${formatCurrency(difference)} উদ্বৃত্ত (Surplus)` 
+          : `🔴 ${formatCurrency(Math.abs(difference))} ঘাটতি (Shortage)`;
+
+        text = `📊 <b>কাউন্টার ক্যাশ ক্লোজিং রিপোর্ট (Cash Register Closing)</b>\n\n` +
+               `📅 <b>তারিখ:</b> ${date || formatNow()}\n` +
+               `👤 <b>ক্লোজ করেছেন:</b> ${staffName || userEmail}\n\n` +
+               `💵 <b>সিস্টেম অনুযায়ী ক্যাশ:</b> ${formatCurrency(expectedCash)}\n` +
+               `📥 <b>ড্রয়ারের প্রকৃত ক্যাশ:</b> ${formatCurrency(actualCash)}\n` +
+               `⚖️ <b>পার্থক্য / স্ট্যাটাস:</b> ${diffText}\n\n` +
+               `📈 <b>আজকের মোট ক্যাশ ইন:</b> ${formatCurrency(totalIn)}\n` +
+               `📉 <b>আজকের মোট ক্যাশ আউট:</b> ${formatCurrency(totalOut)}\n` +
+               (note ? `📝 <b>মন্তব্য/নোট:</b> ${note}\n` : '') +
+               `\n✨ <i>আলহামদুলিল্লাহ, কাউন্টারের সারাদিনের নগদ ক্যাশ সফলভাবে মিলিয়ে ক্লোজ করা হয়েছে।</i>\n` +
+               `\n🕒 <b>সময়:</b> ${formatNow()}`;
       } else {
         const { title, message } = data || {};
         text = `📢 <b>${title || 'অ্যাপ নোটিফিকেশন'}</b>\n\n` +

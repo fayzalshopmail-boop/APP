@@ -1,12 +1,15 @@
 'use client';
 
 import { Customer, RepairRecord, normalizePhone } from '@/lib/services/customer';
-import { X, User, Phone, PhoneCall, MapPin, Tv, Shield, History, Coins, UserCheck, Calendar } from 'lucide-react';
+import { X, User, Phone, PhoneCall, MapPin, Tv, Shield, History, Coins, UserCheck, Calendar, TrendingUp, Link2, Copy } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { transactionService } from '@/lib/services/transaction';
 import { useTranslation } from '@/lib/i18n/useTranslation';
+import { useAppStore } from '@/store/useAppStore';
+import { getWarrantyStatus } from '@/lib/warranty';
+import toast from 'react-hot-toast';
 
 interface CustomerProfileSidebarProps {
   isOpen: boolean;
@@ -18,6 +21,8 @@ interface CustomerProfileSidebarProps {
 
 export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers, onOpenSetBill }: CustomerProfileSidebarProps) {
   const { t, language } = useTranslation();
+  const { user } = useAppStore();
+  const isOwnerOrManager = user?.role === 'Owner' || user?.role === 'Manager';
   const [advanceReceivedByMap, setAdvanceReceivedByMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -138,16 +143,35 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
               
               {/* Profile Card */}
               <div className="bg-secondary rounded-xl p-5 border border-gray-800">
-                <div className="flex items-center gap-2.5 mb-4 flex-wrap">
-                  <h3 className="text-2xl font-bold text-white">{customer.name}</h3>
-                  {customer.customId && (
-                    <span 
-                      className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-400 border border-blue-500/25 select-all" 
-                      title="সার্ভিস / প্রোডাক্ট আইডি"
-                    >
-                      #{customer.customId}
-                    </span>
-                  )}
+                <div className="flex items-center justify-between gap-2.5 mb-4 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-2xl font-bold text-white">{customer.name}</h3>
+                    {customer.customId && (
+                      <span 
+                        className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-400 border border-blue-500/25 select-all" 
+                        title="সার্ভিস / প্রোডাক্ট আইডি"
+                      >
+                        #{customer.customId}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Public Tracking Link Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (typeof window !== 'undefined') {
+                        const trackUrl = `${window.location.origin}/track?id=${customer.customId || customer.id}`;
+                        navigator.clipboard.writeText(trackUrl);
+                        toast.success(language === 'bn' ? 'অনলাইন ট্র্যাকিং লিংক কপি হয়েছে!' : 'Tracking link copied!');
+                      }
+                    }}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 text-xs font-semibold transition-colors shadow-sm"
+                    title={language === 'bn' ? 'কাস্টমারের ট্র্যাকিং লিংক কপি করুন' : 'Copy Customer Tracking Link'}
+                  >
+                    <Link2 className="w-3.5 h-3.5" />
+                    <span>{language === 'bn' ? 'ট্র্যাকিং লিংক' : 'Track Link'}</span>
+                  </button>
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-3 text-gray-300">
@@ -275,12 +299,19 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
                         </div>
                       )}
 
-                      {job.warrantyMonths && (
-                        <div className="mt-3 pt-3 border-t border-gray-800/50 flex items-center gap-2 text-xs text-purple-400 font-medium">
-                          <Shield className="w-3.5 h-3.5" />
-                          {job.warrantyMonths} {language === 'bn' ? 'ওয়ারেন্টি অন্তর্ভুক্ত' : 'Warranty Provided'}
-                        </div>
-                      )}
+                      {job.warrantyMonths ? (() => {
+                        const w = getWarrantyStatus(
+                          job.warrantyMonths, 
+                          (job as any).deliveredAt || (job as any).completedAt, 
+                          job.status
+                        );
+                        return (
+                          <div className={`mt-3 pt-3 border-t border-gray-800/50 flex items-center gap-2 text-xs font-medium ${w.colorClass} px-2.5 py-1.5 rounded-lg border`}>
+                            <Shield className="w-3.5 h-3.5 shrink-0" />
+                            <span>{language === 'bn' ? w.displayBadgeText.bn : w.displayBadgeText.en}</span>
+                          </div>
+                        );
+                      })() : null}
 
                       {job.partsUsed && job.partsUsed.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-gray-800/50">
@@ -296,6 +327,38 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
                             ))}
                             <div className="border-t border-gray-800 mt-2 pt-1 flex justify-between items-center text-[10px] text-gray-500">
                               <span>{language === 'bn' ? 'মোট পার্টস খরচ:' : 'Total Parts Cost:'} {formatCurrency(job.totalCost || 0)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Feature 4: Job-Level Net Profit Analysis (Strictly restricted to Owner and Manager) */}
+                      {isOwnerOrManager && !job.isBillPending && (
+                        <div className="mt-3 pt-3 border-t border-gray-800/80 bg-emerald-950/20 rounded-xl p-3 border border-emerald-500/25">
+                          <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
+                            <span>{language === 'bn' ? 'মোট সার্ভিস বিল:' : 'Total Bill:'}</span>
+                            <span className="font-semibold text-white">{formatCurrency(job.totalBill || 0)}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-gray-400 mb-1.5">
+                            <span>{language === 'bn' ? 'পার্টসের ক্রয়মূল্য (খরচ):' : 'Parts Cost:'}</span>
+                            <span className="font-medium text-rose-400">-{formatCurrency(job.totalCost || 0)}</span>
+                          </div>
+                          <div className="pt-1.5 border-t border-emerald-500/20 flex items-center justify-between">
+                            <div className="flex items-center gap-1.5 text-emerald-400">
+                              <TrendingUp className="w-3.5 h-3.5" />
+                              <span className="text-xs font-bold">
+                                {language === 'bn' ? 'এই জবে নিট লাভ:' : 'Job Net Profit:'}
+                              </span>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-sm font-black text-emerald-400">
+                                {formatCurrency(Math.max(0, (job.totalBill || 0) - (job.totalCost || 0)))}
+                              </span>
+                              {Boolean(job.totalBill && job.totalBill > 0) && (
+                                <span className="text-[10px] text-emerald-300/80 ml-1.5 font-bold">
+                                  ({Math.round(((job.totalBill - (job.totalCost || 0)) / job.totalBill) * 100)}%)
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>

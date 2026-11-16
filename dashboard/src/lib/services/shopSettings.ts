@@ -17,6 +17,7 @@ export interface TelegramSettings {
   notifyOnDailySummary?: boolean;
   notifyOnLoan?: boolean;
   notifyOnBackup?: boolean;
+  lastAutoSummaryDate?: string;
 }
 
 export interface ShopSettings {

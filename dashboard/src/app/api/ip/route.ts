@@ -23,11 +23,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      ip: ip || '127.0.0.1',
-      headers: {
-        forwarded,
-        realIp
-      }
+      ip: ip || '127.0.0.1'
     });
   } catch {
     return NextResponse.json({ ip: '127.0.0.1' }, { status: 200 });

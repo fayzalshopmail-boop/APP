@@ -1,10 +1,16 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Users, Coins, Tv, Wrench, Loader2, TrendingUp, ArrowUpRight, Plus } from 'lucide-react';
+import { Users, Coins, Tv, Wrench, Loader2, TrendingUp, ArrowUpRight, Plus, Scale } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { StatCard } from '@/components/ui/StatCard';
 import { QuickAlerts } from '@/components/ui/QuickAlerts';
 import { RevenueChart } from '@/components/ui/RevenueChart';
+
+const DayEndClosingModal = dynamic(
+  () => import('@/components/ui/DayEndClosingModal').then((m) => m.DayEndClosingModal),
+  { ssr: false }
+);
 import { normalizePhone } from '@/lib/services/customer';
 import { formatCurrency } from '@/lib/currency';
 import { getLocalDateString } from '@/lib/utils';
@@ -26,6 +32,7 @@ export default function Dashboard() {
 
   const timeFilter = dashboardTimeFilter;
   const [isLoading, setIsLoading] = useState(true);
+  const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
   const [stats, setStats] = useState({ 
     totalCustomers: 0, 
     totalJobs: 0,
@@ -318,13 +325,24 @@ export default function Dashboard() {
               <p className="text-[11px] text-gray-400">{isBangla ? "ফিল্টার অনুযায়ী ক্যাশ কালেকশন, মোট খরচ ও প্রকৃত নিট লাভ" : "Collection, expenses and net profit for period"}</p>
             </div>
           </div>
-          <Link 
-            href="/reports" 
-            className="text-xs text-blue-400 hover:text-blue-300 font-medium inline-flex items-center gap-1 transition-colors self-start sm:self-auto"
-          >
-            <span>{isBangla ? "পূর্ণাঙ্গ রিপোর্ট ও লেজার" : "Full Reports & Ledger"}</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
-          </Link>
+          <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+            <button
+              type="button"
+              onClick={() => setIsClosingModalOpen(true)}
+              className="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-400 hover:text-amber-300 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+              title="কাউন্টার ক্যাশ ড্রয়ার মিলিয়ে দিন ক্লোজ করুন"
+            >
+              <Coins className="w-3.5 h-3.5" />
+              <span>{isBangla ? "ক্যাশ ড্রয়ার ক্লোজিং" : "Cash Closing"}</span>
+            </button>
+            <Link 
+              href="/reports" 
+              className="text-xs text-blue-400 hover:text-blue-300 font-medium inline-flex items-center gap-1 transition-colors px-2.5 py-1.5"
+            >
+              <span>{isBangla ? "পূর্ণাঙ্গ রিপোর্ট" : "Full Reports"}</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 xl:gap-4">
@@ -397,6 +415,12 @@ export default function Dashboard() {
       >
         <Plus className="w-6 h-6 stroke-[2.5]" />
       </button>
+
+      {/* Day-End Counter Cash Closing Modal */}
+      <DayEndClosingModal
+        isOpen={isClosingModalOpen}
+        onClose={() => setIsClosingModalOpen(false)}
+      />
     </div>
   );
 }

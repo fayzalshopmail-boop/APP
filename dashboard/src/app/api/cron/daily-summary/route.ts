@@ -274,11 +274,16 @@ export async function executeDailySummary(
     // Save last summary date to avoid re-triggering for the same day
     if (adminDb) {
       try {
-        await adminDb.collection('settings').doc('shop').set({
-          telegram: {
+        await Promise.all([
+          adminDb.collection('settings').doc('telegram').set({
             lastAutoSummaryDate: targetDateStr
-          }
-        }, { merge: true });
+          }, { merge: true }),
+          adminDb.collection('settings').doc('shop').set({
+            telegram: {
+              lastAutoSummaryDate: targetDateStr
+            }
+          }, { merge: true })
+        ]);
       } catch (saveErr) {
         console.warn('Could not update lastAutoSummaryDate:', saveErr);
       }
@@ -292,19 +297,33 @@ export async function executeDailySummary(
 }
 
 async function verifyCronOrOwnerAuth(req: NextRequest): Promise<boolean> {
-  const authHeader = req.headers.get('authorization');
-  const token = authHeader?.replace(/^Bearer\s+/i, '').trim();
-  if (!token) return false;
-
-  const expectedSecret = process.env.CRON_SECRET;
-  if (expectedSecret && token === expectedSecret) {
+  // 1. Native Vercel Cron invocation
+  const isVercelCron = req.headers.get('x-vercel-cron') === '1' || 
+                       (req.headers.get('user-agent') || '').includes('vercel-cron');
+  if (isVercelCron) {
     return true;
   }
 
-  const { verifyUserToken } = await import('@/lib/serverAuth');
-  const res = await verifyUserToken(token);
-  if (res.success && res.user && (res.user.role === 'Owner' || res.user.role === 'Manager')) {
+  // 2. Secret-based authorization
+  const authHeader = req.headers.get('authorization');
+  const token = authHeader?.replace(/^Bearer\s+/i, '').trim();
+
+  const expectedSecret = process.env.CRON_SECRET;
+  if (expectedSecret && token && token === expectedSecret) {
     return true;
+  }
+
+  // 3. Authenticated Owner / Manager Firebase session
+  if (token) {
+    try {
+      const { verifyUserToken } = await import('@/lib/serverAuth');
+      const res = await verifyUserToken(token);
+      if (res.success && res.user && (res.user.role === 'Owner' || res.user.role === 'Manager')) {
+        return true;
+      }
+    } catch {
+      // Continue to reject
+    }
   }
 
   return false;

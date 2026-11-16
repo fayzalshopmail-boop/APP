@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect } from 'react';
-import { Search, Edit, Trash2, MessageCircle, Download, FileText, Phone, PhoneCall, MapPin, Tv, Eye, Filter, X, ChevronLeft, ChevronRight, Coins, Plus } from 'lucide-react';
+import { Search, Edit, Trash2, MessageCircle, Download, FileText, Phone, PhoneCall, MapPin, Tv, Eye, Filter, X, ChevronLeft, ChevronRight, Coins, Plus, Link2, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatCurrency } from '@/lib/currency';
 import { useAppStore } from '@/store/useAppStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
+import { getWarrantyStatus } from '@/lib/warranty';
 import dynamic from 'next/dynamic';
 import type { PartsConfirmData } from '@/components/ui/PartsUsedModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -950,11 +951,14 @@ export default function CustomersPage() {
                     </div>
                     <div className="text-xs text-orange-400/80 mt-0.5">{customer.deviceProblem || 'N/A'}</div>
                     {customer.deviceDetails && <div className="text-[10px] text-gray-500 mt-0.5 truncate max-w-[150px]">{customer.deviceDetails}</div>}
-                    {customer.warrantyMonths ? (
-                      <div className="text-[10px] font-medium text-purple-400 mt-1 bg-purple-500/10 px-2 py-0.5 rounded w-fit">
-                        {customer.warrantyMonths} Warranty
-                      </div>
-                    ) : null}
+                    {customer.warrantyMonths ? (() => {
+                      const w = getWarrantyStatus(customer.warrantyMonths, customer.deliveredAt || customer.completedAt, customer.status);
+                      return (
+                        <div className={`text-[10px] font-medium mt-1 px-1.5 py-0.5 rounded w-fit border ${w.colorClass}`}>
+                          {isBangla ? w.displayBadgeText.bn : w.displayBadgeText.en}
+                        </div>
+                      );
+                    })() : null}
                   </td>
                   <td className="px-4 py-3.5">
                     {customer.isBillPending ? (
@@ -977,6 +981,12 @@ export default function CustomersPage() {
                         ) : (
                           <div className="text-xs font-bold text-emerald-400 mt-1 flex items-center gap-1">
                             Paid ✓
+                          </div>
+                        )}
+                        {hasFullAccess && Boolean(customer.totalCost && customer.totalCost > 0) && (
+                          <div className="text-[10px] font-semibold text-emerald-400 mt-0.5 flex items-center gap-1" title="এই জবে প্রাক্কলিত নিট লাভ">
+                            <TrendingUp className="w-3 h-3 text-emerald-400 shrink-0" />
+                            <span>+{formatCurrency(Math.max(0, customer.totalBill - (customer.totalCost || 0)))}</span>
                           </div>
                         )}
                       </>
@@ -1007,6 +1017,22 @@ export default function CustomersPage() {
                           Pay
                         </Button>
                       ) : null}
+                      {/* Copy Tracking Link Button */}
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => {
+                          if (typeof window !== 'undefined') {
+                            const url = `${window.location.origin}/track?id=${customer.customId || customer.id}`;
+                            navigator.clipboard.writeText(url);
+                            toast.success(isBangla ? 'অনলাইন ট্র্যাকিং লিংক কপি হয়েছে!' : 'Tracking link copied!');
+                          }
+                        }} 
+                        className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors h-8 w-8" 
+                        title="Copy Online Tracking Link"
+                      >
+                        <Link2 className="w-4 h-4" />
+                      </Button>
                       <Button variant="ghost" size="icon" onClick={() => setInvoiceModalCustomer(customer)} className="text-gray-400 hover:text-white hover:bg-gray-800 transition-colors h-8 w-8" 
                         title="Print Invoice"
                       >
@@ -1136,11 +1162,15 @@ export default function CustomersPage() {
                       #{customer.customId}
                     </span>
                   )}
-                  {customer.warrantyMonths ? (
-                    <span className="text-[10px] font-semibold text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.2 rounded shrink-0">
-                      {customer.warrantyMonths}
-                    </span>
-                  ) : null}
+                  {customer.warrantyMonths ? (() => {
+                    const w = getWarrantyStatus(customer.warrantyMonths, customer.deliveredAt || customer.completedAt, customer.status);
+                    return (
+                      <span className={`text-[10px] font-semibold border px-1.5 py-0.5 rounded shrink-0 ${w.colorClass}`}>
+                        {customer.warrantyMonths}
+                        {w.isActive ? ` (${w.daysRemaining}d)` : w.isExpired ? ' (Exp)' : ''}
+                      </span>
+                    );
+                  })() : null}
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-gray-400 mt-0.5 flex-wrap">
                   <span 
@@ -1289,6 +1319,22 @@ export default function CustomersPage() {
 
               {/* Utility Action Icons */}
               <div className="flex items-center gap-0.5 shrink-0">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => {
+                    if (typeof window !== 'undefined') {
+                      const url = `${window.location.origin}/track?id=${customer.customId || customer.id}`;
+                      navigator.clipboard.writeText(url);
+                      toast.success(isBangla ? 'অনলাইন ট্র্যাকিং লিংক কপি হয়েছে!' : 'Tracking link copied!');
+                    }
+                  }} 
+                  className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 h-6.5 w-6.5 rounded-md p-0"
+                  title="Copy Online Tracking Link"
+                >
+                  <Link2 className="w-3.5 h-3.5" />
+                </Button>
+
                 <Button 
                   variant="ghost" 
                   size="icon" 

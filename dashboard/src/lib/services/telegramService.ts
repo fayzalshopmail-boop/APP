@@ -317,6 +317,27 @@ export const telegramService = {
   },
 
   /**
+   * Triggers a notification for day-end counter cash register closing.
+   */
+  notifyCashClosing(data: {
+    date?: string;
+    expectedCash: number;
+    actualCash: number;
+    difference: number;
+    totalIn: number;
+    totalOut: number;
+    note?: string;
+    staffName?: string;
+  }): void {
+    try {
+      postToTelegram({ action: 'notify', type: 'cash_closing', data })
+        .catch(err => console.warn('Telegram notifyCashClosing error:', err));
+    } catch (e) {
+      console.warn('Telegram notifyCashClosing exception:', e);
+    }
+  },
+
+  /**
    * Triggers a generic system alert or announcement.
    */
   notifyGeneral(title: string, message: string): void {
