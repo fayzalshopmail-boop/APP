@@ -165,7 +165,7 @@ export function OwnerBottomNav() {
       {/* iOS-Style Floating Bottom Navigation Bar for Owner/Manager (Mobile Only) */}
       <nav 
         aria-label="Owner Bottom Navigation"
-        className="fixed bottom-3 left-3 right-3 sm:bottom-4 sm:left-auto sm:right-auto sm:w-full max-w-md mx-auto z-40 bg-[#0a0d18]/75 backdrop-blur-2xl backdrop-saturate-150 border border-white/15 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.65)] px-1.5 py-1 sm:px-2.5 sm:py-1.5 md:hidden select-none transition-all pb-[max(0.25rem,env(safe-area-inset-bottom,0px))]"
+        className="fixed bottom-3 left-3 right-3 sm:bottom-4 sm:left-auto sm:right-auto sm:w-full max-w-md mx-auto z-40 bg-[#0a0d18]/55 backdrop-blur-2xl backdrop-saturate-150 border border-white/12 rounded-full shadow-[0_12px_36px_rgba(0,0,0,0.5)] px-2 py-1.5 sm:px-3 sm:py-2 md:hidden select-none transition-all pb-[max(0.35rem,env(safe-area-inset-bottom,0px))]"
       >
         <div className="grid grid-cols-5 items-center gap-0.5 sm:gap-1">
           {primaryTabs.map((tab) => {
@@ -177,7 +177,7 @@ export function OwnerBottomNav() {
                 key={tab.id}
                 href={tab.href}
                 onClick={handlePrimaryTabClick}
-                className={`flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all duration-200 relative group min-w-0 active:scale-95 ${
+                className={`flex flex-col items-center justify-center py-1 px-0.5 rounded-full transition-all duration-200 relative group min-w-0 active:scale-95 ${
                   active ? 'text-blue-400 font-bold' : 'text-gray-400 hover:text-gray-200'
                 }`}
               >
@@ -189,13 +189,6 @@ export function OwnerBottomNav() {
                 <span className="text-[10px] sm:text-[11px] mt-0.5 leading-tight tracking-tight text-center truncate max-w-full block">
                   {tab.name}
                 </span>
-                <span 
-                  className={`w-1.5 h-1.5 rounded-full mt-0.5 transition-all duration-200 ${
-                    active 
-                      ? 'bg-blue-400 opacity-100 shadow-[0_0_6px_rgba(59,130,246,0.8)] scale-100' 
-                      : 'opacity-0 scale-0 pointer-events-none'
-                  }`} 
-                />
               </Link>
             );
           })}
@@ -204,7 +197,7 @@ export function OwnerBottomNav() {
           <button
             type="button"
             onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-            className={`flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all duration-200 relative group min-w-0 active:scale-95 ${
+            className={`flex flex-col items-center justify-center py-1 px-0.5 rounded-full transition-all duration-200 relative group min-w-0 active:scale-95 ${
               isMoreActive ? 'text-blue-400 font-bold' : 'text-gray-400 hover:text-gray-200'
             }`}
           >
@@ -216,13 +209,6 @@ export function OwnerBottomNav() {
             <span className="text-[10px] sm:text-[11px] mt-0.5 leading-tight tracking-tight text-center truncate max-w-full block">
               {t('bottomNav.menu')}
             </span>
-            <span 
-              className={`w-1.5 h-1.5 rounded-full mt-0.5 transition-all duration-200 ${
-                isMoreActive 
-                  ? 'bg-blue-400 opacity-100 shadow-[0_0_6px_rgba(59,130,246,0.8)] scale-100' 
-                  : 'opacity-0 scale-0 pointer-events-none'
-              }`} 
-            />
           </button>
         </div>
       </nav>
