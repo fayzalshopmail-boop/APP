@@ -285,7 +285,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
 
  return (
  <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
- <DialogContent className="w-[95vw] sm:max-w-3xl max-h-[92vh] sm:max-h-[88vh] bg-popover text-white border-gray-800 shadow-2xl shadow-blue-900/10 p-0 overflow-hidden rounded-2xl flex flex-col">
+ <DialogContent className="w-[95vw] sm:max-w-3xl max-h-[90dvh] sm:max-h-[88dvh] bg-popover text-white border-gray-800 shadow-2xl shadow-blue-900/10 p-0 overflow-hidden rounded-2xl flex flex-col">
  {/* Gradient Header Background */}
  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 z-10 shrink-0" />
  

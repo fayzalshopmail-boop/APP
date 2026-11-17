@@ -322,7 +322,7 @@ export function AttendanceSecurityModal({ isOpen, onClose, onSaved }: Attendance
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[96vw] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[92vh] sm:max-h-[88vh] overflow-y-auto bg-[#0d101d] border border-gray-800 text-white rounded-2xl p-4 sm:p-6 md:p-8 shadow-2xl custom-scrollbar">
+      <DialogContent className="w-[96vw] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[90dvh] sm:max-h-[88dvh] overflow-y-auto bg-[#0d101d] border border-gray-800 text-white rounded-2xl p-4 sm:p-6 md:p-8 shadow-2xl custom-scrollbar">
         <DialogHeader className="border-b border-gray-800/80 pb-3 sm:pb-4">
           <div className="flex items-start sm:items-center gap-2.5 sm:gap-3.5">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-500/15 text-blue-400 flex items-center justify-center border border-blue-500/25 shrink-0 mt-0.5 sm:mt-0 shadow-inner">

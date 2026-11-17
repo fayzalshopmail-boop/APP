@@ -265,7 +265,7 @@ export function DayEndClosingModal({ isOpen, onClose, onSuccess }: DayEndClosing
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[95vw] sm:max-w-[620px] max-h-[92vh] flex flex-col bg-popover text-white border-gray-800 shadow-2xl p-0 overflow-hidden [&>button]:hidden">
+      <DialogContent className="max-w-[95vw] sm:max-w-[620px] max-h-[90dvh] flex flex-col bg-popover text-white border-gray-800 shadow-2xl p-0 overflow-hidden [&>button]:hidden">
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-800 bg-secondary shrink-0">
           <div className="flex items-center gap-2.5">

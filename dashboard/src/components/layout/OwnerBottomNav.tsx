@@ -233,7 +233,7 @@ export function OwnerBottomNav() {
               : 'translateY(0)',
           transition: isDragging ? 'none' : 'transform 240ms cubic-bezier(0.16, 1, 0.3, 1)',
         }}
-        className={`fixed bottom-0 left-0 right-0 z-50 bg-[#121523] border-t border-gray-800 rounded-t-3xl shadow-2xl max-h-[85vh] overflow-y-auto md:hidden pb-8 will-change-transform ${
+        className={`fixed bottom-0 left-0 right-0 z-50 bg-[#121523] border-t border-gray-800 rounded-t-3xl shadow-2xl max-h-[85dvh] overflow-y-auto md:hidden pb-8 will-change-transform ${
           isMoreOpen ? 'pointer-events-auto' : 'pointer-events-none'
         }`}
         aria-hidden={!isMoreOpen}

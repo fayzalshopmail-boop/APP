@@ -667,7 +667,8 @@ export default function LoansPage() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-280px)] relative">
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto overflow-y-auto max-h-[calc(100vh-280px)] relative">
               <table className="w-full whitespace-nowrap">
                 <thead className="bg-background/50">
                   <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-800/50">
@@ -783,6 +784,146 @@ export default function LoansPage() {
                   })}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Card View (Touch-friendly & Responsive) */}
+            <div className="md:hidden space-y-2.5">
+              {paginatedLoans.map((l) => {
+                const remainingDue = l.amount - (l.paidAmount || 0);
+                const isPaid = l.status === 'Paid' || remainingDue <= 0;
+                const isGiven = l.type === 'Given';
+
+                return (
+                  <div 
+                    key={l.id} 
+                    className="bg-card/90 border border-gray-800/90 rounded-xl p-3 shadow-sm hover:border-gray-700 transition-all space-y-2.5"
+                  >
+                    {/* Top Row: Person Name & Phone + Type Badge */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-semibold text-gray-100 text-sm truncate">
+                          {l.personName}
+                        </div>
+                        {l.phone && (
+                          <div className="flex items-center gap-1.5 text-xs text-gray-400 mt-0.5">
+                            <Phone className="w-3 h-3 text-blue-400" />
+                            <a 
+                              href={`tel:${l.phone}`} 
+                              className="hover:underline text-gray-300 font-medium"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {l.phone}
+                            </a>
+                          </div>
+                        )}
+                        {l.notes && <p className="text-xs text-gray-400 font-normal mt-0.5 truncate">{l.notes}</p>}
+                      </div>
+
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${
+                          isGiven ? 'bg-orange-500/10 text-orange-400 border-orange-500/25' : 'bg-red-500/10 text-red-400 border-red-500/25'
+                        }`}>
+                          {isGiven ? (language === 'bn' ? 'পাবো' : 'Given') : (language === 'bn' ? 'দিতে হবে' : 'Taken')}
+                        </span>
+                        {isPaid && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            {language === 'bn' ? 'পরিশোধিত' : 'Paid'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Middle Info Strip: Total & Remaining Due */}
+                    <div className="flex items-center justify-between bg-[#121523]/80 px-2.5 py-2 rounded-lg border border-gray-800/60 text-xs">
+                      <div>
+                        <span className="text-[10px] text-gray-400 block">{language === 'bn' ? 'মোট ঋণ:' : 'Total:'}</span>
+                        <span className="text-xs font-bold text-gray-200">
+                          {formatCurrency(l.amount)}
+                        </span>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="text-[10px] text-gray-400 block">{language === 'bn' ? 'অবশিষ্ট বাকি:' : 'Due:'}</span>
+                        <span className={`text-sm font-bold ${isPaid ? 'text-emerald-400' : 'text-yellow-400'}`}>
+                          {isPaid ? formatCurrency(0) : formatCurrency(remainingDue)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Date & Next Date info */}
+                    <div className="flex items-center justify-between text-[11px] text-gray-400 px-0.5">
+                      <span>{language === 'bn' ? 'তারিখ:' : 'Date:'} {l.date}</span>
+                      {!isPaid && l.nextPaymentDate && (
+                        <span className="flex items-center gap-1 text-blue-400 font-medium">
+                          <CalendarClock className="w-3 h-3" />
+                          {language === 'bn' ? 'পরবর্তী:' : 'Next:'} {l.nextPaymentDate}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Actions Row */}
+                    <div className="flex items-center justify-between gap-1.5 pt-1 border-t border-gray-800/50">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {!isPaid && (
+                          <>
+                            <Button 
+                              size="sm" 
+                              onClick={() => { setPaymentModalData(l); setNextDate(''); setPaymentNote(''); }} 
+                              className="bg-blue-600 hover:bg-blue-500 text-white text-xs h-8 px-2.5 rounded-lg shadow-sm font-medium flex items-center gap-1"
+                            >
+                              <Coins className="w-3.5 h-3.5" />
+                              <span>{language === 'bn' ? 'জমা / পরিশোধ' : 'Payment'}</span>
+                            </Button>
+                            {l.phone && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => handleSendSms(l)} 
+                                disabled={sendingSmsId === l.id} 
+                                className="h-8 px-2 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-400/10 border border-indigo-500/20 rounded-lg text-xs flex items-center gap-1"
+                                title={language === 'bn' ? 'SMS রিমাইন্ডার' : 'SMS Reminder'}
+                              >
+                                <MessageSquare className="w-3.5 h-3.5" />
+                                <span>SMS</span>
+                              </Button>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => setHistoryModalData(l)} 
+                          className="h-8 w-8 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-400/10 rounded-lg" 
+                          title={language === 'bn' ? 'হিস্ট্রি দেখুন' : 'View History'}
+                        >
+                          <History className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleOpenModal(l)} 
+                          className="h-8 w-8 text-gray-400 hover:text-white rounded-lg" 
+                          title={language === 'bn' ? 'এডিট করুন' : 'Edit'}
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => setDeleteId(l.id)} 
+                          className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg" 
+                          title={language === 'bn' ? 'ডিলিট করুন' : 'Delete'}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Desktop Pagination (>=640px) */}
