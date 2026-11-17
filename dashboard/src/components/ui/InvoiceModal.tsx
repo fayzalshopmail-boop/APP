@@ -34,7 +34,7 @@ export function InvoiceModal({ isOpen, onClose, customer }: InvoiceModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-[96vw] sm:max-w-[800px] max-h-[92vh] sm:max-h-[90vh] flex flex-col bg-popover text-white border-gray-800 shadow-2xl p-0 overflow-hidden [&>button]:hidden print:bg-white print:text-black print:border-none print:shadow-none print:max-w-full print:max-h-none print:h-auto">
+      <DialogContent className="w-[96vw] sm:max-w-[800px] max-h-[92dvh] sm:max-h-[90dvh] flex flex-col bg-popover text-white border-gray-800 shadow-2xl p-0 overflow-hidden [&>button]:hidden print:bg-white print:text-black print:border-none print:shadow-none print:max-w-full print:max-h-none print:h-auto">
         {/* Screen Only Header */}
         <div className="flex justify-between items-center p-3 sm:p-4 border-b border-gray-800 bg-secondary print:hidden shrink-0">
           <h2 className="text-base sm:text-lg font-bold">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { Customer, customerService } from '@/lib/services/customer';
 import { shopTransactionService } from '@/lib/services/shopTransaction';
@@ -81,25 +81,27 @@ export default function DuePage() {
     return d.getTime() < currentTime;
   }, [currentTime]);
 
-  const totalDues = customers.reduce((sum, c) => sum + c.due, 0);
-  const overdueCount = customers.filter(c => isOverdue(c.dueDate)).length;
-  const highDueCount = customers.filter(c => c.due >= 500).length;
+  const totalDues = useMemo(() => customers.reduce((sum, c) => sum + c.due, 0), [customers]);
+  const overdueCount = useMemo(() => customers.filter(c => isOverdue(c.dueDate)).length, [customers, isOverdue]);
+  const highDueCount = useMemo(() => customers.filter(c => c.due >= 500).length, [customers]);
 
-  const filteredCustomers = customers
-    .filter(c => {
-      const matchesSearch = 
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        c.phone.includes(searchTerm);
-      if (!matchesSearch) return false;
-      if (filterTab === 'overdue') return isOverdue(c.dueDate);
-      if (filterTab === 'high') return c.due >= 500;
-      return true;
-    })
-    .sort((a, b) => {
-      if (!a.dueDate) return 1;
-      if (!b.dueDate) return -1;
-      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-    });
+  const filteredCustomers = useMemo(() => {
+    return customers
+      .filter(c => {
+        const matchesSearch = 
+          c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+          c.phone.includes(searchTerm);
+        if (!matchesSearch) return false;
+        if (filterTab === 'overdue') return isOverdue(c.dueDate);
+        if (filterTab === 'high') return c.due >= 500;
+        return true;
+      })
+      .sort((a, b) => {
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      });
+  }, [customers, searchTerm, filterTab, isOverdue]);
 
   const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage) || 1;
   const paginatedCustomers = filteredCustomers.slice(

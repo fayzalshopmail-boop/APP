@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Wrench, Edit2, Trash2, Coins, Phone, MapPin, Calculator, Briefcase, Search } from 'lucide-react';
 import { mechanicService, Mechanic } from '@/lib/services/mechanic';
 import { formatCurrency } from '@/lib/currency';
@@ -174,21 +174,23 @@ export default function MechanicsPage() {
     }
   };
 
-  const totalShopDueToMechanics = mechanics.reduce((acc, m) => acc + m.commissionDue, 0);
-  const totalJobs = mechanics.reduce((acc, m) => acc + m.totalJobsBrought, 0);
-  const dueCount = mechanics.filter(m => m.commissionDue > 0).length;
-  const clearedCount = mechanics.filter(m => m.commissionDue <= 0).length;
+  const totalShopDueToMechanics = useMemo(() => mechanics.reduce((acc, m) => acc + m.commissionDue, 0), [mechanics]);
+  const totalJobs = useMemo(() => mechanics.reduce((acc, m) => acc + m.totalJobsBrought, 0), [mechanics]);
+  const dueCount = useMemo(() => mechanics.filter(m => m.commissionDue > 0).length, [mechanics]);
+  const clearedCount = useMemo(() => mechanics.filter(m => m.commissionDue <= 0).length, [mechanics]);
 
-  const filteredMechanics = mechanics.filter(m => {
-    const matchesSearch = 
-      m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      m.phone.includes(searchTerm) ||
-      (m.address && m.address.toLowerCase().includes(searchTerm.toLowerCase()));
-    if (!matchesSearch) return false;
-    if (filterTab === 'due') return m.commissionDue > 0;
-    if (filterTab === 'cleared') return m.commissionDue <= 0;
-    return true;
-  });
+  const filteredMechanics = useMemo(() => {
+    return mechanics.filter(m => {
+      const matchesSearch = 
+        m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        m.phone.includes(searchTerm) ||
+        (m.address && m.address.toLowerCase().includes(searchTerm.toLowerCase()));
+      if (!matchesSearch) return false;
+      if (filterTab === 'due') return m.commissionDue > 0;
+      if (filterTab === 'cleared') return m.commissionDue <= 0;
+      return true;
+    });
+  }, [mechanics, searchTerm, filterTab]);
 
   const totalPages = Math.ceil(filteredMechanics.length / itemsPerPage) || 1;
   const paginatedMechanics = filteredMechanics.slice(
@@ -501,7 +503,7 @@ export default function MechanicsPage() {
 
       {/* Add/Edit Mechanic Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto bg-popover border-border rounded-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-[425px] max-h-[90dvh] overflow-y-auto bg-popover border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">
               {editingMechanic 
@@ -566,7 +568,7 @@ export default function MechanicsPage() {
 
       {/* Add Job/Commission Modal */}
       <Dialog open={isCommissionModalOpen} onOpenChange={setIsCommissionModalOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-[400px] max-h-[90vh] overflow-y-auto bg-popover border-border rounded-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-[400px] max-h-[90dvh] overflow-y-auto bg-popover border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">
               {language === 'bn' ? 'নতুন রেফারেল কাজ রেকর্ড' : 'Record New Job'}
@@ -596,7 +598,7 @@ export default function MechanicsPage() {
 
       {/* Pay Commission Modal */}
       <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-[400px] max-h-[90vh] overflow-y-auto bg-popover border-border rounded-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-[400px] max-h-[90dvh] overflow-y-auto bg-popover border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">
               {language === 'bn' ? 'কমিশন পরিশোধ' : 'Pay Commission'}

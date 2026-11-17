@@ -1,7 +1,7 @@
 'use client';
 import { shopTransactionService } from '@/lib/services/shopTransaction';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/currency';
@@ -350,13 +350,15 @@ export default function InventoryPage() {
 
   const categories = ['All', 'Low Stock', ...invSettings.categories];
 
-  const filteredItems = items.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    if (!matchesSearch) return false;
-    if (categoryFilter === 'All') return true;
-    if (categoryFilter === 'Low Stock') return item.stock <= (item.minStockLevel || 5);
-    return item.category === categoryFilter;
-  });
+  const filteredItems = useMemo(() => {
+    return items.filter(item => {
+      const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+      if (!matchesSearch) return false;
+      if (categoryFilter === 'All') return true;
+      if (categoryFilter === 'Low Stock') return item.stock <= (item.minStockLevel || 5);
+      return item.category === categoryFilter;
+    });
+  }, [items, searchTerm, categoryFilter]);
 
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage) || 1;
   const paginatedItems = filteredItems.slice(

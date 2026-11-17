@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Truck, Plus, Search, Edit, Trash2, Phone, Building, MapPin, Wallet } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -168,21 +168,23 @@ export default function SuppliersPage() {
     }
   };
 
-  const totalShopDue = suppliers.reduce((sum, s) => sum + s.due, 0);
-  const totalPurchases = suppliers.reduce((sum, s) => sum + s.totalPurchase, 0);
-  const dueCount = suppliers.filter(s => s.due > 0).length;
-  const clearedCount = suppliers.filter(s => s.due <= 0).length;
+  const totalShopDue = useMemo(() => suppliers.reduce((sum, s) => sum + s.due, 0), [suppliers]);
+  const totalPurchases = useMemo(() => suppliers.reduce((sum, s) => sum + s.totalPurchase, 0), [suppliers]);
+  const dueCount = useMemo(() => suppliers.filter(s => s.due > 0).length, [suppliers]);
+  const clearedCount = useMemo(() => suppliers.filter(s => s.due <= 0).length, [suppliers]);
 
-  const filteredSuppliers = suppliers.filter(s => {
-    const matchesSearch = 
-      s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      s.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.phone.includes(searchTerm);
-    if (!matchesSearch) return false;
-    if (filterTab === 'due') return s.due > 0;
-    if (filterTab === 'cleared') return s.due <= 0;
-    return true;
-  });
+  const filteredSuppliers = useMemo(() => {
+    return suppliers.filter(s => {
+      const matchesSearch = 
+        s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        s.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.phone.includes(searchTerm);
+      if (!matchesSearch) return false;
+      if (filterTab === 'due') return s.due > 0;
+      if (filterTab === 'cleared') return s.due <= 0;
+      return true;
+    });
+  }, [suppliers, searchTerm, filterTab]);
 
   const totalPages = Math.ceil(filteredSuppliers.length / itemsPerPage) || 1;
   const paginatedSuppliers = filteredSuppliers.slice(
@@ -528,7 +530,7 @@ export default function SuppliersPage() {
 
       {/* Add/Edit Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto bg-popover border-border rounded-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[90dvh] overflow-y-auto bg-popover border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold text-white">
               {editingSupplier 
@@ -611,7 +613,7 @@ export default function SuppliersPage() {
 
       {/* Pay Due Modal */}
       <Dialog open={!!paymentModalSupplier} onOpenChange={(open) => !open && setPaymentModalSupplier(null)}>
-        <DialogContent className="w-[95vw] sm:max-w-[400px] max-h-[90vh] overflow-y-auto bg-popover border-border rounded-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-[400px] max-h-[90dvh] overflow-y-auto bg-popover border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">
               {language === 'bn' ? 'সাপ্লায়ারকে বকেয়া পরিশোধ' : 'Pay Supplier'}
@@ -654,7 +656,7 @@ export default function SuppliersPage() {
 
             {/* Add Bill Modal */}
       <Dialog open={!!billModalSupplier} onOpenChange={(open) => !open && setBillModalSupplier(null)}>
-        <DialogContent className="w-[95vw] sm:max-w-[400px] max-h-[90vh] overflow-y-auto bg-popover border-border rounded-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-[400px] max-h-[90dvh] overflow-y-auto bg-popover border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">
               {language === 'bn' ? 'নতুন বিল যোগ করুন' : 'Add New Bill'}

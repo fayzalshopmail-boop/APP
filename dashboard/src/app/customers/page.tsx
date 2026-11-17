@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Search, Edit, Trash2, MessageCircle, Download, FileText, Phone, PhoneCall, MapPin, Tv, Eye, Filter, X, Coins, Plus, Link2, TrendingUp } from 'lucide-react';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { motion } from 'framer-motion';
@@ -662,76 +662,78 @@ export default function CustomersPage() {
   };
 
   // Group and deduplicate customer documents sharing the same phone number so each customer appears once
-  const uniqueCustomersMap = new Map<string, Customer>();
-  customers.forEach(c => {
-    const key = normalizePhone(c.phone) || c.id;
-    if (!uniqueCustomersMap.has(key)) {
-      uniqueCustomersMap.set(key, { ...c, repairHistory: [...(c.repairHistory || [])] });
-    } else {
-      const existing = uniqueCustomersMap.get(key)!;
-      const historyRecord: RepairRecord = {
-        id: c.id,
-        deviceBrand: c.deviceBrand,
-        deviceType: c.deviceType,
-        deviceProblem: c.deviceProblem,
-        deviceDetails: c.deviceDetails,
-        serialNumber: c.serialNumber,
-        totalBill: c.totalBill || 0,
-        advance: c.advance || 0,
-        due: c.due || 0,
-        discount: c.discount || 0,
-        dueDate: c.dueDate,
-        expectedDeliveryDate: c.expectedDeliveryDate,
-        status: c.status || 'Received',
-        warrantyMonths: c.warrantyMonths,
-        partsUsed: c.partsUsed || [],
-        totalCost: c.totalCost || 0,
-        createdAt: c.createdAt
-      };
-      const mergedHistory = [...(existing.repairHistory || []), historyRecord, ...(c.repairHistory || [])];
-      if (getCustomerTime(c) > getCustomerTime(existing)) {
-        uniqueCustomersMap.set(key, {
-          ...c,
-          repairHistory: mergedHistory
-        });
+  const filteredCustomers = useMemo(() => {
+    const uniqueCustomersMap = new Map<string, Customer>();
+    customers.forEach(c => {
+      const key = normalizePhone(c.phone) || c.id;
+      if (!uniqueCustomersMap.has(key)) {
+        uniqueCustomersMap.set(key, { ...c, repairHistory: [...(c.repairHistory || [])] });
       } else {
-        existing.repairHistory = mergedHistory;
+        const existing = uniqueCustomersMap.get(key)!;
+        const historyRecord: RepairRecord = {
+          id: c.id,
+          deviceBrand: c.deviceBrand,
+          deviceType: c.deviceType,
+          deviceProblem: c.deviceProblem,
+          deviceDetails: c.deviceDetails,
+          serialNumber: c.serialNumber,
+          totalBill: c.totalBill || 0,
+          advance: c.advance || 0,
+          due: c.due || 0,
+          discount: c.discount || 0,
+          dueDate: c.dueDate,
+          expectedDeliveryDate: c.expectedDeliveryDate,
+          status: c.status || 'Received',
+          warrantyMonths: c.warrantyMonths,
+          partsUsed: c.partsUsed || [],
+          totalCost: c.totalCost || 0,
+          createdAt: c.createdAt
+        };
+        const mergedHistory = [...(existing.repairHistory || []), historyRecord, ...(c.repairHistory || [])];
+        if (getCustomerTime(c) > getCustomerTime(existing)) {
+          uniqueCustomersMap.set(key, {
+            ...c,
+            repairHistory: mergedHistory
+          });
+        } else {
+          existing.repairHistory = mergedHistory;
+        }
       }
-    }
-  });
+    });
 
-  const displayCustomers = Array.from(uniqueCustomersMap.values());
+    const displayCustomers = Array.from(uniqueCustomersMap.values());
 
-  const filteredCustomers = displayCustomers.filter(c => {
-    const cleanSearch = search.trim().replace(/^#/, '');
-    const matchesId = Boolean(cleanSearch && c.customId && String(c.customId).includes(cleanSearch));
-    const matchesSearch = matchesId ||
-                          c.name.toLowerCase().includes(search.toLowerCase()) || 
-                          c.phone.includes(search) ||
-                          c.deviceBrand?.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === 'All' 
-      ? true 
-      : statusFilter === 'Pending'
-        ? ['Received', 'In Progress', 'Waiting for Parts'].includes(c.status || 'Received')
-        : (c.status || 'Received') === statusFilter;
-    return matchesSearch && matchesStatus;
-  }).sort((a, b) => {
-    // 0 = Active / Newly Listed, 1 = Delivered, 2 = Returned / Cancelled
-    const tierA = a.status === 'Returned (Unrepaired)' ? 2 : a.status === 'Delivered' ? 1 : 0;
-    const tierB = b.status === 'Returned (Unrepaired)' ? 2 : b.status === 'Delivered' ? 1 : 0;
-    
-    if (tierA !== tierB) {
-      return tierA - tierB;
-    }
+    return displayCustomers.filter(c => {
+      const cleanSearch = search.trim().replace(/^#/, '');
+      const matchesId = Boolean(cleanSearch && c.customId && String(c.customId).includes(cleanSearch));
+      const matchesSearch = matchesId ||
+                            c.name.toLowerCase().includes(search.toLowerCase()) || 
+                            c.phone.includes(search) ||
+                            c.deviceBrand?.toLowerCase().includes(search.toLowerCase());
+      const matchesStatus = statusFilter === 'All' 
+        ? true 
+        : statusFilter === 'Pending'
+          ? ['Received', 'In Progress', 'Waiting for Parts'].includes(c.status || 'Received')
+          : (c.status || 'Received') === statusFilter;
+      return matchesSearch && matchesStatus;
+    }).sort((a, b) => {
+      // 0 = Active / Newly Listed, 1 = Delivered, 2 = Returned / Cancelled
+      const tierA = a.status === 'Returned (Unrepaired)' ? 2 : a.status === 'Delivered' ? 1 : 0;
+      const tierB = b.status === 'Returned (Unrepaired)' ? 2 : b.status === 'Delivered' ? 1 : 0;
+      
+      if (tierA !== tierB) {
+        return tierA - tierB;
+      }
 
-    // Within the same tier, sort newest first
-    const timeA = getCustomerTime(a);
-    const timeB = getCustomerTime(b);
-    if (timeA && timeB) {
-      return timeB - timeA;
-    }
-    return 0;
-  });
+      // Within the same tier, sort newest first
+      const timeA = getCustomerTime(a);
+      const timeB = getCustomerTime(b);
+      if (timeA && timeB) {
+        return timeB - timeA;
+      }
+      return 0;
+    });
+  }, [customers, search, statusFilter]);
 
   const totalPages = Math.ceil(filteredCustomers.length / ITEMS_PER_PAGE) || 1;
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;

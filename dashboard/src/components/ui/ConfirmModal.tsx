@@ -73,7 +73,7 @@ export function ConfirmModal({
 
  return (
  <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
- <DialogContent className="sm:max-w-[400px] bg-popover text-white border-gray-800 shadow-2xl p-0 overflow-hidden ">
+ <DialogContent className="w-[92vw] sm:max-w-[400px] bg-popover text-white border-gray-800 shadow-2xl p-0 overflow-hidden rounded-2xl">
  <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${isDanger ? 'from-red-500 to-orange-500' : 'from-orange-500 to-yellow-500'}`} />
  
  <div className="p-6">

@@ -803,7 +803,7 @@ export default function LoansPage() {
 
       {/* Partial Payment Modal */}
       <Dialog open={!!paymentModalData} onOpenChange={(open) => !open && closePaymentModal()}>
-        <DialogContent className="w-[95vw] sm:max-w-[400px] max-h-[90vh] overflow-y-auto bg-popover border-border rounded-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-[400px] max-h-[90dvh] overflow-y-auto bg-popover border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">
               {language === 'bn' ? 'পরিশোধ গ্রহণ / প্রদান' : 'Add Payment'}
@@ -875,7 +875,7 @@ export default function LoansPage() {
 
       {/* Add/Edit Modal (Bug Fixed: Perfectly populates on Edit) */}
       <Dialog open={isModalOpen} onOpenChange={(v) => !v && closeLoanModal()}>
-        <DialogContent className="w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto bg-popover border-border rounded-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-[425px] max-h-[90dvh] overflow-y-auto bg-popover border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">
               {editingLoan 
@@ -1033,7 +1033,7 @@ export default function LoansPage() {
     
       {/* History Modal */}
       <Dialog open={!!historyModalData} onOpenChange={(open) => !open && closeHistoryModal()}>
-        <DialogContent className="sm:max-w-[500px] bg-popover border-border max-h-[80vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-[500px] bg-popover border-border max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">
               {language === 'bn' ? 'লেনদেনের হিস্ট্রি' : 'Loan History'}

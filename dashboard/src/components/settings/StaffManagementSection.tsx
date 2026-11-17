@@ -1570,7 +1570,7 @@ export function StaffManagementSection({
 
       {/* 1. Manual Attendance Modal */}
       <Dialog open={isManualAttendanceOpen} onOpenChange={setIsManualAttendanceOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto bg-secondary text-white border-gray-800 shadow-2xl p-4 sm:p-6 rounded-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[90dvh] overflow-y-auto bg-secondary text-white border-gray-800 shadow-2xl p-4 sm:p-6 rounded-2xl">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
               <Clock className="w-5 h-5 text-blue-400" />
@@ -1667,7 +1667,7 @@ export function StaffManagementSection({
 
       {/* 2. Payroll Payment Modal */}
       <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto bg-secondary text-white border-gray-800 shadow-2xl p-4 sm:p-6 rounded-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[90dvh] overflow-y-auto bg-secondary text-white border-gray-800 shadow-2xl p-4 sm:p-6 rounded-2xl">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
               <CreditCard className="w-5 h-5 text-emerald-400" />
@@ -1781,7 +1781,7 @@ export function StaffManagementSection({
 
       {/* 3. Salary Config Modal */}
       <Dialog open={isSalaryConfigModalOpen} onOpenChange={setIsSalaryConfigModalOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto bg-secondary text-white border-gray-800 shadow-2xl p-4 sm:p-6 rounded-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[90dvh] overflow-y-auto bg-secondary text-white border-gray-800 shadow-2xl p-4 sm:p-6 rounded-2xl">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
               <Coins className="w-5 h-5 text-yellow-400" />

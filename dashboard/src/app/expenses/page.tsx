@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -159,37 +159,44 @@ export default function ExpensesPage() {
   const todayStr = getLocalDateString();
   const currentMonth = todayStr.slice(0, 7); // YYYY-MM
 
-  const thisMonthExpenses = expenses
-    .filter(e => e.date.startsWith(currentMonth))
-    .reduce((sum, e) => sum + e.amount, 0);
+  const thisMonthExpenses = useMemo(() => {
+    return expenses
+      .filter(e => e.date.startsWith(currentMonth))
+      .reduce((sum, e) => sum + e.amount, 0);
+  }, [expenses, currentMonth]);
 
-  const todayExpenses = expenses
-    .filter(e => e.date === todayStr)
-    .reduce((sum, e) => sum + e.amount, 0);
+  const todayExpenses = useMemo(() => {
+    return expenses
+      .filter(e => e.date === todayStr)
+      .reduce((sum, e) => sum + e.amount, 0);
+  }, [expenses, todayStr]);
 
-  const totalAllTimeExpenses = expenses
-    .reduce((sum, e) => sum + e.amount, 0);
+  const totalAllTimeExpenses = useMemo(() => {
+    return expenses.reduce((sum, e) => sum + e.amount, 0);
+  }, [expenses]);
 
-  const filteredExpenses = expenses.filter(expense => {
-    const matchesSearch = 
-      expense.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      expense.category.toLowerCase().includes(searchTerm.toLowerCase());
-    if (!matchesSearch) return false;
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter(expense => {
+      const matchesSearch = 
+        expense.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        expense.category.toLowerCase().includes(searchTerm.toLowerCase());
+      if (!matchesSearch) return false;
 
-    if (dateFilter === 'all') return true;
-    if (dateFilter === 'today') {
-      return expense.date === todayStr;
-    }
-    if (dateFilter === 'week') {
-      const lastWeek = new Date();
-      lastWeek.setDate(lastWeek.getDate() - 7);
-      return new Date(expense.date) >= lastWeek;
-    }
-    if (dateFilter === 'month') {
-      return expense.date.startsWith(currentMonth);
-    }
-    return true;
-  });
+      if (dateFilter === 'all') return true;
+      if (dateFilter === 'today') {
+        return expense.date === todayStr;
+      }
+      if (dateFilter === 'week') {
+        const lastWeek = new Date();
+        lastWeek.setDate(lastWeek.getDate() - 7);
+        return new Date(expense.date) >= lastWeek;
+      }
+      if (dateFilter === 'month') {
+        return expense.date.startsWith(currentMonth);
+      }
+      return true;
+    });
+  }, [expenses, searchTerm, dateFilter, todayStr, currentMonth]);
 
   const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage) || 1;
   const paginatedExpenses = filteredExpenses.slice(
@@ -501,7 +508,7 @@ export default function ExpensesPage() {
 
       {/* Add / Edit Expense Dialog */}
       <Dialog open={isModalOpen} onOpenChange={(open) => { setIsModalOpen(open); if (!open) setEditingExpenseId(null); }}>
-        <DialogContent className="w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto bg-popover border-border rounded-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[90dvh] overflow-y-auto bg-popover border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold text-white">
               {editingExpenseId 
