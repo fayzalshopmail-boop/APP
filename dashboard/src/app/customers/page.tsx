@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect } from 'react';
-import { Search, Edit, Trash2, MessageCircle, Download, FileText, Phone, PhoneCall, MapPin, Tv, Eye, Filter, X, ChevronLeft, ChevronRight, Coins, Plus, Link2, TrendingUp } from 'lucide-react';
+import { Search, Edit, Trash2, MessageCircle, Download, FileText, Phone, PhoneCall, MapPin, Tv, Eye, Filter, X, Coins, Plus, Link2, TrendingUp } from 'lucide-react';
+import { PaginationControl } from '@/components/ui/PaginationControl';
 import { motion } from 'framer-motion';
 import { formatCurrency } from '@/lib/currency';
 import { useAppStore } from '@/store/useAppStore';
@@ -38,7 +39,7 @@ import { smsConfigService } from '@/lib/services/smsConfig';
 import toast from 'react-hot-toast';
 
 export default function CustomersPage() {
-  const { t, isBangla } = useTranslation();
+  const { t, isBangla, language } = useTranslation();
   const { user, highlightCustomerId, highlightCustomerSearch, setHighlightCustomerId, setHighlightCustomerSearch } = useAppStore();
   const hasFullAccess = user?.role === 'Owner' || user?.role === 'Manager';
   const [search, setSearch] = useState('');
@@ -737,42 +738,6 @@ export default function CustomersPage() {
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const paginatedCustomers = filteredCustomers.slice(startIndex, endIndex);
 
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
-    if (typeof window !== 'undefined') {
-      const el = document.getElementById('customer-list-container');
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }
-  };
-
-  const getPageNumbers = (isMobile: boolean = false) => {
-    if (isMobile) {
-      if (totalPages <= 4) {
-        return Array.from({ length: totalPages }, (_, i) => i + 1);
-      }
-      if (currentPage <= 2) {
-        return [1, 2, 3, '...', totalPages];
-      }
-      if (currentPage >= totalPages - 1) {
-        return [1, '...', totalPages - 2, totalPages - 1, totalPages];
-      }
-      return [1, '...', currentPage, '...', totalPages];
-    }
-
-    if (totalPages <= 7) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
-    if (currentPage <= 4) {
-      return [1, 2, 3, 4, 5, '...', totalPages];
-    }
-    if (currentPage >= totalPages - 3) {
-      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-    }
-    return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
-  };
-
   return (
     <div className="max-w-[1600px] mx-auto w-full">
       {/* Page Controls */}
@@ -1073,63 +1038,15 @@ export default function CustomersPage() {
         </div>
 
         {/* Integrated Desktop Table Footer Pagination */}
-        {filteredCustomers.length > 0 && (
-          <div className="flex items-center justify-between px-5 py-3.5 border-t border-gray-800/80 bg-secondary/20">
-            <div className="text-xs text-gray-400">
-              Showing <span className="font-semibold text-white">{startIndex + 1}</span> to <span className="font-semibold text-white">{Math.min(endIndex, filteredCustomers.length)}</span> of <span className="font-semibold text-white">{filteredCustomers.length}</span> customers
-              <span className="text-gray-500 ml-1.5">(Page {currentPage} of {totalPages})</span>
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="h-8 w-8 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
-                title="Previous Page"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-
-              {getPageNumbers(false).map((pageNum, idx) => {
-                if (pageNum === '...') {
-                  return (
-                    <span key={`desktop-ellipsis-${idx}`} className="px-1 text-gray-500 text-xs select-none">
-                      ...
-                    </span>
-                  );
-                }
-                const page = Number(pageNum);
-                const isActive = currentPage === page;
-                return (
-                  <button
-                    key={`desktop-page-${page}`}
-                    onClick={() => handlePageChange(page)}
-                    className={`h-8 min-w-[32px] px-2 rounded-lg text-xs font-medium transition-all ${
-                      isActive
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 font-bold'
-                        : 'bg-card border border-gray-800 text-gray-300 hover:text-white hover:bg-secondary hover:border-gray-700'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                );
-              })}
-
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                className="h-8 w-8 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
-                title="Next Page"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        )}
+        <PaginationControl
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={filteredCustomers.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+          itemLabel={language === 'bn' ? 'কাস্টমার' : 'customers'}
+          containerId="customer-list-container"
+        />
       </motion.div>
 
       {/* Mobile Customer Cards (visible on mobile only) */}
@@ -1388,63 +1305,16 @@ export default function CustomersPage() {
         )}
 
         {/* Mobile Pagination */}
-        {filteredCustomers.length > 0 && (
-          <div className="flex flex-col items-center gap-3 pt-3 pb-2 bg-card border border-gray-800/80 rounded-xl p-3 shadow-sm">
-            <div className="flex items-center gap-1.5 flex-wrap justify-center">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="h-8 w-8 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
-                title="Previous Page"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-
-              {getPageNumbers(true).map((pageNum, idx) => {
-                if (pageNum === '...') {
-                  return (
-                    <span key={`mobile-ellipsis-${idx}`} className="px-1 text-gray-500 text-xs select-none">
-                      ...
-                    </span>
-                  );
-                }
-                const page = Number(pageNum);
-                const isActive = currentPage === page;
-                return (
-                  <button
-                    key={`mobile-page-${page}`}
-                    onClick={() => handlePageChange(page)}
-                    className={`h-8 min-w-[32px] px-2 rounded-lg text-xs font-medium transition-all ${
-                      isActive
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 font-bold'
-                        : 'bg-card border border-gray-800 text-gray-300 hover:text-white hover:bg-secondary hover:border-gray-700'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                );
-              })}
-
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                className="h-8 w-8 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
-                title="Next Page"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="text-xs text-gray-400 text-center">
-              Showing <span className="font-semibold text-white">{startIndex + 1}</span> to <span className="font-semibold text-white">{Math.min(endIndex, filteredCustomers.length)}</span> of <span className="font-semibold text-white">{filteredCustomers.length}</span>
-              <span className="text-gray-500 ml-1">(Page {currentPage} of {totalPages})</span>
-            </div>
-          </div>
-        )}
+        <PaginationControl
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={filteredCustomers.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+          itemLabel={language === 'bn' ? 'কাস্টমার' : 'customers'}
+          containerId="customer-list-container"
+          className="rounded-xl border border-gray-800/80"
+        />
       </div>
       </div>
 

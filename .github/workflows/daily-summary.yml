@@ -1,0 +1,28 @@
+name: Daily Summary Telegram Cron (12:00 AM BST)
+
+on:
+  schedule:
+    # 18:00 UTC is exactly 12:00 AM (midnight) Bangladesh Time (UTC+6)
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+
+jobs:
+  trigger-summary:
+    name: Dispatch Midnight Closing Report
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Daily Summary Request to Live Vercel App
+        run: |
+          echo "Triggering Daily Summary on https://app-psi-eight-55.vercel.app/api/cron/daily-summary at $(date)"
+          response=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X GET "https://app-psi-eight-55.vercel.app/api/cron/daily-summary" \
+            -H "Authorization: Bearer backup_secret_shop_2026_antigravity" \
+            -H "x-vercel-cron: 1")
+          
+          echo "$response"
+          
+          status=$(echo "$response" | grep "HTTP_STATUS" | cut -d: -f2)
+          if [ "$status" -ne 200 ]; then
+            echo "Failed with HTTP status $status"
+            exit 1
+          fi
+          echo "Daily summary dispatched successfully!"

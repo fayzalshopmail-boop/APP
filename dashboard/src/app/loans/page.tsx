@@ -6,8 +6,9 @@ import { motion } from 'framer-motion';
 import { 
   CreditCard, ArrowUpRight, ArrowDownRight, Edit2, Trash2, 
   CheckCircle, Coins, CalendarClock, History, MessageSquare, Phone, 
-  Search, X, ChevronLeft, ChevronRight, ShieldAlert 
+  Search, X, ShieldAlert 
 } from 'lucide-react';
+import { PaginationControl } from '@/components/ui/PaginationControl';
 import { loanService, Loan } from '@/lib/services/loan';
 import { formatCurrency } from '@/lib/currency';
 import { Button } from '@/components/ui/button';
@@ -25,7 +26,7 @@ type FilterType = 'all' | 'pending' | 'paid' | 'given' | 'taken';
 export default function LoansPage() {
   const { user } = useAppStore();
   const router = useRouter();
-  const { t, language } = useTranslation();
+  const { language } = useTranslation();
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -345,42 +346,6 @@ export default function LoansPage() {
     }
   }, [totalPages, currentPage]);
 
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
-    if (typeof window !== 'undefined') {
-      const el = document.getElementById('loans-list-container');
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }
-  };
-
-  const getPageNumbers = (isMobile: boolean = false) => {
-    if (isMobile) {
-      if (totalPages <= 4) {
-        return Array.from({ length: totalPages }, (_, i) => i + 1);
-      }
-      if (currentPage <= 2) {
-        return [1, 2, 3, '...', totalPages];
-      }
-      if (currentPage >= totalPages - 1) {
-        return [1, '...', totalPages - 2, totalPages - 1, totalPages];
-      }
-      return [1, '...', currentPage, '...', totalPages];
-    }
-
-    if (totalPages <= 7) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
-    if (currentPage <= 4) {
-      return [1, 2, 3, 4, 5, '...', totalPages];
-    }
-    if (currentPage >= totalPages - 3) {
-      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-    }
-    return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
-  };
-
   if (isUnauthorized) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-center p-6">
@@ -673,67 +638,16 @@ export default function LoansPage() {
 
             {/* Mobile Pagination Card */}
             {totalPages > 1 && (
-              <div className="flex flex-col items-center gap-2 pt-3 pb-3 px-3 bg-card border border-gray-800/80 rounded-xl shadow-sm">
-                <div className="text-[11px] text-gray-400">
-                  {language === 'bn' ? (
-                    <>দেখাচ্ছে <span className="font-semibold text-white">{startIndex + 1}</span> - <span className="font-semibold text-white">{Math.min(endIndex, filteredLoans.length)}</span> / মোট <span className="font-semibold text-white">{filteredLoans.length}</span> টি</>
-                  ) : (
-                    <>Showing <span className="font-semibold text-white">{startIndex + 1}</span> - <span className="font-semibold text-white">{Math.min(endIndex, filteredLoans.length)}</span> of <span className="font-semibold text-white">{filteredLoans.length}</span></>
-                  )}
-                  <span className="text-gray-500 ml-1">
-                    ({language === 'bn' ? `${currentPage}/${totalPages} পৃষ্ঠা` : `Page ${currentPage} of ${totalPages}`})
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-1 flex-wrap justify-center">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className="h-7 w-7 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-md p-0"
-                    title={language === 'bn' ? 'পূর্ববর্তী পৃষ্ঠা' : 'Previous Page'}
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                  </Button>
-
-                  {getPageNumbers(true).map((pageNum, idx) => {
-                    if (pageNum === '...') {
-                      return (
-                        <span key={`mobile-ellipsis-${idx}`} className="px-1 text-gray-500 text-xs select-none">
-                          ...
-                        </span>
-                      );
-                    }
-                    const page = Number(pageNum);
-                    const isActive = currentPage === page;
-                    return (
-                      <button
-                        key={`mobile-page-${page}`}
-                        onClick={() => handlePageChange(page)}
-                        className={`h-7 min-w-[28px] px-1.5 rounded-md text-xs font-medium transition-all ${
-                          isActive
-                            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 font-bold'
-                            : 'bg-card border border-gray-800 text-gray-300 hover:text-white hover:bg-secondary hover:border-gray-700'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    );
-                  })}
-
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                    className="h-7 w-7 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-md p-0"
-                    title={language === 'bn' ? 'পরবর্তী পৃষ্ঠা' : 'Next Page'}
-                  >
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              </div>
+              <PaginationControl
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                totalItems={filteredLoans.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                itemLabel={language === 'bn' ? 'টি ঋণ' : 'loans'}
+                containerId="loans-list-container"
+                className="rounded-xl border border-gray-800/80"
+              />
             )}
           </>
         )}
@@ -873,67 +787,15 @@ export default function LoansPage() {
 
             {/* Desktop Pagination (>=640px) */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-5 py-3.5 border-t border-gray-800/80 bg-secondary/20">
-                <div className="text-xs text-gray-400">
-                  {language === 'bn' ? (
-                    <>দেখাচ্ছে <span className="font-semibold text-white">{startIndex + 1}</span> থেকে <span className="font-semibold text-white">{Math.min(endIndex, filteredLoans.length)}</span> / মোট <span className="font-semibold text-white">{filteredLoans.length}</span> টি রেকর্ড</>
-                  ) : (
-                    <>Showing <span className="font-semibold text-white">{startIndex + 1}</span> to <span className="font-semibold text-white">{Math.min(endIndex, filteredLoans.length)}</span> of <span className="font-semibold text-white">{filteredLoans.length}</span> records</>
-                  )}
-                  <span className="text-gray-500 ml-1.5">
-                    ({language === 'bn' ? `পৃষ্ঠা ${currentPage} / ${totalPages}` : `Page ${currentPage} of ${totalPages}`})
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className="h-8 w-8 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
-                    title={language === 'bn' ? 'পূর্ববর্তী পৃষ্ঠা' : 'Previous Page'}
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-
-                  {getPageNumbers(false).map((pageNum, idx) => {
-                    if (pageNum === '...') {
-                      return (
-                        <span key={`desktop-ellipsis-${idx}`} className="px-1 text-gray-500 text-xs select-none">
-                          ...
-                        </span>
-                      );
-                    }
-                    const page = Number(pageNum);
-                    const isActive = currentPage === page;
-                    return (
-                      <button
-                        key={`desktop-page-${page}`}
-                        onClick={() => handlePageChange(page)}
-                        className={`h-8 min-w-[32px] px-2 rounded-lg text-xs font-medium transition-all ${
-                          isActive
-                            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 font-bold'
-                            : 'bg-card border border-gray-800 text-gray-300 hover:text-white hover:bg-secondary hover:border-gray-700'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    );
-                  })}
-
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                    className="h-8 w-8 bg-card border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
-                    title={language === 'bn' ? 'পরবর্তী পৃষ্ঠা' : 'Next Page'}
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
+              <PaginationControl
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                totalItems={filteredLoans.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                itemLabel={language === 'bn' ? 'টি ঋণ' : 'loans'}
+                containerId="loans-list-container"
+              />
             )}
           </>
         )}
