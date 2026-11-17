@@ -43,13 +43,10 @@ export function startMidnightScheduler() {
         day: '2-digit'
       }).format(yesterday);
 
-      // Trigger condition:
-      // 1. Midnight window: hour === 0
-      // 2. Or night/early morning window (00:00 - 08:00) if yesterday was missed due to sleeping server
+      // Trigger condition: strictly at midnight (12:00 AM window)
       const isMidnightWindow = hour === 0;
-      const isEarlyMorningCatchup = hour >= 1 && hour <= 8;
 
-      if ((isMidnightWindow || isEarlyMorningCatchup) && lastDispatchedDate !== yesterdayStr) {
+      if (isMidnightWindow && lastDispatchedDate !== yesterdayStr) {
         // Verify with Firestore to prevent duplicate dispatch
         const { adminDb } = await import('@/lib/firebase-admin');
         let alreadyDispatched = false;

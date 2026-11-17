@@ -74,8 +74,8 @@ async function fetchCollectionDocs(
 
 export async function executeDailySummary(
   forceDate?: string,
-  overrides?: { token?: string; chatId?: string; bearerToken?: string }
-): Promise<{ success: boolean; messageId?: number; error?: string; skipped?: boolean }> {
+  overrides?: { token?: string; chatId?: string; bearerToken?: string; allowDuplicate?: boolean }
+): Promise<{ success: boolean; messageId?: number; error?: string; skipped?: boolean; reason?: string }> {
   try {
     let adminDb: any = null;
     try {
@@ -181,6 +181,16 @@ export async function executeDailySummary(
       } else {
         targetDateStr = dateStr;
       }
+    }
+
+    // Check if summary for this date was already dispatched earlier
+    if (lastAutoSummaryDate === targetDateStr && !overrides?.allowDuplicate) {
+      console.log(`[DailySummary] Summary for date ${targetDateStr} was already dispatched (${lastAutoSummaryDate}). Skipping duplicate.`);
+      return {
+        success: true,
+        skipped: true,
+        reason: `Daily summary for ${targetDateStr} has already been sent.`
+      };
     }
 
     const startOfDayMs = new Date(`${targetDateStr}T00:00:00+06:00`).getTime();
@@ -346,6 +356,6 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => ({}));
-  const result = await executeDailySummary(body?.forceDate);
+  const result = await executeDailySummary(body?.forceDate, { allowDuplicate: body?.allowDuplicate === true });
   return NextResponse.json(result);
 }

@@ -214,7 +214,7 @@ export async function POST(request: Request) {
     } else if (action === 'send_daily_summary') {
       const { executeDailySummary } = await import('@/app/api/cron/daily-summary/route');
       const todayStr = getTodayDhakaDateStr();
-      const summaryResult = await executeDailySummary(todayStr, { token, chatId, bearerToken });
+      const summaryResult = await executeDailySummary(todayStr, { token, chatId, bearerToken, allowDuplicate: true });
       if (!summaryResult.success) {
         return NextResponse.json({ 
           success: false, 
