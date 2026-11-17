@@ -1,5 +1,5 @@
 // Service Worker for VSC POS - 100% Offline-First PWA
-const CACHE_NAME = 'vsc-pos-cache-v7';
+const CACHE_NAME = 'vsc-pos-cache-v8';
 
 // Pre-cache core application shell routes and assets
 const PRECACHE_ASSETS = [
@@ -16,8 +16,12 @@ const PRECACHE_ASSETS = [
   '/settings',
   '/sms',
   '/staff',
+  '/manifest.json',
   '/api/manifest',
   '/api/favicon',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/apple-touch-icon.png',
   '/icon.png',
   '/icon.svg',
   '/notification.mp3'
