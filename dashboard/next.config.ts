@@ -32,6 +32,7 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ['192.168.10.248', '192.168.10.248:3000', 'localhost', 'localhost:3000'],
   experimental: {
     optimizePackageImports: ['lucide-react'],
+    agentUpgrade: "security",
   },
   turbopack: {},
   async headers() {
