@@ -33,9 +33,9 @@ export interface ShopSettings {
 }
 
 export const defaultShopSettings: ShopSettings = {
-  shopName: 'My Shop',
-  shopTitle: 'Electronics Servicing Center',
-  logoUrl: '',
+  shopName: 'VVSC',
+  shopTitle: 'VAI VAi Servicing Center',
+  logoUrl: '/icon.png',
   phone: '',
   address: '',
   ownerName: 'Owner',

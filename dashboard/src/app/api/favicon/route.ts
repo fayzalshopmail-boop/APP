@@ -15,7 +15,7 @@ let lastCheckTime = 0;
 const CACHE_TTL_MS = 60 * 1000; // 60 seconds in-memory cache
 
 export async function GET(req: NextRequest) {
-  const fallbackUrl = new URL('/icon.svg', req.url);
+  const fallbackUrl = new URL('/icon.png', req.url);
   const now = Date.now();
 
   // Return from in-memory cache if fresh
