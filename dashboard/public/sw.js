@@ -1,5 +1,5 @@
 // Service Worker for VSC POS - 100% Offline-First PWA
-const CACHE_NAME = 'vsc-pos-cache-v8';
+const CACHE_NAME = 'vsc-pos-cache-v9';
 
 // Pre-cache core application shell routes and assets
 const PRECACHE_ASSETS = [
@@ -16,6 +16,7 @@ const PRECACHE_ASSETS = [
   '/settings',
   '/sms',
   '/staff',
+  '/offline.html',
   '/manifest.json',
   '/api/manifest',
   '/api/favicon',
@@ -24,22 +25,55 @@ const PRECACHE_ASSETS = [
   '/apple-touch-icon.png',
   '/icon.png',
   '/icon.svg',
-  '/notification.mp3'
+  '/notification.mp3',
+  '/firebase/firebase-app-compat.js',
+  '/firebase/firebase-messaging-compat.js'
 ];
 
-// Install: Cache all core assets
+// Install: Cache all core assets AND automatically discover & cache Next.js runtime chunks
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
+    caches.open(CACHE_NAME).then(async (cache) => {
       console.log('[SW] Pre-caching offline app shell');
-      return Promise.allSettled(
+
+      // 1. Pre-cache defined static shell assets
+      await Promise.allSettled(
         PRECACHE_ASSETS.map((asset) =>
           cache.add(asset).catch((err) => {
             console.warn(`[SW] Precache skipped for ${asset}:`, err);
           })
         )
       );
+
+      // 2. Discover and pre-cache scripts & CSS referenced in the root HTML
+      try {
+        const rootRes = await fetch('/');
+        if (rootRes && rootRes.status === 200) {
+          const html = await rootRes.clone().text();
+          await cache.put('/', rootRes);
+
+          const scriptRegex = /src="(\/_next\/static\/[^"]+)"/g;
+          const cssRegex = /href="(\/_next\/static\/[^"]+)"/g;
+          const chunkUrls = [];
+          let m;
+          while ((m = scriptRegex.exec(html)) !== null) chunkUrls.push(m[1]);
+          while ((m = cssRegex.exec(html)) !== null) chunkUrls.push(m[1]);
+
+          await Promise.allSettled(
+            chunkUrls.map((chunk) =>
+              fetch(chunk).then((res) => {
+                if (res && res.status === 200) {
+                  return cache.put(chunk, res);
+                }
+              }).catch(() => {})
+            )
+          );
+          console.log(`[SW] Pre-cached ${chunkUrls.length} Next.js runtime chunks for offline launch`);
+        }
+      } catch (err) {
+        console.warn('[SW] Could not auto-discover Next.js runtime chunks:', err);
+      }
     })
   );
 });
@@ -60,7 +94,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch: Offline-First strategy
+// Fetch: Offline-First strategy with resilient fallback
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -80,18 +114,39 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. Skip Turbopack, HMR dev resources, and WebSockets (Never intercept dev channels)
+  // 3. Skip development HMR and WebSockets in dev mode only
   if (
-    url.pathname.includes('turbopack') ||
-    url.pathname.includes('_next/hmr') ||
-    url.pathname.includes('webpack-hmr') ||
-    url.pathname.includes('_next/development') ||
+    url.pathname.includes('/_next/webpack-hmr') ||
+    url.pathname.includes('/_next/static/development') ||
+    url.pathname.includes('/__nextjs_') ||
     request.headers.get('upgrade') === 'websocket'
   ) {
     return;
   }
 
-  // 3. Static Media Assets (icons, images, audio, fonts) -> Cache First, update in background
+  // 4. Next.js Static Chunks (/_next/static/...) -> Cache First (Immutable with Content Hashes)
+  // CRITICAL FIX: Next.js 16 production Turbopack chunks contain 'turbopack-' in their filename.
+  // They MUST be intercepted and served from cache offline!
+  if (url.pathname.startsWith('/_next/static/')) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+
+        return fetch(request)
+          .then((res) => {
+            if (res && res.status === 200) {
+              const clone = res.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+            }
+            return res;
+          })
+          .catch(() => caches.match(request));
+      })
+    );
+    return;
+  }
+
+  // 5. Static Media Assets (icons, images, audio, fonts, local vendor scripts) -> Cache First
   if (
     url.pathname.endsWith('.svg') ||
     url.pathname.endsWith('.png') ||
@@ -99,6 +154,7 @@ self.addEventListener('fetch', (event) => {
     url.pathname.endsWith('.jpeg') ||
     url.pathname.endsWith('.woff2') ||
     url.pathname.endsWith('.mp3') ||
+    url.pathname.startsWith('/firebase/') ||
     url.pathname.startsWith('/api/favicon')
   ) {
     event.respondWith(
@@ -128,8 +184,44 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 4. Next.js Code chunks (/_next/), Pages, and RSC payloads -> Network First, fallback to Cache
-  // Ensures new features and UI updates are loaded immediately, with 100% offline fallback
+  // 6. Navigation Requests (HTML Pages) -> Network First with Multi-Tier Offline Fallback
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((res) => {
+          if (res && res.status === 200) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return res;
+        })
+        .catch(async () => {
+          // Tier 1: Try exact requested URL in cache
+          const cachedExact = await caches.match(request, { ignoreSearch: true });
+          if (cachedExact) return cachedExact;
+
+          // Tier 2: Try origin + pathname in cache
+          const cachedPath = await caches.match(url.origin + url.pathname);
+          if (cachedPath) return cachedPath;
+
+          // Tier 3: Try root page ('/') in cache
+          const cachedRoot = await caches.match('/');
+          if (cachedRoot) return cachedRoot;
+
+          // Tier 4: Fallback to standalone offline.html
+          const cachedOffline = await caches.match('/offline.html');
+          if (cachedOffline) return cachedOffline;
+
+          return new Response(
+            '<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Offline</title><meta name="viewport" content="width=device-width,initial-scale=1"/><style>body{background:#0b0e14;color:#fff;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center}h2{color:#60a5fa}button{background:#2563eb;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;margin-top:15px}</style></head><body><h2>📴 আপনি অফলাইনে আছেন</h2><p>অ্যাপটি অফলাইনে লোড করা হচ্ছে...</p><button onclick="window.location.reload()">পুনরায় চেষ্টা করুন</button></body></html>',
+            { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+          );
+        })
+    );
+    return;
+  }
+
+  // 7. Data APIs and other GET requests -> Network First, Fallback to Cache
   event.respondWith(
     fetch(request)
       .then((res) => {
@@ -140,39 +232,21 @@ self.addEventListener('fetch', (event) => {
         return res;
       })
       .catch(async () => {
-        const cached = await caches.match(request);
+        const cached = await caches.match(request, { ignoreSearch: true });
         if (cached) return cached;
-
-        // Strip query parameters (?_rsc=...) and try matching base path
-        if (url.search) {
-          const basePath = url.origin + url.pathname;
-          const cachedBase = await caches.match(basePath);
-          if (cachedBase) return cachedBase;
-        }
-
-        // For navigation requests, fallback to exact path or root '/'
-        if (request.mode === 'navigate') {
-          const cachedPath = await caches.match(url.pathname);
-          if (cachedPath) return cachedPath;
-
-          const cachedRoot = await caches.match('/');
-          if (cachedRoot) return cachedRoot;
-
-          return new Response(
-            '<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Offline</title><meta name="viewport" content="width=device-width,initial-scale=1"/><style>body{background:#0b0e14;color:#fff;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center}h2{color:#60a5fa}button{background:#2563eb;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;margin-top:15px}</style></head><body><h2>📴 আপনি অফলাইনে আছেন</h2><p>অ্যাপটি অফলাইনে লোড করা হচ্ছে...</p><button onclick="window.location.reload()">পুনরায় চেষ্টা করুন</button></body></html>',
-            { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
-          );
-        }
-
-        return new Response('Offline', { status: 503 });
+        return new Response(JSON.stringify({ error: 'Offline', offline: true }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' }
+        });
       })
   );
 });
 
 // Firebase Cloud Messaging (Push Notifications in background)
 try {
-  importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
-  importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
+  // Use local vendored scripts for 100% offline startup reliability
+  importScripts('/firebase/firebase-app-compat.js');
+  importScripts('/firebase/firebase-messaging-compat.js');
 
   const firebaseConfig = {
     apiKey: "AIzaSyATCc5eD9GRqd3_cm9Ja67ZASIVIwrL66c",
@@ -183,52 +257,55 @@ try {
     appId: "1:964563299091:web:15aec08af139ead80a88e6"
   };
 
-  if (!firebase.apps.length) {
+  if (typeof firebase !== 'undefined' && !firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
   }
-  const messaging = firebase.messaging();
 
-  messaging.onBackgroundMessage((payload) => {
-    const title = payload.notification?.title || payload.data?.title || 'VSC শপ নোটিফিকেশন';
-    const body = payload.notification?.body || payload.data?.body || '';
-    const clickUrl = payload.data?.url || payload.data?.link || '/';
-    
-    const options = {
-      body: body,
-      icon: '/icon.png',
-      badge: '/icon.png',
-      vibrate: [200, 100, 200],
-      tag: payload.data?.tag || `vsc-${Date.now()}`,
-      renotify: true,
-      requireInteraction: true,
-      data: {
-        url: clickUrl,
-        ...payload.data
-      }
-    };
-    return self.registration.showNotification(title, options);
-  });
+  if (typeof firebase !== 'undefined' && firebase.messaging && firebase.messaging.isSupported()) {
+    const messaging = firebase.messaging();
 
-  self.addEventListener('notificationclick', (event) => {
-    event.notification.close();
-    const rawUrl = event.notification.data?.url || event.notification.data?.link || '/';
-    const urlToOpen = new URL(rawUrl, self.location.origin).href;
-    
-    event.waitUntil(
-      clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-        for (let i = 0; i < windowClients.length; i++) {
-          const client = windowClients[i];
-          if (client.url === urlToOpen && 'focus' in client) {
-            return client.focus();
+    messaging.onBackgroundMessage((payload) => {
+      const title = payload.notification?.title || payload.data?.title || 'VSC শপ নোটিফিকেশন';
+      const body = payload.notification?.body || payload.data?.body || '';
+      const clickUrl = payload.data?.url || payload.data?.link || '/';
+      
+      const options = {
+        body: body,
+        icon: '/icon.png',
+        badge: '/icon.png',
+        vibrate: [200, 100, 200],
+        tag: payload.data?.tag || `vsc-${Date.now()}`,
+        renotify: true,
+        requireInteraction: true,
+        data: {
+          url: clickUrl,
+          ...payload.data
+        }
+      };
+      return self.registration.showNotification(title, options);
+    });
+
+    self.addEventListener('notificationclick', (event) => {
+      event.notification.close();
+      const rawUrl = event.notification.data?.url || event.notification.data?.link || '/';
+      const urlToOpen = new URL(rawUrl, self.location.origin).href;
+      
+      event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+          for (let i = 0; i < windowClients.length; i++) {
+            const client = windowClients[i];
+            if (client.url === urlToOpen && 'focus' in client) {
+              return client.focus();
+            }
           }
-        }
-        if (clients.openWindow) {
-          return clients.openWindow(urlToOpen);
-        }
-      })
-    );
-  });
+          if (clients.openWindow) {
+            return clients.openWindow(urlToOpen);
+          }
+        })
+      );
+    });
+  }
 } catch (e) {
   // FCM offline fallback
-  console.warn('[SW] Firebase messaging init failed:', e);
+  console.warn('[SW] Firebase messaging init skipped or offline:', e);
 }
