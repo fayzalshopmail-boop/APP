@@ -84,8 +84,8 @@ export async function executeDailySummary(
     } catch {}
 
     // 1. Load Telegram settings from Firestore or env
-    let token = overrides?.token || process.env.TELEGRAM_BOT_TOKEN || '9266090926:AAGAf1-cy4oKAXG3xbV--HA1Yq9QMKrCTtk';
-    let chatId = overrides?.chatId || process.env.TELEGRAM_CHAT_ID || '8960586792';
+    let token = overrides?.token || process.env.TELEGRAM_BOT_TOKEN || '';
+    let chatId = overrides?.chatId || process.env.TELEGRAM_CHAT_ID || '';
     let notifyOnDailySummary = true;
     let enabled = true;
     let lastAutoSummaryDate = '';
