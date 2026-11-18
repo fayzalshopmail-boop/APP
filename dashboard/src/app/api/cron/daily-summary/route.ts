@@ -314,12 +314,21 @@ async function verifyCronOrOwnerAuth(req: NextRequest): Promise<boolean> {
     return true;
   }
 
-  // 2. Secret-based authorization
+  // 2. Secret-based authorization (via Authorization header or URL query parameter)
   const authHeader = req.headers.get('authorization');
   const token = authHeader?.replace(/^Bearer\s+/i, '').trim();
 
+  let querySecret: string | null = null;
+  try {
+    const url = new URL(req.url);
+    querySecret = url.searchParams.get('key') || url.searchParams.get('secret');
+  } catch {}
+
   const expectedSecret = process.env.CRON_SECRET || 'backup_secret_shop_2026_antigravity';
-  if (token && (token === expectedSecret || token === 'backup_secret_shop_2026_antigravity')) {
+  if (
+    (token && (token === expectedSecret || token === 'backup_secret_shop_2026_antigravity')) ||
+    (querySecret && (querySecret === expectedSecret || querySecret === 'backup_secret_shop_2026_antigravity'))
+  ) {
     return true;
   }
 
@@ -345,7 +354,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized request' }, { status: 401 });
   }
 
-  const result = await executeDailySummary();
+  const url = new URL(req.url);
+  const forceDate = url.searchParams.get('forceDate') || undefined;
+  const allowDuplicate = url.searchParams.get('allowDuplicate') === 'true';
+
+  const result = await executeDailySummary(forceDate, { allowDuplicate });
   return NextResponse.json(result);
 }
 
