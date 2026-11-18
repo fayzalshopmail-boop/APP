@@ -83,9 +83,9 @@ export async function executeDailySummary(
       adminDb = adminMod.adminDb;
     } catch {}
 
-    // 1. Load Telegram settings from Firestore or env
-    let token = overrides?.token || process.env.TELEGRAM_BOT_TOKEN || '';
-    let chatId = overrides?.chatId || process.env.TELEGRAM_CHAT_ID || '';
+    // 1. Load Telegram settings dynamically (Settings UI takes 100% highest priority)
+    let token = overrides?.token ? String(overrides.token).trim() : '';
+    let chatId = overrides?.chatId ? String(overrides.chatId).trim() : '';
     let notifyOnDailySummary = true;
     let enabled = true;
     let lastAutoSummaryDate = '';
@@ -105,8 +105,8 @@ export async function executeDailySummary(
       const data = settingsSnap.data();
       const tg = data?.botToken ? data : data?.telegram;
       if (tg) {
-        if (tg.botToken) token = tg.botToken;
-        if (tg.chatId) chatId = tg.chatId;
+        if (!token && tg.botToken) token = String(tg.botToken).trim();
+        if (!chatId && tg.chatId) chatId = String(tg.chatId).trim();
         if (tg.enabled === false) enabled = false;
         if (tg.notifyOnDailySummary === false) notifyOnDailySummary = false;
         lastAutoSummaryDate = tg.lastAutoSummaryDate || '';
@@ -128,8 +128,8 @@ export async function executeDailySummary(
             const rawTg = await tgRes.json();
             const tg = parseFirestoreFields(rawTg.fields);
             if (tg) {
-              if (!token && tg.botToken) token = tg.botToken;
-              if (!chatId && tg.chatId) chatId = tg.chatId;
+              if (!token && tg.botToken) token = String(tg.botToken).trim();
+              if (!chatId && tg.chatId) chatId = String(tg.chatId).trim();
               if (tg.enabled === false) enabled = false;
               if (tg.notifyOnDailySummary === false) notifyOnDailySummary = false;
               lastAutoSummaryDate = tg.lastAutoSummaryDate || '';
@@ -147,8 +147,8 @@ export async function executeDailySummary(
               const shopData = parseFirestoreFields(rawDoc.fields);
               const tg = shopData?.telegram;
               if (tg) {
-                if (!token && tg.botToken) token = tg.botToken;
-                if (!chatId && tg.chatId) chatId = tg.chatId;
+                if (!token && tg.botToken) token = String(tg.botToken).trim();
+                if (!chatId && tg.chatId) chatId = String(tg.chatId).trim();
                 if (tg.enabled === false) enabled = false;
                 if (tg.notifyOnDailySummary === false) notifyOnDailySummary = false;
                 lastAutoSummaryDate = tg.lastAutoSummaryDate || '';
@@ -161,12 +161,19 @@ export async function executeDailySummary(
       }
     }
 
+    // Fallback to server environment variables ONLY if missing in Firestore
+    if (!token && process.env.TELEGRAM_BOT_TOKEN) token = process.env.TELEGRAM_BOT_TOKEN.trim();
+    if (!chatId && process.env.TELEGRAM_CHAT_ID) chatId = process.env.TELEGRAM_CHAT_ID.trim();
+
     if (!enabled || !notifyOnDailySummary) {
       return { success: true, skipped: true };
     }
 
     if (!token || !chatId) {
-      return { success: false, error: 'Telegram Bot Token বা Chat ID সেট করা নেই।' };
+      return { 
+        success: false, 
+        error: 'Telegram Bot Token বা Chat ID সেট করা নেই। দয়া করে শপ সেটিংস (Settings) পেজ থেকে Bot Token এবং Chat ID সেভ করুন।' 
+      };
     }
 
     // 2. Determine target date

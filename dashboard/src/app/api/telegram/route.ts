@@ -95,17 +95,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Only Owners or Managers can send test Telegram messages' }, { status: 403 });
     }
 
-    // Default to server-configured secrets
-    let token = process.env.TELEGRAM_BOT_TOKEN;
-    let chatId = process.env.TELEGRAM_CHAT_ID;
+    // 1. Direct override from test request (if provided by Owner/Manager)
+    let token = directToken ? String(directToken).trim() : '';
+    let chatId = directChatId ? String(directChatId).trim() : '';
 
-    // Direct token and chat ID override is permitted for Owners/Managers in test mode or daily summary
-    if ((action === 'test' || action === 'send_daily_summary') && (isServerCron || userRole === 'Owner' || userRole === 'Manager')) {
-      if (directToken) token = directToken;
-      if (directChatId) chatId = directChatId;
-    }
-
-    // Check Firestore settings if needed
+    // 2. Query Firestore settings (Dynamic UI settings take absolute priority!)
     let tgSettings: any = null;
     try {
       const { adminDb } = await import('@/lib/firebase-admin');
@@ -127,7 +121,7 @@ export async function POST(request: Request) {
       console.warn('Could not read Telegram settings from Firestore adminDb:', dbErr);
     }
 
-    // Fallback: If adminDb is not available (e.g. on Vercel serverless without service account keys), query Firestore REST API
+    // Fallback: If adminDb is not available, query Firestore REST API
     if ((!token || !chatId || !tgSettings) && bearerToken) {
       try {
         const projId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
@@ -143,8 +137,8 @@ export async function POST(request: Request) {
             const data = parseFirestoreFields(rawTg.fields);
             if (data) {
               tgSettings = data;
-              if (!token && data.botToken) token = data.botToken;
-              if (!chatId && data.chatId) chatId = data.chatId;
+              if (!token && data.botToken) token = String(data.botToken).trim();
+              if (!chatId && data.chatId) chatId = String(data.chatId).trim();
             }
           }
 
@@ -159,8 +153,8 @@ export async function POST(request: Request) {
               const shopData = parseFirestoreFields(rawDoc.fields);
               if (shopData?.telegram) {
                 if (!tgSettings) tgSettings = shopData.telegram;
-                if (!token && shopData.telegram.botToken) token = shopData.telegram.botToken;
-                if (!chatId && shopData.telegram.chatId) chatId = shopData.telegram.chatId;
+                if (!token && shopData.telegram.botToken) token = String(shopData.telegram.botToken).trim();
+                if (!chatId && shopData.telegram.chatId) chatId = String(shopData.telegram.chatId).trim();
               }
             }
           }
@@ -170,9 +164,10 @@ export async function POST(request: Request) {
       }
     }
 
+    // Apply credentials from UI Settings (highest priority)
     if (tgSettings) {
-      if (!token && tgSettings.botToken) token = tgSettings.botToken;
-      if (!chatId && tgSettings.chatId) chatId = tgSettings.chatId;
+      if (!token && tgSettings.botToken) token = String(tgSettings.botToken).trim();
+      if (!chatId && tgSettings.chatId) chatId = String(tgSettings.chatId).trim();
 
       // If not explicit test and disabled globally, skip
       if (action !== 'test' && tgSettings.enabled === false) {
@@ -197,10 +192,14 @@ export async function POST(request: Request) {
       }
     }
 
+    // Fallback to environment variables ONLY if missing in Firestore settings and direct payload
+    if (!token && process.env.TELEGRAM_BOT_TOKEN) token = process.env.TELEGRAM_BOT_TOKEN.trim();
+    if (!chatId && process.env.TELEGRAM_CHAT_ID) chatId = process.env.TELEGRAM_CHAT_ID.trim();
+
     if (!token || !chatId) {
       return NextResponse.json({ 
         success: false, 
-        error: 'Telegram Bot Token বা Chat ID সেট করা নেই।' 
+        error: 'Telegram Bot Token বা Chat ID সেট করা নেই। দয়া করে শপ সেটিংস (Settings) পেজ থেকে Bot Token এবং Chat ID সেভ করুন।' 
       }, { status: 400 });
     }
 
