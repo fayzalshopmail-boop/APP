@@ -21,7 +21,8 @@ const CustomerModal = dynamic(
 );
 
 export function Topbar() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const isBangla = language === 'bn';
   const pathname = usePathname();
   const router = useRouter();
 
@@ -350,7 +351,7 @@ export function Topbar() {
             type="button"
             onClick={handleHeaderBack}
             className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-secondary/80 hover:bg-secondary border border-gray-800 hover:border-gray-700 active:scale-95 flex items-center justify-center text-gray-300 hover:text-white transition-all shrink-0 cursor-pointer"
-            title="ফিরে যান"
+            title={isBangla ? "ফিরে যান" : "Go back"}
             aria-label="Back"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -418,7 +419,7 @@ export function Topbar() {
         {!isOnline && (
           <div 
             className="flex items-center gap-1.5 bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-semibold shrink-0"
-            title="Offline"
+            title={isBangla ? "অফলাইন" : "Offline"}
           >
             <WifiOff className="w-3.5 h-3.5 text-amber-400" />
             <span className="text-[11px] sm:text-xs">{t('common.offline')}</span>
@@ -452,7 +453,7 @@ export function Topbar() {
                     {t('topbar.notifications')}
                     {unreadCount > 0 && (
                       <span className="bg-blue-500 text-white text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-                        {unreadCount} NEW
+                        {unreadCount} {isBangla ? 'টি নতুন' : 'NEW'}
                       </span>
                     )}
                   </h3>
@@ -500,7 +501,7 @@ export function Topbar() {
                           <button 
                             onClick={(e) => handleDeleteNotification(notif.id!, e)}
                             className="absolute right-3 top-4 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                            title="Clear notification"
+                            title={isBangla ? "নোটিফিকেশন মুছুন" : "Clear notification"}
                           >
                             <X className="w-4 h-4" />
                           </button>

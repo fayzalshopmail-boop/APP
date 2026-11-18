@@ -35,12 +35,12 @@ export default function SettingsPage() {
     // If there is an existing pin, verify the current pin first
     if (pin) {
       if (!currentPinInput) {
-        setPinError('বর্তমান পিন কোড লিখুন');
+        setPinError(language === 'bn' ? 'বর্তমান পিন কোড লিখুন' : 'Please enter current PIN code');
         return;
       }
       const check = await verifyPin(currentPinInput, pin);
       if (!check.valid) {
-        setPinError('বর্তমান পিন কোডটি সঠিক নয়');
+        setPinError(language === 'bn' ? 'বর্তমান পিন কোডটি সঠিক নয়' : 'Current PIN code is incorrect');
         return;
       }
     }
@@ -48,12 +48,12 @@ export default function SettingsPage() {
     // Validate new pin
     const cleanNewPin = newPinInput.trim();
     if (!/^\d{4,6}$/.test(cleanNewPin)) {
-      setPinError('নতুন পিন কোডটি অবশ্যই ৪ থেকে ৬ ডিজিটের সংখ্যা হতে হবে');
+      setPinError(language === 'bn' ? 'নতুন পিন কোডটি অবশ্যই ৪ থেকে ৬ ডিজিটের সংখ্যা হতে হবে' : 'New PIN code must be a 4 to 6 digit number');
       return;
     }
 
     if (cleanNewPin !== confirmPinInput.trim()) {
-      setPinError('নতুন পিন কোড দুটি মিলছে না!');
+      setPinError(language === 'bn' ? 'নতুন পিন কোড দুটি মিলছে না!' : 'New PIN codes do not match!');
       return;
     }
 
@@ -62,13 +62,13 @@ export default function SettingsPage() {
       const hashedPin = await hashPin(cleanNewPin);
       await securitySettingsService.savePinHash(hashedPin, currentUser?.email);
       setPin(hashedPin);
-      toast.success('ভল্ট পিন সফলভাবে পরিবর্তন ও ক্লাউডে সুরক্ষিত করা হয়েছে!');
+      toast.success(language === 'bn' ? 'ভল্ট পিন সফলভাবে পরিবর্তন ও ক্লাউডে সুরক্ষিত করা হয়েছে!' : 'Vault PIN successfully updated and secured to cloud!');
       setIsChangingPin(false);
       setCurrentPinInput('');
       setNewPinInput('');
       setConfirmPinInput('');
     } catch (err: any) {
-      setPinError(err?.message || 'পিন সংরক্ষণ করতে সমস্যা হয়েছে');
+      setPinError(err?.message || (language === 'bn' ? 'পিন সংরক্ষণ করতে সমস্যা হয়েছে' : 'Failed to save PIN'));
     } finally {
       setSavingPin(false);
     }
@@ -107,17 +107,17 @@ export default function SettingsPage() {
   const getModalProps = () => {
     switch (confirmModal.actionType) {
       case 'wipe': return { 
-        title: "Wipe All Data?", 
-        message: "CRITICAL WARNING: This will PERMANENTLY DELETE ALL shop data (Customers, Inventory, Transactions, Loans, Expenses). This action is irreversible.", 
-        confirmText: "Wipe Database",
+        title: language === 'bn' ? "সমস্ত ডেটা মুছে ফেলবেন?" : "Wipe All Data?", 
+        message: language === 'bn' ? "সতর্কতা: এটি দোকানের সমস্ত কাস্টমার, স্টক, ট্রানজেকশন, লোন ও খরচের ডেটা স্থায়ীভাবে মুছে ফেলবে। এটি আর ফেরত আনা সম্ভব নয়।" : "CRITICAL WARNING: This will PERMANENTLY DELETE ALL shop data (Customers, Inventory, Transactions, Loans, Expenses). This action is irreversible.", 
+        confirmText: language === 'bn' ? "ডেটাবেজ রিসেট করুন" : "Wipe Database",
         requireMatchString: "DELETE"
       };
       case 'deleteStaff': return { 
-        title: "স্টাফ সদস্য মুছে ফেলতে চান?", 
-        message: "আপনি কি নিশ্চিতভাবে এই স্টাফ অ্যাকাউন্টটি স্থায়ীভাবে মুছে ফেলতে চান? এটি মুছে ফেললে তিনি আর সিস্টেমে লগইন করতে পারবেন না।", 
-        confirmText: "হ্যাঁ, মুছে ফেলুন" 
+        title: language === 'bn' ? "স্টাফ সদস্য মুছে ফেলতে চান?" : "Delete Staff Member?", 
+        message: language === 'bn' ? "আপনি কি নিশ্চিতভাবে এই স্টাফ অ্যাকাউন্টটি স্থায়ীভাবে মুছে ফেলতে চান? এটি মুছে ফেললে তিনি আর সিস্টেমে লগইন করতে পারবেন না।" : "Are you sure you want to permanently delete this staff account? They will no longer be able to log in.", 
+        confirmText: language === 'bn' ? "হ্যাঁ, মুছে ফেলুন" : "Yes, Delete" 
       };
-      default: return { title: "Confirm", message: "Are you sure?", confirmText: "Confirm" };
+      default: return { title: language === 'bn' ? "নিশ্চিতকরণ" : "Confirm", message: language === 'bn' ? "আপনি কি নিশ্চিত?" : "Are you sure?", confirmText: language === 'bn' ? "নিশ্চিত করুন" : "Confirm" };
     }
   };
   const [activeTab, setActiveTab] = useState<'shop' | 'staff' | 'data'>('shop');
@@ -134,9 +134,9 @@ export default function SettingsPage() {
       setSavingTelegram(true);
       await shopSettingsService.saveSettings(shopForm);
       setGlobalShop(shopForm);
-      toast.success('টেলিগ্রাম সেটিংস সফলভাবে সংরক্ষিত হয়েছে!');
+      toast.success(language === 'bn' ? 'টেলিগ্রাম সেটিংস সফলভাবে সংরক্ষিত হয়েছে!' : 'Telegram settings saved successfully!');
     } catch (err: any) {
-      toast.error(err?.message || 'টেলিগ্রাম সেটিংস সংরক্ষণ করতে সমস্যা হয়েছে।');
+      toast.error(err?.message || (language === 'bn' ? 'টেলিগ্রাম সেটিংস সংরক্ষণ করতে সমস্যা হয়েছে।' : 'Failed to save Telegram settings.'));
     } finally {
       setSavingTelegram(false);
     }
@@ -146,7 +146,7 @@ export default function SettingsPage() {
     const token = shopForm.telegram?.botToken?.trim();
     const chat = shopForm.telegram?.chatId?.trim();
     if (!token || !chat) {
-      toast.error('অনুগ্রহ করে টেলিগ্রাম বট টোকেন এবং চ্যাট আইডি দুটিই প্রদান করুন।');
+      toast.error(language === 'bn' ? 'অনুগ্রহ করে টেলিগ্রাম বট টোকেন এবং চ্যাট আইডি দুটিই প্রদান করুন।' : 'Please provide both Telegram Bot Token and Chat ID.');
       return;
     }
     try {
@@ -172,7 +172,7 @@ export default function SettingsPage() {
     const token = shopForm.telegram?.botToken?.trim();
     const chat = shopForm.telegram?.chatId?.trim();
     if (!token || !chat) {
-      toast.error('অনুগ্রহ করে টেলিগ্রাম বট টোকেন এবং চ্যাট আইডি প্রদান করুন।');
+      toast.error(language === 'bn' ? 'অনুগ্রহ করে টেলিগ্রাম বট টোকেন এবং চ্যাট আইডি প্রদান করুন।' : 'Please provide Telegram Bot Token and Chat ID.');
       return;
     }
     try {
@@ -238,17 +238,17 @@ export default function SettingsPage() {
 
   const handleExportData = async () => {
     if (currentUser?.role !== 'Owner') {
-      return toast.error("শুধুমাত্র দোকানের মালিক (Owner) ব্যাকআপ ডাউনলোড করতে পারবেন।");
+      return toast.error(language === 'bn' ? "শুধুমাত্র দোকানের মালিক (Owner) ব্যাকআপ ডাউনলোড করতে পারবেন।" : "Only the shop Owner can download backups.");
     }
     try {
       setBackupLoading(true);
       await backupService.exportAllData();
-      toast.success('Full backup downloaded successfully!');
-      setSuccess('Full backup downloaded successfully!');
+      toast.success(language === 'bn' ? 'সম্পূর্ণ ব্যাকআপ ফাইল ডাউনলোড সম্পন্ন হয়েছে!' : 'Full backup downloaded successfully!');
+      setSuccess(language === 'bn' ? 'সম্পূর্ণ ব্যাকআপ ফাইল ডাউনলোড সম্পন্ন হয়েছে!' : 'Full backup downloaded successfully!');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to export data');
-      setError(err.message || 'Failed to export data');
+      toast.error(err.message || (language === 'bn' ? 'ডেটা এক্সপোর্ট করতে ব্যর্থ হয়েছে' : 'Failed to export data'));
+      setError(err.message || (language === 'bn' ? 'ডেটা এক্সপোর্ট করতে ব্যর্থ হয়েছে' : 'Failed to export data'));
     } finally {
       setBackupLoading(false);
     }
@@ -258,12 +258,12 @@ export default function SettingsPage() {
     try {
       setBackupLoading(true);
       await backupService.exportCustomerContactsCSV();
-      toast.success('Customer contacts downloaded successfully!');
-      setSuccess('Customer contacts downloaded successfully!');
+      toast.success(language === 'bn' ? 'কাস্টমার কন্টাক্ট লিস্ট ডাউনলোড হয়েছে!' : 'Customer contacts downloaded successfully!');
+      setSuccess(language === 'bn' ? 'কাস্টমার কন্টাক্ট লিস্ট ডাউনলোড হয়েছে!' : 'Customer contacts downloaded successfully!');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to export contacts');
-      setError(err.message || 'Failed to export contacts');
+      toast.error(err.message || (language === 'bn' ? 'কন্টাক্ট এক্সপোর্ট করতে ব্যর্থ হয়েছে' : 'Failed to export contacts'));
+      setError(err.message || (language === 'bn' ? 'কন্টাক্ট এক্সপোর্ট করতে ব্যর্থ হয়েছে' : 'Failed to export contacts'));
     } finally {
       setBackupLoading(false);
     }
@@ -271,7 +271,7 @@ export default function SettingsPage() {
 
   const handleRestoreData = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (currentUser?.role !== 'Owner') {
-      return toast.error("শুধুমাত্র দোকানের মালিক (Owner) ডেটা রিস্টোর করতে পারবেন।");
+      return toast.error(language === 'bn' ? "শুধুমাত্র দোকানের মালিক (Owner) ডেটা রিস্টোর করতে পারবেন।" : "Only the shop Owner can restore data.");
     }
     const file = e.target.files?.[0];
     if (!file) return;
@@ -288,27 +288,27 @@ export default function SettingsPage() {
         try {
           const json = event.target?.result as string;
           await backupService.restoreData(json);
-          toast.success('Data restored successfully!');
-          setSuccess('Data restored successfully!');
+          toast.success(language === 'bn' ? 'ডেটা সফলভাবে রিস্টোর হয়েছে!' : 'Data restored successfully!');
+          setSuccess(language === 'bn' ? 'ডেটা সফলভাবে রিস্টোর হয়েছে!' : 'Data restored successfully!');
           setTimeout(() => setSuccess(null), 3000);
         } catch (err: any) {
-          toast.error(err.message || 'Failed to parse or restore file');
-          setError(err.message || 'Failed to parse or restore file');
+          toast.error(err.message || (language === 'bn' ? 'ফাইল পার্স বা রিস্টোর করতে ব্যর্থ হয়েছে' : 'Failed to parse or restore file'));
+          setError(err.message || (language === 'bn' ? 'ফাইল পার্স বা রিস্টোর করতে ব্যর্থ হয়েছে' : 'Failed to parse or restore file'));
         } finally {
           setBackupLoading(false);
         }
       };
       reader.readAsText(file);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to read file');
-      setError(err.message || 'Failed to read file');
+      toast.error(err.message || (language === 'bn' ? 'ফাইল পড়তে ব্যর্থ হয়েছে' : 'Failed to read file'));
+      setError(err.message || (language === 'bn' ? 'ফাইল পড়তে ব্যর্থ হয়েছে' : 'Failed to read file'));
       setBackupLoading(false);
     }
   };
 
     const handleClearData = async () => {
       if (currentUser?.role !== 'Owner') {
-        return toast.error("শুধুমাত্র দোকানের মালিক (Owner) ডেটাবেজ মুছে ফেলতে পারবেন।");
+        return toast.error(language === 'bn' ? "শুধুমাত্র দোকানের মালিক (Owner) ডেটাবেজ মুছে ফেলতে পারবেন।" : "Only the shop Owner can wipe the database.");
       }
       setConfirmModal({isOpen: true, actionType: 'wipe', payload: null});
     };
@@ -317,12 +317,12 @@ export default function SettingsPage() {
     try {
       setBackupLoading(true);
       await backupService.clearAllData();
-      toast.success('সমস্ত ডেটা সফলভাবে মুছে ফেলা হয়েছে! সিস্টেম প্রস্তুত।');
-      setSuccess('All data cleared successfully! System is ready for live use.');
+      toast.success(language === 'bn' ? 'সমস্ত ডেটা সফলভাবে মুছে ফেলা হয়েছে! সিস্টেম প্রস্তুত।' : 'All data wiped successfully! System is ready.');
+      setSuccess(language === 'bn' ? 'সমস্ত ডেটা সফলভাবে মুছে ফেলা হয়েছে! সিস্টেম প্রস্তুত।' : 'All data cleared successfully! System is ready for live use.');
       setTimeout(() => setSuccess(null), 5000);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to clear data');
-      setError(err.message || 'Failed to clear data');
+      toast.error(err.message || (language === 'bn' ? 'ডেটা মুছে ফেলতে ব্যর্থ হয়েছে' : 'Failed to clear data'));
+      setError(err.message || (language === 'bn' ? 'ডেটা মুছে ফেলতে ব্যর্থ হয়েছে' : 'Failed to clear data'));
     } finally {
       setBackupLoading(false);
     }
@@ -418,12 +418,12 @@ export default function SettingsPage() {
 
   const handleDeleteStaff = (email: string) => {
     if (currentUser?.email?.toLowerCase() === email?.toLowerCase()) {
-      toast.error("আপনি নিজের অ্যাকাউন্ট মুছতে পারবেন না।");
+      toast.error(language === 'bn' ? "আপনি নিজের অ্যাকাউন্ট মুছতে পারবেন না।" : "You cannot delete your own account.");
       return;
     }
     const targetUser = staffList.find(s => s.email.toLowerCase() === email.toLowerCase());
     if (targetUser?.role === 'Owner' && currentUser?.role !== 'Owner') {
-      toast.error("মালিকের (Owner) অ্যাকাউন্ট শুধুমাত্র অন্য মালিক মুছে ফেলতে পারেন।");
+      toast.error(language === 'bn' ? "মালিকের (Owner) অ্যাকাউন্ট শুধুমাত্র অন্য মালিক মুছে ফেলতে পারেন।" : "Only an Owner can delete an Owner account.");
       return;
     }
     setConfirmModal({
@@ -436,20 +436,20 @@ export default function SettingsPage() {
   const executeDeleteStaff = async (email: string) => {
     try {
       if (currentUser?.email?.toLowerCase() === email?.toLowerCase()) {
-        toast.error("নিজের অ্যাকাউন্ট মোছা সম্ভব নয়।");
+        toast.error(language === 'bn' ? "নিজের অ্যাকাউন্ট মোছা সম্ভব নয়।" : "Cannot delete your own account.");
         return;
       }
       const targetUser = staffList.find(s => s.email.toLowerCase() === email.toLowerCase());
       if (targetUser?.role === 'Owner' && currentUser?.role !== 'Owner') {
-        toast.error("মালিকের অ্যাকাউন্ট মোছার অনুমতি আপনার নেই।");
+        toast.error(language === 'bn' ? "মালিকের অ্যাকাউন্ট মোছার অনুমতি আপনার নেই।" : "You do not have permission to delete an Owner account.");
         return;
       }
       await userService.deleteUser(email);
       setStaffList(prev => prev.filter(s => s.email.toLowerCase() !== email.toLowerCase()));
-      toast.success("স্টাফ সফলভাবে মুছে ফেলা হয়েছে");
+      toast.success(language === 'bn' ? "স্টাফ সফলভাবে মুছে ফেলা হয়েছে" : "Staff member deleted successfully");
     } catch (err) {
       console.error("Failed to delete user", err);
-      toast.error("স্টাফ মুছতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+      toast.error(language === 'bn' ? "স্টাফ মুছতে সমস্যা হয়েছে। আবার চেষ্টা করুন।" : "Failed to delete staff member. Please try again.");
     }
   };
 
@@ -549,7 +549,7 @@ export default function SettingsPage() {
                     value={shopForm.shopName}
                     onChange={(e) => setShopForm({ ...shopForm, shopName: e.target.value })}
                     className="w-full bg-popover border border-gray-800 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50" 
-                    placeholder="e.g. Shop Name"
+                    placeholder={language === 'bn' ? "যেমন: দোকানের নাম" : "e.g. Shop Name"}
                   />
                 </div>
               </div>
@@ -569,7 +569,7 @@ export default function SettingsPage() {
                     value={shopForm.shopTitle}
                     onChange={(e) => setShopForm({ ...shopForm, shopTitle: e.target.value })}
                     className="w-full bg-popover border border-gray-800 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50" 
-                    placeholder="e.g. Electronics Servicing Center"
+                    placeholder={language === 'bn' ? "যেমন: ইলেকট্রনিক্স সার্ভিসিং সেন্টার" : "e.g. Electronics Servicing Center"}
                   />
                 </div>
               </div>
@@ -583,7 +583,7 @@ export default function SettingsPage() {
                       <button 
                         onClick={() => setShopForm({ ...shopForm, logoUrl: '' })}
                         className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                        title="Remove Logo"
+                        title={language === 'bn' ? "লোগো মুছুন" : "Remove Logo"}
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
@@ -646,7 +646,7 @@ export default function SettingsPage() {
                     value={shopForm.ownerName}
                     onChange={(e) => setShopForm({ ...shopForm, ownerName: e.target.value })}
                     className="w-full bg-popover border border-gray-800 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50" 
-                    placeholder="Owner's Name"
+                    placeholder={language === 'bn' ? "মালিকের নাম" : "Owner's Name"}
                   />
                 </div>
               </div>
@@ -665,7 +665,7 @@ export default function SettingsPage() {
                     value={shopForm.address}
                     onChange={(e) => setShopForm({ ...shopForm, address: e.target.value })}
                     className="w-full bg-popover border border-gray-800 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50 h-24 resize-none" 
-                    placeholder="Full shop address..."
+                    placeholder={language === 'bn' ? "দোকানের সম্পূর্ণ ঠিকানা..." : "Full shop address..."}
                   />
                 </div>
               </div>
@@ -704,7 +704,7 @@ export default function SettingsPage() {
               {/* Master Toggle */}
               <label className="flex items-center gap-3 cursor-pointer self-start sm:self-auto select-none">
                 <span className="text-xs font-medium text-gray-300">
-                  {shopForm.telegram?.enabled ? 'সক্রিয় (Active)' : 'নিষ্ক্রিয় (Disabled)'}
+                  {shopForm.telegram?.enabled ? (language === 'bn' ? 'সক্রিয় (Active)' : 'Active') : (language === 'bn' ? 'নিষ্ক্রিয় (Disabled)' : 'Disabled')}
                 </span>
                 <input
                   type="checkbox"
@@ -1084,15 +1084,23 @@ export default function SettingsPage() {
                     <ShieldCheck className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-white">ভল্ট পিন ও কাউন্টার নিরাপত্তা</h2>
-                    <p className="text-xs text-gray-400 mt-0.5">পিসিতে ক্যাশ কাউন্টার ও ওনার স্ক্রিন লক করার জন্য ৪-৬ ডিজিটের পিন কোড (SHA-256 এনক্রিপ্টেড)</p>
+                    <h2 className="text-lg font-semibold text-white">
+                      {language === 'bn' ? 'ভল্ট পিন ও কাউন্টার নিরাপত্তা' : 'Vault PIN & Counter Security'}
+                    </h2>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {language === 'bn' 
+                        ? 'পিসিতে ক্যাশ কাউন্টার ও ওনার স্ক্রিন লক করার জন্য ৪-৬ ডিজিটের পিন কোড (SHA-256 এনক্রিপ্টেড)' 
+                        : '4-6 digit PIN code (SHA-256 encrypted) to lock cash counter and owner screen on PC'}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
                     pin ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                   }`}>
-                    {pin ? '✓ সক্রিয় ও সুরক্ষিত' : '⚠ পিন সেট করা নেই'}
+                    {pin 
+                      ? (language === 'bn' ? '✓ সক্রিয় ও সুরক্ষিত' : '✓ Active & Protected') 
+                      : (language === 'bn' ? '⚠ পিন সেট করা নেই' : '⚠ PIN Not Set')}
                   </span>
                 </div>
               </div>
@@ -1101,10 +1109,14 @@ export default function SettingsPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-[#1b1f30] border border-gray-800">
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-gray-200">
-                      {pin ? 'আপনার অ্যাকাউন্টে একটি মাস্টার ভল্ট পিন সক্রিয় রয়েছে।' : 'আপনার অ্যাকাউন্টে এখনো কোনো ভল্ট পিন সেট করা হয়নি।'}
+                      {pin 
+                        ? (language === 'bn' ? 'আপনার অ্যাকাউন্টে একটি মাস্টার ভল্ট পিন সক্রিয় রয়েছে।' : 'A master vault PIN is active on your account.') 
+                        : (language === 'bn' ? 'আপনার অ্যাকাউন্টে এখনো কোনো ভল্ট পিন সেট করা হয়নি।' : 'No vault PIN has been set on your account yet.')}
                     </p>
                     <p className="text-xs text-gray-500">
-                      ডেস্কটপ ব্রাউজারে ক্যাশ কাউন্টার ছেড়ে যাওয়ার আগে সাইডবার থেকে &quot;Lock Screen&quot; চাপলেই এই পিন দিয়ে স্ক্রিন লক থাকবে।
+                      {language === 'bn' 
+                        ? 'ডেস্কটপ ব্রাউজারে ক্যাশ কাউন্টার ছেড়ে যাওয়ার আগে সাইডবার থেকে "Lock Screen" চাপলেই এই পিন দিয়ে স্ক্রিন লক থাকবে।' 
+                        : 'Before stepping away from the counter on desktop, click "Lock Screen" in sidebar to lock screen behind this PIN.'}
                     </p>
                   </div>
                   <button
@@ -1119,7 +1131,9 @@ export default function SettingsPage() {
                     className="shrink-0 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-md shadow-blue-500/20 flex items-center gap-2"
                   >
                     <KeyRound className="w-4 h-4" />
-                    {pin ? 'পিন পরিবর্তন করুন' : 'নতুন পিন সেট করুন'}
+                    {pin 
+                      ? (language === 'bn' ? 'পিন পরিবর্তন করুন' : 'Change PIN') 
+                      : (language === 'bn' ? 'নতুন পিন সেট করুন' : 'Set New PIN')}
                   </button>
                 </div>
               ) : (
@@ -1127,14 +1141,16 @@ export default function SettingsPage() {
                   <div className="flex items-center justify-between pb-3 border-b border-gray-800/80">
                     <h3 className="text-sm font-semibold text-white flex items-center gap-2">
                       <KeyRound className="w-4 h-4 text-blue-400" />
-                      {pin ? 'ভল্ট পিন পরিবর্তন' : 'নতুন ভল্ট পিন সেট'}
+                      {pin 
+                        ? (language === 'bn' ? 'ভল্ট পিন পরিবর্তন' : 'Change Vault PIN') 
+                        : (language === 'bn' ? 'নতুন ভল্ট পিন সেট' : 'Set New Vault PIN')}
                     </h3>
                     <button
                       type="button"
                       onClick={() => setIsChangingPin(false)}
                       className="text-xs text-gray-400 hover:text-gray-200"
                     >
-                      বাতিল
+                      {language === 'bn' ? 'বাতিল' : 'Cancel'}
                     </button>
                   </div>
 
@@ -1148,7 +1164,9 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {pin && (
                       <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">বর্তমান পিন</label>
+                        <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                          {language === 'bn' ? 'বর্তমান পিন' : 'Current PIN'}
+                        </label>
                         <input
                           type="password"
                           inputMode="numeric"
@@ -1156,13 +1174,15 @@ export default function SettingsPage() {
                           required
                           value={currentPinInput}
                           onChange={(e) => setCurrentPinInput(e.target.value.replace(/\D/g, ''))}
-                          placeholder="বর্তমান পিন"
+                          placeholder={language === 'bn' ? 'বর্তমান পিন' : 'Current PIN'}
                           className="w-full bg-popover border border-gray-800 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500/50"
                         />
                       </div>
                     )}
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">নতুন পিন (৪-৬ ডিজিট)</label>
+                      <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        {language === 'bn' ? 'নতুন পিন (৪-৬ ডিজিট)' : 'New PIN (4-6 digits)'}
+                      </label>
                       <input
                         type="password"
                         inputMode="numeric"
@@ -1170,12 +1190,14 @@ export default function SettingsPage() {
                         required
                         value={newPinInput}
                         onChange={(e) => setNewPinInput(e.target.value.replace(/\D/g, ''))}
-                        placeholder="৪-৬ ডিজিট"
+                        placeholder={language === 'bn' ? '৪-৬ ডিজিট' : '4-6 digits'}
                         className="w-full bg-popover border border-gray-800 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500/50"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">নতুন পিন নিশ্চিত করুন</label>
+                      <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        {language === 'bn' ? 'নতুন পিন নিশ্চিত করুন' : 'Confirm New PIN'}
+                      </label>
                       <input
                         type="password"
                         inputMode="numeric"
@@ -1183,7 +1205,7 @@ export default function SettingsPage() {
                         required
                         value={confirmPinInput}
                         onChange={(e) => setConfirmPinInput(e.target.value.replace(/\D/g, ''))}
-                        placeholder="পুনরায় লিখুন"
+                        placeholder={language === 'bn' ? 'পুনরায় লিখুন' : 'Re-enter PIN'}
                         className="w-full bg-popover border border-gray-800 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500/50"
                       />
                     </div>
@@ -1196,7 +1218,7 @@ export default function SettingsPage() {
                       disabled={savingPin}
                       className="px-4 py-2 rounded-xl text-xs sm:text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
                     >
-                      বাতিল
+                      {language === 'bn' ? 'বাতিল' : 'Cancel'}
                     </button>
                     <button
                       type="submit"
@@ -1204,7 +1226,7 @@ export default function SettingsPage() {
                       className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-md shadow-blue-500/20 flex items-center gap-2 disabled:opacity-50"
                     >
                       {savingPin ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                      পিন সংরক্ষণ করুন
+                      {language === 'bn' ? 'পিন সংরক্ষণ করুন' : 'Save PIN'}
                     </button>
                   </div>
                 </form>
@@ -1356,8 +1378,14 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-3">
                   <div className="p-3 bg-red-500/10 text-red-400 rounded-lg"><AlertTriangle className="w-5 h-5" /></div>
                   <div>
-                    <h3 className="font-semibold text-red-400">Danger Zone: Wipe Database</h3>
-                    <p className="text-xs text-gray-400">সমস্ত কাস্টমার, স্টক, ট্রানজেকশন ও লোন ডেটা স্থায়ীভাবে মুছে ফেলুন। এই কাজটি পুনরায় ফিরিয়ে আনা সম্ভব নয়।</p>
+                    <h3 className="font-semibold text-red-400">
+                      {language === 'bn' ? 'বিপদজনক অঞ্চল: ডেটাবেজ রিসেট' : 'Danger Zone: Wipe Database'}
+                    </h3>
+                    <p className="text-xs text-gray-400">
+                      {language === 'bn' 
+                        ? 'সমস্ত কাস্টমার, স্টক, ট্রানজেকশন ও লোন ডেটা স্থায়ীভাবে মুছে ফেলুন। এই কাজটি পুনরায় ফিরিয়ে আনা সম্ভব নয়।' 
+                        : 'Permanently wipe all customers, stock, transactions and loans data. This action cannot be undone.'}
+                    </p>
                   </div>
                 </div>
                 <button 
@@ -1366,7 +1394,7 @@ export default function SettingsPage() {
                   className="w-full sm:w-auto py-2.5 px-6 bg-red-600/20 text-red-400 hover:bg-red-600/30 border border-red-500/30 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Wipe All Data (রিসেট ডেটাবেজ)
+                  {language === 'bn' ? 'Wipe All Data (রিসেট ডেটাবেজ)' : 'Wipe All Data (Factory Reset)'}
                 </button>
               </div>
             )}

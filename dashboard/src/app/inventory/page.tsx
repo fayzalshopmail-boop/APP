@@ -22,6 +22,7 @@ import toast from "react-hot-toast";
 
 export default function InventoryPage() {
   const { t, language } = useTranslation();
+  const isBangla = language === 'bn';
   const { user, highlightInventorySearch, setHighlightInventorySearch } = useAppStore();
   const hasFullAccess = user?.role === 'Owner' || user?.role === 'Manager';
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -140,7 +141,7 @@ export default function InventoryPage() {
   };
 
   const handleManageProducts = () => {
-    if (!formData.category) return toast.error('Select a category first!');
+    if (!formData.category) return toast.error(isBangla ? 'প্রথমে একটি ক্যাটাগরি নির্বাচন করুন!' : 'Select a category first!');
     setManageProductModal(true);
   };
   
@@ -213,7 +214,7 @@ export default function InventoryPage() {
     e.preventDefault();
     if (!restockItem || restockData.addQuantity <= 0) return;
     if (restockData.newPurchasePrice > 0 && restockData.newSellingPrice < restockData.newPurchasePrice) {
-      toast.error("নতুন বিক্রয়মূল্য কেনা দামের চেয়ে কম হতে পারে না!");
+      toast.error(isBangla ? "নতুন বিক্রয়মূল্য কেনা দামের চেয়ে কম হতে পারে না!" : "New selling price cannot be lower than purchase price!");
       return;
     }
 
@@ -235,11 +236,11 @@ export default function InventoryPage() {
       };
 
       setItems(items.map(item => item.id === restockItem.id ? { ...item, ...updates } : item));
-      toast.success(restockData.supplierId ? "Item restocked & Supplier due updated" : "Item restocked & Cash purchase recorded");
+      toast.success(restockData.supplierId ? (isBangla ? "আইটেম রিস্টক ও মহাজন বাকি আপডেট হয়েছে" : "Item restocked & Supplier due updated") : (isBangla ? "আইটেম রিস্টক ও নগদ কেনা রেকর্ড হয়েছে" : "Item restocked & Cash purchase recorded"));
       closeRestockModal();
     } catch (error: any) {
       console.error("Error restocking item", error);
-      toast.error(error?.message || "Failed to restock item.");
+      toast.error(error?.message || (isBangla ? "আইটেম রিস্টক করতে সমস্যা হয়েছে।" : "Failed to restock item."));
     }
   };
 
@@ -257,10 +258,10 @@ export default function InventoryPage() {
   const handleSaveSell = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!sellItem || sellData.quantity <= 0 || sellData.quantity > sellItem.stock) {
-      return toast.error('Invalid quantity! Must be between 1 and current stock.');
+      return toast.error(isBangla ? 'সঠিক পরিমাণ লিখুন! ১ থেকে বর্তমান স্টকের মধ্যে হতে হবে।' : 'Invalid quantity! Must be between 1 and current stock.');
     }
     if (sellData.price < 0) {
-      return toast.error('Price cannot be negative!');
+      return toast.error(isBangla ? 'মূল্য ঋণাত্মক হতে পারে না!' : 'Price cannot be negative!');
     }
 
     try {
@@ -283,24 +284,24 @@ export default function InventoryPage() {
       };
       closeSellModal();
       setReceiptData(completedReceipt);
-      toast.success('Direct sell successful!');
+      toast.success(isBangla ? 'সরাসরি বিক্রয় সফল হয়েছে!' : 'Direct sell successful!');
     } catch (error: any) {
       console.error("Error direct selling", error);
-      toast.error(error.message || "Failed to process direct sell.");
+      toast.error(error.message || (isBangla ? "সরাসরি বিক্রয় করতে ব্যর্থ হয়েছে।" : "Failed to process direct sell."));
     }
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.purchasePrice > 0 && formData.sellingPrice < formData.purchasePrice) {
-      toast.error("বিক্রয়মূল্য অবশ্যই ক্রয়মূল্যের (কেনা দাম) চেয়ে বেশি বা সমান হতে হবে!");
+      toast.error(isBangla ? "বিক্রয়মূল্য অবশ্যই ক্রয়মূল্যের (কেনা দাম) চেয়ে বেশি বা সমান হতে হবে!" : "Selling price must be greater than or equal to purchase price!");
       return;
     }
     try {
       if (editingItem) {
         await inventoryService.update(editingItem.id, formData);
         setItems(items.map(i => i.id === editingItem.id ? { ...i, ...formData } as InventoryItem : i));
-        toast.success("Item updated successfully");
+        toast.success(isBangla ? "আইটেম সফলভাবে আপডেট হয়েছে" : "Item updated successfully");
       } else {
         const id = await inventoryService.add(formData);
         const newItem = { id, ...formData, createdAt: new Date() } as InventoryItem;
@@ -310,7 +311,7 @@ export default function InventoryPage() {
         if (totalCost > 0) {
           if (formData.supplierId) {
             await supplierService.addBill(formData.supplierId, totalCost);
-            toast.success("Item added & Supplier due updated");
+            toast.success(isBangla ? "আইটেম যোগ ও মহাজন বাকি আপডেট হয়েছে" : "Item added & Supplier due updated");
           } else {
             await transactionService.add({
               customerId: 'cash-purchase',
@@ -319,16 +320,16 @@ export default function InventoryPage() {
               type: 'Inventory Purchase',
               receivedBy: user?.email || 'Unknown'
             });
-            toast.success("Item added & Cash purchase recorded");
+            toast.success(isBangla ? "আইটেম যোগ ও নগদ ক্রয় রেকর্ড হয়েছে" : "Item added & Cash purchase recorded");
           }
         } else {
-          toast.success("Item added successfully");
+          toast.success(isBangla ? "আইটেম সফলভাবে যোগ হয়েছে" : "Item added successfully");
         }
       }
       closeInvModal();
     } catch (error) {
       console.error("Error saving item", error);
-      toast.error("Failed to save item. Please try again.");
+      toast.error(isBangla ? "আইটেম সংরক্ষণ করতে সমস্যা হয়েছে।" : "Failed to save item. Please try again.");
     }
   };
 
@@ -336,11 +337,11 @@ export default function InventoryPage() {
     try {
       await inventoryService.delete(id);
       setItems(items.filter(i => i.id !== id));
-      toast.success("Item deleted successfully");
+      toast.success(isBangla ? "আইটেম সফলভাবে মুছে ফেলা হয়েছে" : "Item deleted successfully");
       setDeleteConfirm({isOpen: false, id: null});
     } catch (error) {
       console.error("Error deleting item", error);
-      toast.error("Failed to delete item.");
+      toast.error(isBangla ? "আইটেম মুছতে ব্যর্থ হয়েছে।" : "Failed to delete item.");
     }
   };
 

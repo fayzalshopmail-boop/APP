@@ -28,7 +28,8 @@ import { auth } from '@/lib/firebase';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 export function OwnerBottomNav() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const isBangla = language === 'bn';
   const pathname = usePathname();
   const router = useRouter();
   const { user, setUser, setUnlocked, shop, isMoreMenuOpen, setIsMoreMenuOpen } = useAppStore();
@@ -245,7 +246,7 @@ export function OwnerBottomNav() {
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onClick={handleCloseMenu}
-          title="নিচে টেনে বন্ধ করুন"
+          title={isBangla ? "নিচে টেনে বন্ধ করুন" : "Drag down to close"}
         >
           <div className="w-14 h-1.5 bg-gray-500/80 hover:bg-gray-400 active:bg-gray-300 rounded-full transition-colors" />
         </div>
@@ -260,7 +261,9 @@ export function OwnerBottomNav() {
               <h3 className="text-base font-bold text-white leading-tight">
                 {shop?.shopName || 'Shop Hub'}
               </h3>
-              <p className="text-xs text-gray-400">ব্যবসার অন্যান্য সব অপশন</p>
+              <p className="text-xs text-gray-400">
+                {isBangla ? 'ব্যবসার অন্যান্য সব অপশন' : 'All other business options'}
+              </p>
             </div>
           </div>
         </div>
@@ -272,7 +275,7 @@ export function OwnerBottomNav() {
           <div>
             <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
               <CreditCard className="w-3.5 h-3.5 text-blue-400" />
-              আর্থিক ও লাভ-ক্ষতি
+              {isBangla ? 'আর্থিক ও লাভ-ক্ষতি' : 'Finance & Accounts'}
             </h4>
             <div className="grid grid-cols-3 gap-2.5">
               <Link

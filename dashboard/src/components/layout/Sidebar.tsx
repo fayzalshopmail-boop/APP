@@ -16,7 +16,8 @@ import { auth } from '@/lib/firebase';
 import { offlineSyncService } from '@/lib/services/offlineSync';
 
 export function Sidebar() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const isBangla = language === 'bn';
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -110,15 +111,15 @@ export function Sidebar() {
         {isSyncing ? (
           <div 
             className="flex items-center gap-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 animate-pulse"
-            title="অফলাইন ডাটা ক্লাউডে সিঙ্ক হচ্ছে..."
+            title={isBangla ? "অফলাইন ডাটা ক্লাউডে সিঙ্ক হচ্ছে..." : "Syncing offline data to cloud..."}
           >
             <RefreshCw className="w-2.5 h-2.5 animate-spin text-blue-400" />
-            <span>সিঙ্ক হচ্ছে</span>
+            <span>{isBangla ? "সিঙ্ক হচ্ছে" : "Syncing..."}</span>
           </div>
         ) : isOnline ? (
           <div 
             className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 rounded-full text-[10px] font-bold shrink-0"
-            title="ক্লাউড ডাটাবেজের সাথে সরাসরি সংযুক্ত"
+            title={isBangla ? "ক্লাউড ডাটাবেজের সাথে সরাসরি সংযুক্ত" : "Directly connected to cloud database"}
           >
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span>ONLINE</span>
@@ -126,10 +127,10 @@ export function Sidebar() {
         ) : (
           <div 
             className="flex items-center gap-1.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-0.5 rounded-full text-[10px] font-bold shrink-0 cursor-help"
-            title="ইন্টারনেট সংযোগ নেই। অফলাইন মোড সক্রিয়, সব কাজ লোকালি সেভ হচ্ছে।"
+            title={isBangla ? "ইন্টারনেট সংযোগ নেই। অফলাইন মোড সক্রিয়, সব কাজ লোকালি সেভ হচ্ছে।" : "No internet connection. Offline mode active, saving locally."}
           >
             <WifiOff className="w-3 h-3 text-amber-400" />
-            <span>{pendingSyncCount > 0 ? `অফলাইন (${pendingSyncCount})` : 'OFFLINE'}</span>
+            <span>{pendingSyncCount > 0 ? (isBangla ? `অফলাইন (${pendingSyncCount})` : `Offline (${pendingSyncCount})`) : 'OFFLINE'}</span>
           </div>
         )}
       </div>
@@ -185,7 +186,7 @@ export function Sidebar() {
             <button 
               onClick={() => setUnlocked(false)}
               className="text-gray-500 hover:text-orange-400 transition-colors bg-[#1b1f30] hover:bg-gray-800 p-1.5 rounded-lg"
-              title="Lock Screen"
+              title={isBangla ? "স্ক্রিন লক" : "Lock Screen"}
             >
               <Lock className="w-4 h-4" />
             </button>
@@ -193,7 +194,7 @@ export function Sidebar() {
           <button 
             onClick={handleLogoutRequest}
             className="text-gray-500 hover:text-red-400 transition-colors bg-[#1b1f30] hover:bg-gray-800 p-1.5 rounded-lg"
-            title="Log Out"
+            title={isBangla ? "লগআউট" : "Log Out"}
           >
             <LogOut className="w-4 h-4" />
           </button>

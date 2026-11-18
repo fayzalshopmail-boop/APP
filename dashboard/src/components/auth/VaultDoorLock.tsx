@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ShieldCheck, LogOut, RotateCcw } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import { hashPin, verifyPin } from '@/lib/security';
 
 interface VaultDoorLockProps {
@@ -25,6 +26,8 @@ export function VaultDoorLock({
   onResetPin,
 }: VaultDoorLockProps) {
   const { shop } = useAppStore();
+  const { language } = useTranslation();
+  const isBangla = language === 'bn';
   const [code, setCode] = useState('');
   const codeRef = useRef(''); // Single source of truth to eliminate any closure lag
   const [isConfirmingSetup, setIsConfirmingSetup] = useState(false);
@@ -155,7 +158,7 @@ export function VaultDoorLock({
     if (currentCode.length < 4) {
       setIsBusy(true);
       rootRef.current.classList.add('p-jam');
-      setStatusMessage('কমপক্ষে ৪ ডিজিটের পিন কোড লিখুন');
+      setStatusMessage(isBangla ? 'কমপক্ষে ৪ ডিজিটের পিন কোড লিখুন' : 'Enter at least 4 digits PIN');
       at(950, () => {
         rootRef.current?.classList.remove('p-jam');
         setIsBusy(false);
@@ -170,7 +173,7 @@ export function VaultDoorLock({
         setFirstSetupPin(currentCode);
         setIsConfirmingSetup(true);
         handleCodeChange('');
-        setStatusMessage('পিন নিশ্চিত করতে পুনরায় লিখুন');
+        setStatusMessage(isBangla ? 'পিন নিশ্চিত করতে পুনরায় লিখুন' : 'Re-enter PIN to confirm');
         inputRef.current?.focus();
         return;
       } else {
@@ -180,7 +183,7 @@ export function VaultDoorLock({
           genRef.current++;
           const myGen = genRef.current;
           clearAllTimers();
-          setStatusMessage('পিন সফলভাবে সেট হয়েছে! ভল্ট খুলছে...');
+          setStatusMessage(isBangla ? 'পিন সফলভাবে সেট হয়েছে! ভল্ট খুলছে...' : 'PIN set successfully! Opening vault...');
           inputRef.current?.blur();
 
           rootRef.current.classList.add('is-playing');
@@ -191,7 +194,7 @@ export function VaultDoorLock({
           at(2550, () => { rootRef.current?.classList.add('p-open'); });
           at(3200, () => {
             rootRef.current?.classList.add('p-reveal');
-            setStatusMessage('ভল্ট আনলকড!');
+            setStatusMessage(isBangla ? 'ভল্ট আনলকড!' : 'Vault Unlocked!');
           });
           // Hash the PIN before saving to store
           const hashedPin = await hashPin(currentCode);
@@ -204,7 +207,7 @@ export function VaultDoorLock({
           // Mismatch
           setIsBusy(true);
           rootRef.current.classList.add('p-jam');
-          setStatusMessage('পিন মেলেনি! অনুগ্রহ করে আবার চেষ্টা করুন');
+          setStatusMessage(isBangla ? 'পিন মেলেনি! অনুগ্রহ করে আবার চেষ্টা করুন' : 'PIN mismatch! Please try again');
           at(950, () => {
             rootRef.current?.classList.remove('p-jam');
             handleCodeChange('');
@@ -230,7 +233,7 @@ export function VaultDoorLock({
       genRef.current++;
       const myGen = genRef.current;
       clearAllTimers();
-      setStatusMessage('কোড সঠিক! ভল্ট ডোর খোলা হচ্ছে...');
+      setStatusMessage(isBangla ? 'কোড সঠিক! ভল্ট ডোর খোলা হচ্ছে...' : 'Code correct! Opening vault door...');
       inputRef.current?.blur();
 
       rootRef.current.classList.add('is-playing');
@@ -241,7 +244,7 @@ export function VaultDoorLock({
       at(2550, () => { rootRef.current?.classList.add('p-open'); });
       at(3200, () => {
         rootRef.current?.classList.add('p-reveal');
-        setStatusMessage('Access Granted! স্বাগতম');
+        setStatusMessage(isBangla ? 'Access Granted! স্বাগতম' : 'Access Granted! Welcome');
       });
       // Door fully opens and stays visible for 1 second before going to dashboard
       at(4300, () => {
@@ -251,7 +254,7 @@ export function VaultDoorLock({
       // Wrong PIN
       setIsBusy(true);
       rootRef.current.classList.add('p-jam');
-      setStatusMessage('ভুল পিন কোড! আবার চেষ্টা করুন');
+      setStatusMessage(isBangla ? 'ভুল পিন কোড! আবার চেষ্টা করুন' : 'Incorrect PIN! Try again');
       at(950, () => {
         rootRef.current?.classList.remove('p-jam');
         handleCodeChange('');
@@ -339,17 +342,17 @@ export function VaultDoorLock({
         <h2 className="text-xl sm:text-2xl font-bold text-white tracking-wide">
           {isSetupMode
             ? isConfirmingSetup
-              ? 'পিন নিশ্চিত করুন'
-              : '৪-ডিজিটের ভল্ট পিন সেট করুন'
-            : 'সিকিউর ভল্ট আনলক'}
+              ? (isBangla ? 'পিন নিশ্চিত করুন' : 'Confirm PIN')
+              : (isBangla ? '৪-ডিজিটের ভল্ট পিন সেট করুন' : 'Set 4-Digit Vault PIN')
+            : (isBangla ? 'সিকিউর ভল্ট আনলক' : 'Secure Vault Unlock')}
         </h2>
         <p className="text-gray-400 text-xs sm:text-sm mt-1 h-5 flex items-center justify-center">
           {statusMessage ? (
             <span className="text-amber-400 font-semibold animate-pulse">{statusMessage}</span>
           ) : isSetupMode ? (
-            'ভবিষ্যতে লগইন ও দ্রুত অ্যাক্সেসের জন্য একটি নিরাপদ পিন দিন'
+            isBangla ? 'ভবিষ্যতে লগইন ও দ্রুত অ্যাক্সেসের জন্য একটি নিরাপদ পিন দিন' : 'Set a secure PIN for future logins & quick access'
           ) : (
-            `স্বাগতম, ${userName}। আপনার ভল্ট কোড লিখুন`
+            isBangla ? `স্বাগতম, ${userName}। আপনার ভল্ট কোড লিখুন` : `Welcome, ${userName}. Enter your vault code`
           )}
         </p>
       </div>
@@ -608,7 +611,7 @@ export function VaultDoorLock({
             className="inline-flex items-center gap-1 hover:text-amber-400 transition-colors underline"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            পিন রিসেট করুন
+            {isBangla ? 'পিন রিসেট করুন' : 'Reset PIN'}
           </button>
         )}
         {onResetPin && onSignOut && <span>•</span>}
@@ -619,7 +622,7 @@ export function VaultDoorLock({
             className="inline-flex items-center gap-1 hover:text-gray-300 transition-colors underline"
           >
             <LogOut className="w-3.5 h-3.5" />
-            লগ আউট
+            {isBangla ? 'লগ আউট' : 'Log Out'}
           </button>
         )}
       </div>

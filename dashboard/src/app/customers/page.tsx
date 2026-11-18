@@ -354,7 +354,7 @@ export default function CustomersPage() {
       setSetBillCustomer(null);
     } catch (err) {
       console.error("Failed to set customer bill:", err);
-      toast.error("বিল সংরক্ষণ করতে সমস্যা হয়েছে।");
+      toast.error(isBangla ? "বিল সংরক্ষণ করতে সমস্যা হয়েছে।" : "Failed to save bill.");
     }
   };
 
@@ -509,7 +509,7 @@ export default function CustomersPage() {
       setPartsModalCustomer(null);
     } catch (error: any) {
       console.error("Error confirming parts and delivery checkout", error);
-      toast.error(error.message || "ডেলিভারি চেকআউট সম্পন্ন করতে সমস্যা হয়েছে।");
+      toast.error(error.message || (isBangla ? "ডেলিভারি চেকআউট সম্পন্ন করতে সমস্যা হয়েছে।" : "Failed to complete delivery checkout."));
     }
   };
 
@@ -533,10 +533,10 @@ export default function CustomersPage() {
         } : c
       ));
       setPaymentModalCustomer(null);
-      toast.success("পেমেন্ট সফলভাবে সংরক্ষিত হয়েছে!");
+      toast.success(isBangla ? "পেমেন্ট সফলভাবে সংরক্ষিত হয়েছে!" : "Payment received successfully!");
     } catch (error: any) { 
       console.error("Firebase error", error); 
-      toast.error(error.message || "পেমেন্ট সংরক্ষণ করতে সমস্যা হয়েছে।"); 
+      toast.error(error.message || (isBangla ? "পেমেন্ট সংরক্ষণ করতে সমস্যা হয়েছে।" : "Failed to save payment.")); 
     }
   };
 
@@ -581,13 +581,13 @@ export default function CustomersPage() {
         setProfileSidebarCustomer(null);
       }
       if (deleteTransactions) {
-        toast.success("কাস্টমার ও তার সমস্ত লেনদেন সফলভাবে মুছে ফেলা হয়েছে");
+        toast.success(isBangla ? "কাস্টমার ও তার সমস্ত লেনদেন সফলভাবে মুছে ফেলা হয়েছে" : "Customer and all associated transactions deleted");
       } else {
-        toast.success("কাস্টমার মুছে ফেলা হয়েছে (লেনদেন হিস্ট্রি রিপোর্টে সংরক্ষিত আছে)");
+        toast.success(isBangla ? "কাস্টমার মুছে ফেলা হয়েছে (লেনদেন হিস্ট্রি রিপোর্টে সংরক্ষিত আছে)" : "Customer deleted (transaction history preserved in reports)");
       }
     } catch (error) { 
       console.error("Firebase error", error); 
-      toast.error("কাস্টমার মুছতে সমস্যা হয়েছে। ইন্টারনেট সংযোগ চেক করুন।"); 
+      toast.error(isBangla ? "কাস্টমার মুছতে সমস্যা হয়েছে। ইন্টারনেট সংযোগ চেক করুন।" : "Failed to delete customer. Check internet connection."); 
     }
   };
 
@@ -640,10 +640,10 @@ export default function CustomersPage() {
           await sendSMS(c.phone, `Your device has been returned unrepaired. Please collect it from shop.`, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
         }
       }
-      toast.success("ডিভাইস আনরিপেয়ার্ড ফেরত মার্ক করা হয়েছে");
+      toast.success(isBangla ? "ডিভাইস আনরিপেয়ার্ড ফেরত মার্ক করা হয়েছে" : "Device marked as returned unrepaired");
     } catch (err: any) {
       console.error('Error marking as returned', err);
-      toast.error(err.message || 'ফেরত মার্ক করতে সমস্যা হয়েছে');
+      toast.error(err.message || (isBangla ? 'ফেরত মার্ক করতে সমস্যা হয়েছে' : 'Failed to mark as returned'));
     }
   };
 
@@ -762,7 +762,7 @@ export default function CustomersPage() {
           {statusFilter !== 'All' && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
               {statusFilter === 'Pending' ? (isBangla ? 'পেন্ডিং কাজ' : 'Pending') : statusFilter}
-              <button onClick={() => setStatusFilter('All')} className="hover:text-white" title="Clear filter">
+              <button onClick={() => setStatusFilter('All')} className="hover:text-white" title={isBangla ? 'ফিল্টার মুছুন' : 'Clear filter'}>
                 <X className="w-3 h-3" />
               </button>
             </span>
@@ -787,7 +787,7 @@ export default function CustomersPage() {
                 <button 
                   onClick={() => setSearch('')}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 p-0.5 transition-colors"
-                  title="Clear search"
+                  title={isBangla ? 'সার্চ মুছুন' : 'Clear search'}
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -857,7 +857,7 @@ export default function CustomersPage() {
                   <td className="px-4 py-3.5">
                     <div className="space-y-0.5">
                       <Button variant="link" onClick={() => setProfileSidebarCustomer(customer)} className="p-0 h-auto font-semibold text-gray-200 hover:text-blue-400 transition-colors text-left block hover:no-underline"
-                        title="View Customer Profile & History"
+                        title={isBangla ? "কাস্টমার প্রোফাইল ও ইতিহাস দেখুন" : "View Customer Profile & History"}
                       >
                         {customer.name}
                       </Button>
@@ -865,7 +865,7 @@ export default function CustomersPage() {
                         {customer.customId && (
                           <span 
                             className="font-mono text-[11px] font-bold px-1.5 py-0.2 rounded bg-blue-500/15 text-blue-400 border border-blue-500/25 shrink-0 select-all" 
-                            title="সার্ভিস / প্রোডাক্ট আইডি"
+                            title={isBangla ? "সার্ভিস / প্রোডাক্ট আইডি" : "Service / Product ID"}
                           >
                             #{customer.customId}
                           </span>
@@ -884,7 +884,7 @@ export default function CustomersPage() {
                       <a 
                         href={`tel:${customer.phone}`}
                         className="text-blue-400 hover:text-blue-300 p-1 bg-blue-500/10 hover:bg-blue-500/20 rounded-md transition-colors"
-                        title="Direct Call"
+                        title={isBangla ? "সরাসরি কল" : "Direct Call"}
                       >
                         <Phone className="w-3.5 h-3.5" />
                       </a>
@@ -901,7 +901,7 @@ export default function CustomersPage() {
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="text-green-500 hover:text-green-400 p-1 bg-green-500/10 hover:bg-green-500/20 rounded-md transition-colors"
-                        title="Send Invoice on WhatsApp"
+                        title={isBangla ? "হোয়াটসঅ্যাপে ইনভয়েস পাঠান" : "Send Invoice on WhatsApp"}
                       >
                         <MessageCircle className="w-3.5 h-3.5" />
                       </a>
@@ -951,7 +951,7 @@ export default function CustomersPage() {
                           </div>
                         )}
                         {hasFullAccess && Boolean(customer.totalCost && customer.totalCost > 0) && (
-                          <div className="text-[10px] font-semibold text-emerald-400 mt-0.5 flex items-center gap-1" title="এই জবে প্রাক্কলিত নিট লাভ">
+                          <div className="text-[10px] font-semibold text-emerald-400 mt-0.5 flex items-center gap-1" title={isBangla ? "এই জবে প্রাক্কলিত নিট লাভ" : "Estimated net profit for this job"}>
                             <TrendingUp className="w-3 h-3 text-emerald-400 shrink-0" />
                             <span>+{formatCurrency(Math.max(0, customer.totalBill - (customer.totalCost || 0)))}</span>
                           </div>
@@ -972,16 +972,16 @@ export default function CustomersPage() {
                           variant="ghost" 
                           onClick={() => setSetBillCustomer(customer)} 
                           className="text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2 py-1 h-auto rounded text-xs font-semibold mr-1 flex items-center gap-1 shadow-sm"
-                          title="Set Customer Bill"
+                          title={isBangla ? "বিল নির্ধারণ করুন" : "Set Customer Bill"}
                         >
                           <Coins className="w-3.5 h-3.5" />
-                          <span>Set Bill</span>
+                          <span>{isBangla ? "বিল নির্ধারণ" : "Set Bill"}</span>
                         </Button>
                       ) : customer.due > 0 ? (
                         <Button variant="ghost" onClick={() => setPaymentModalCustomer(customer)} className="text-emerald-500 hover:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1 h-auto rounded text-xs font-medium mr-1"
-                          title="Receive Payment"
+                          title={isBangla ? "বাকি আদায় করুন" : "Receive Payment"}
                         >
-                          Pay
+                          {isBangla ? "জমা নিন" : "Pay"}
                         </Button>
                       ) : null}
                       {/* Copy Tracking Link Button */}
@@ -996,29 +996,29 @@ export default function CustomersPage() {
                           }
                         }} 
                         className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors h-8 w-8" 
-                        title="Copy Online Tracking Link"
+                        title={isBangla ? "অনলাইন ট্র্যাকিং লিংক কপি করুন" : "Copy Online Tracking Link"}
                       >
                         <Link2 className="w-4 h-4" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => setInvoiceModalCustomer(customer)} className="text-gray-400 hover:text-white hover:bg-gray-800 transition-colors h-8 w-8" 
-                        title="Print Invoice"
+                        title={isBangla ? "ইনভয়েস প্রিন্ট" : "Print Invoice"}
                       >
                         <FileText className="w-4 h-4" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => setProfileSidebarCustomer(customer)} className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors h-8 w-8" 
-                        title="View History & Profile"
+                        title={isBangla ? "ইতিহাস ও প্রোফাইল" : "View History & Profile"}
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
                       {hasFullAccess && (
                         <>
                           <Button variant="ghost" size="icon" onClick={() => openEditModal(customer)} className="text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 transition-colors h-8 w-8" 
-                            title="Edit"
+                            title={isBangla ? "সম্পাদনা" : "Edit"}
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button variant="ghost" size="icon" onClick={() => handleDeleteRequest(customer.id)} className="text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors h-8 w-8" 
-                            title="Delete"
+                            title={isBangla ? "মুছে ফেলুন" : "Delete"}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -1069,14 +1069,14 @@ export default function CustomersPage() {
                   <button 
                     onClick={() => setProfileSidebarCustomer(customer)}
                     className="font-bold text-sm text-gray-100 hover:text-blue-400 transition-colors text-left truncate max-w-[190px] xs:max-w-[230px]"
-                    title="Click to view details"
+                    title={isBangla ? "বিস্তারিত দেখতে ক্লিক করুন" : "Click to view details"}
                   >
                     {customer.name}
                   </button>
                   {customer.customId && (
                     <span 
                       className="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-500/25 shrink-0 select-all" 
-                      title="সার্ভিস / প্রোডাক্ট আইডি"
+                      title={isBangla ? "সার্ভিস / প্রোডাক্ট আইডি" : "Service / Product ID"}
                     >
                       #{customer.customId}
                     </span>
@@ -1186,10 +1186,10 @@ export default function CustomersPage() {
                 <a 
                   href={`tel:${customer.phone}`}
                   className="flex items-center gap-1 py-1 px-2.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white rounded-lg text-[11px] font-semibold transition-all shadow-sm shadow-blue-600/20"
-                  title="Direct Call"
+                  title={isBangla ? "সরাসরি কল" : "Direct Call"}
                 >
                   <PhoneCall className="w-3 h-3" />
-                  <span>Call</span>
+                  <span>{isBangla ? "কল" : "Call"}</span>
                 </a>
 
                 {/* WhatsApp Button */}
@@ -1199,14 +1199,14 @@ export default function CustomersPage() {
                       .replace(/{name}/g, customer.name || '')
                       .replace(/{brand}/g, customer.deviceBrand || '')
                       .replace(/{type}/g, customer.deviceType || '')
-                      .replace(/{total}/g, customer.isBillPending ? 'চেক করে জানানো হবে' : `${customer.totalBill || 0}`)
+                      .replace(/{total}/g, customer.isBillPending ? (isBangla ? 'চেক করে জানানো হবে' : 'Pending Review') : `${customer.totalBill || 0}`)
                       .replace(/{advance}/g, `${customer.advance || 0}`)
-                      .replace(/{due}/g, customer.isBillPending ? 'পেন্ডিং' : `${customer.due || 0}`)
+                      .replace(/{due}/g, customer.isBillPending ? (isBangla ? 'পেন্ডিং' : 'Pending') : `${customer.due || 0}`)
                   )}`} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 py-1 px-2 bg-emerald-600/15 hover:bg-emerald-600/25 active:scale-95 text-emerald-400 border border-emerald-500/30 rounded-lg text-[11px] font-semibold transition-all"
-                  title="Send on WhatsApp"
+                  title={isBangla ? "হোয়াটসঅ্যাপে পাঠান" : "Send on WhatsApp"}
                 >
                   <MessageCircle className="w-3 h-3" />
                   <span>WA</span>
@@ -1218,20 +1218,20 @@ export default function CustomersPage() {
                     variant="ghost" 
                     onClick={() => setSetBillCustomer(customer)} 
                     className="bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 hover:text-amber-300 px-2 py-0 h-6 text-[11px] font-semibold rounded-lg border border-amber-500/30 flex items-center gap-1 shadow-sm"
-                    title="Set Customer Bill"
+                    title={isBangla ? "বিল নির্ধারণ করুন" : "Set Customer Bill"}
                   >
                     <Coins className="w-3 h-3" />
-                    <span>Set Bill</span>
+                    <span>{isBangla ? "বিল নির্ধারণ" : "Set Bill"}</span>
                   </Button>
                 ) : customer.due > 0 ? (
                   <Button 
                     variant="ghost" 
                     onClick={() => setPaymentModalCustomer(customer)} 
                     className="bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 hover:text-amber-300 px-2 py-0 h-6 text-[11px] font-semibold rounded-lg border border-amber-500/25 flex items-center gap-1"
-                    title="Receive Due Payment"
+                    title={isBangla ? "বাকি আদায় করুন" : "Receive Due Payment"}
                   >
                     <Coins className="w-3 h-3" />
-                    <span>Pay</span>
+                    <span>{isBangla ? "জমা নিন" : "Pay"}</span>
                   </Button>
                 ) : null}
               </div>
@@ -1249,7 +1249,7 @@ export default function CustomersPage() {
                     }
                   }} 
                   className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 h-6.5 w-6.5 rounded-md p-0"
-                  title="Copy Online Tracking Link"
+                  title={isBangla ? "অনলাইন ট্র্যাকিং লিংক কপি করুন" : "Copy Online Tracking Link"}
                 >
                   <Link2 className="w-3.5 h-3.5" />
                 </Button>
@@ -1259,7 +1259,7 @@ export default function CustomersPage() {
                   size="icon" 
                   onClick={() => setInvoiceModalCustomer(customer)} 
                   className="text-gray-400 hover:text-white hover:bg-gray-800 h-6.5 w-6.5 rounded-md p-0"
-                  title="Print Invoice"
+                  title={isBangla ? "ইনভয়েস প্রিন্ট" : "Print Invoice"}
                 >
                   <FileText className="w-3.5 h-3.5" />
                 </Button>
@@ -1269,7 +1269,7 @@ export default function CustomersPage() {
                   size="icon" 
                   onClick={() => setProfileSidebarCustomer(customer)} 
                   className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 h-6.5 w-6.5 rounded-md p-0"
-                  title="View History & Profile"
+                  title={isBangla ? "ইতিহাস ও প্রোফাইল" : "View History & Profile"}
                 >
                   <Eye className="w-3.5 h-3.5" />
                 </Button>
@@ -1281,7 +1281,7 @@ export default function CustomersPage() {
                       size="icon" 
                       onClick={() => openEditModal(customer)} 
                       className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 h-6.5 w-6.5 rounded-md p-0"
-                      title="Edit Customer"
+                      title={isBangla ? "সম্পাদনা" : "Edit Customer"}
                     >
                       <Edit className="w-3.5 h-3.5" />
                     </Button>
@@ -1290,7 +1290,7 @@ export default function CustomersPage() {
                       size="icon" 
                       onClick={() => handleDeleteRequest(customer.id)} 
                       className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 h-6.5 w-6.5 rounded-md p-0"
-                      title="Delete Customer"
+                      title={isBangla ? "মুছে ফেলুন" : "Delete Customer"}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>

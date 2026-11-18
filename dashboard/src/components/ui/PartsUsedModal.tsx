@@ -150,7 +150,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  // Automatically attach to selectedParts
  handleAddPart(newItem);
 
- toast.success(`"${newItem.name}" ইনভেন্টরিতে যুক্ত হয়েছে এবং সার্ভিসে সিলেক্ট করা হয়েছে!`);
+ toast.success(language === 'bn' ? `"${newItem.name}" ইনভেন্টরিতে যুক্ত হয়েছে এবং সার্ভিসে সিলেক্ট করা হয়েছে!` : `"${newItem.name}" added to inventory & selected for service!`);
  
  // Reset form and close
  setQuickPartForm({ name: '', category: 'General', purchasePrice: 0, sellingPrice: 0, stock: 1 });
@@ -158,7 +158,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  setSearch('');
  } catch (error) {
  console.error("Error quick adding inventory item:", error);
- toast.error("ইনভেন্টরিতে যুক্ত করতে সমস্যা হয়েছে");
+ toast.error(language === 'bn' ? "ইনভেন্টরিতে যুক্ত করতে সমস্যা হয়েছে" : "Failed to add item to inventory");
  } finally {
  setIsSavingQuickPart(false);
  }

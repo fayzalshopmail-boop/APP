@@ -190,7 +190,7 @@ export function DayEndClosingModal({ isOpen, onClose, onSuccess }: DayEndClosing
         }
       } catch (err) {
         console.error('Error fetching today financials:', err);
-        toast.error('আজকের হিসাব লোড করতে সমস্যা হয়েছে।');
+        toast.error(language === 'bn' ? 'আজকের হিসাব লোড করতে সমস্যা হয়েছে।' : 'Failed to load today\'s records.');
       } finally {
         setLoading(false);
       }
@@ -204,7 +204,7 @@ export function DayEndClosingModal({ isOpen, onClose, onSuccess }: DayEndClosing
 
   const handleSaveClosing = async () => {
     if (actualCash === null || isNaN(actualCash)) {
-      toast.error('ড্রয়ারে থাকা নগদ টাকার পরিমাণ লিখুন।');
+      toast.error(language === 'bn' ? 'ড্রয়ারে থাকা নগদ টাকার পরিমাণ লিখুন।' : 'Please enter drawer cash amount.');
       return;
     }
 
@@ -257,7 +257,7 @@ export function DayEndClosingModal({ isOpen, onClose, onSuccess }: DayEndClosing
       onClose();
     } catch (err: any) {
       console.error('Error saving cash closing:', err);
-      toast.error(err.message || 'ক্যাশ ক্লোজিং সংরক্ষণ করতে ব্যর্থ হয়েছে।');
+      toast.error(err.message || (language === 'bn' ? 'ক্যাশ ক্লোজিং সংরক্ষণ করতে ব্যর্থ হয়েছে।' : 'Failed to save cash closing.'));
     } finally {
       setSaving(false);
     }
@@ -293,7 +293,7 @@ export function DayEndClosingModal({ isOpen, onClose, onSuccess }: DayEndClosing
           {loading ? (
             <div className="py-12 flex flex-col items-center justify-center gap-2 text-gray-400">
               <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
-              <p className="text-xs">আজকের আর্থিক হিসাব হিসাব করা হচ্ছে...</p>
+              <p className="text-xs">{language === 'bn' ? 'আজকের আর্থিক হিসাব হিসাব করা হচ্ছে...' : 'Calculating today\'s financial records...'}</p>
             </div>
           ) : (
             <>
@@ -308,7 +308,7 @@ export function DayEndClosingModal({ isOpen, onClose, onSuccess }: DayEndClosing
                     +{formatCurrency(breakdown.totalIn)}
                   </p>
                   <p className="text-[10px] text-gray-400 mt-0.5">
-                    অগ্রিম, বাকি আদায় ও বিক্রয়
+                    {language === 'bn' ? 'অগ্রিম, বাকি আদায় ও বিক্রয়' : 'Advances, collections & sales'}
                   </p>
                 </div>
 
@@ -321,7 +321,7 @@ export function DayEndClosingModal({ isOpen, onClose, onSuccess }: DayEndClosing
                     -{formatCurrency(breakdown.totalOut)}
                   </p>
                   <p className="text-[10px] text-gray-400 mt-0.5">
-                    খরচ, পার্টস ও মহাজন পেমেন্ট
+                    {language === 'bn' ? 'খরচ, পার্টস ও মহাজন পেমেন্ট' : 'Expenses, parts & supplier dues'}
                   </p>
                 </div>
               </div>
@@ -353,7 +353,7 @@ export function DayEndClosingModal({ isOpen, onClose, onSuccess }: DayEndClosing
                     className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1 font-semibold"
                   >
                     <Calculator className="w-3.5 h-3.5" />
-                    <span>{showDenominations ? 'ক্যালকুলেটর লুকান' : 'নোটের হিসাব খুলুন'}</span>
+                    <span>{showDenominations ? (language === 'bn' ? 'ক্যালকুলেটর লুকান' : 'Hide Calculator') : (language === 'bn' ? 'নোটের হিসাব খুলুন' : 'Open Note Counter')}</span>
                   </button>
                 </div>
 
@@ -363,7 +363,7 @@ export function DayEndClosingModal({ isOpen, onClose, onSuccess }: DayEndClosing
                     type="number"
                     value={actualCashStr}
                     onChange={(e) => setActualCashStr(e.target.value)}
-                    placeholder="ড্রয়ারের টাকার পরিমাণ লিখুন"
+                    placeholder={language === 'bn' ? "ড্রয়ারের টাকার পরিমাণ লিখুন" : "Enter drawer cash amount"}
                     className="pl-8 bg-secondary border-gray-700 text-white font-bold text-lg h-12 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   />
                 </div>
@@ -372,7 +372,7 @@ export function DayEndClosingModal({ isOpen, onClose, onSuccess }: DayEndClosing
                 {showDenominations && (
                   <div className="p-3 bg-secondary/80 rounded-xl border border-gray-800 space-y-2 animate-in fade-in duration-200">
                     <p className="text-[11px] text-gray-400 font-medium">
-                      নোটের সংখ্যা লিখলে মোট টাকা স্বয়ংক্রিয়ভাবে যোগ হয়ে যাবে:
+                      {language === 'bn' ? 'নোটের সংখ্যা লিখলে মোট টাকা স্বয়ংক্রিয়ভাবে যোগ হয়ে যাবে:' : 'Enter note counts to automatically sum drawer cash:'}
                     </p>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {[1000, 500, 200, 100, 50, 20, 10].map((denom) => (
@@ -381,7 +381,7 @@ export function DayEndClosingModal({ isOpen, onClose, onSuccess }: DayEndClosing
                           <input
                             type="number"
                             min="0"
-                            placeholder="০"
+                            placeholder={language === 'bn' ? "০" : "0"}
                             value={counts[denom] || ''}
                             onChange={(e) => handleDenominationChange(denom, e.target.value)}
                             className="w-full bg-transparent text-right text-xs font-bold text-amber-400 focus:outline-none"
@@ -414,17 +414,17 @@ export function DayEndClosingModal({ isOpen, onClose, onSuccess }: DayEndClosing
                   <div className="text-xs">
                     <p className="font-bold">
                       {difference === 0
-                        ? '✅ ক্যাশ নিখুঁতভাবে মিলে গেছে! (পার্থক্য: ৳০)'
+                        ? (language === 'bn' ? '✅ ক্যাশ নিখুঁতভাবে মিলে গেছে! (পার্থক্য: ৳০)' : '✅ Cash matches perfectly! (Diff: ৳0)')
                         : difference > 0
-                        ? `🔵 উদ্বৃত্ত (Surplus): ড্রয়ারে +${formatCurrency(difference)} বেশি আছে!`
-                        : `🔴 ঘাটতি (Shortage): ড্রয়ারে -${formatCurrency(Math.abs(difference))} কম আছে!`}
+                        ? (language === 'bn' ? `🔵 উদ্বৃত্ত (Surplus): ড্রয়ারে +${formatCurrency(difference)} বেশি আছে!` : `🔵 Surplus: Drawer has +${formatCurrency(difference)} extra!`)
+                        : (language === 'bn' ? `🔴 ঘাটতি (Shortage): ড্রয়ারে -${formatCurrency(Math.abs(difference))} কম আছে!` : `🔴 Shortage: Drawer is -${formatCurrency(Math.abs(difference))} short!`)}
                     </p>
                     <p className="text-[11px] opacity-80 mt-0.5">
                       {difference === 0
-                        ? 'সিস্টেমের মোট হিসাব ও ড্রয়ারের টাকা ১০০% সঠিক।'
+                        ? (language === 'bn' ? 'সিস্টেমের মোট হিসাব ও ড্রয়ারের টাকা ১০০% সঠিক।' : 'System calculation and drawer cash match 100%.')
                         : difference > 0
-                        ? 'কোনো খরচ কম লেখা হয়ে থাকলে বা অতিরিক্ত নগদ জমা থাকলে চেক করুন।'
-                        : 'কোনো খরচ মিস হয়েছে কিনা বা কাস্টমার পেমেন্ট কম দিয়েছে কিনা যাচাই করুন।'}
+                        ? (language === 'bn' ? 'কোনো খরচ কম লেখা হয়ে থাকলে বা অতিরিক্ত নগদ জমা থাকলে চেক করুন।' : 'Check if any expense was unrecorded or extra cash was deposited.')
+                        : (language === 'bn' ? 'কোনো খরচ মিস হয়েছে কিনা বা কাস্টমার পেমেন্ট কম দিয়েছে কিনা যাচাই করুন।' : 'Check if any expense was missed or customer underpaid.')}
                     </p>
                   </div>
                 </div>
@@ -438,7 +438,7 @@ export function DayEndClosingModal({ isOpen, onClose, onSuccess }: DayEndClosing
                 <Input
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  placeholder="যেমন: কাল সকালের খুচরার জন্য ড্রয়ারে ৫০০ টাকা রাখা হয়েছে..."
+                  placeholder={language === 'bn' ? "যেমন: কাল সকালের খুচরার জন্য ড্রয়ারে ৫০০ টাকা রাখা হয়েছে..." : "e.g., Kept 500 in drawer for morning change..."}
                   className="bg-secondary border-gray-700 text-white text-xs h-9"
                 />
               </div>
@@ -451,10 +451,12 @@ export function DayEndClosingModal({ isOpen, onClose, onSuccess }: DayEndClosing
                   </div>
                   <div>
                     <label htmlFor="send-tg" className="text-xs font-bold text-white cursor-pointer">
-                      টেলিগ্রামে ক্লোজিং রিপোর্ট পাঠান
+                      {language === 'bn' ? 'টেলিগ্রামে ক্লোজিং রিপোর্ট পাঠান' : 'Send closing report to Telegram'}
                     </label>
                     <p className="text-[10px] text-gray-400">
-                      {shop?.telegram?.chatId ? 'মালিকের টেলিগ্রাম চ্যানেলে তাৎক্ষণিক মেসেজ যাবে' : 'টেলিগ্রাম কনফিগার করা নেই'}
+                      {shop?.telegram?.chatId 
+                        ? (language === 'bn' ? 'মালিকের টেলিগ্রাম চ্যানেলে তাৎক্ষণিক মেসেজ যাবে' : 'Instant message will be sent to owner\'s Telegram') 
+                        : (language === 'bn' ? 'টেলিগ্রাম কনফিগার করা নেই' : 'Telegram not configured')}
                     </p>
                   </div>
                 </div>
@@ -484,7 +486,7 @@ export function DayEndClosingModal({ isOpen, onClose, onSuccess }: DayEndClosing
             {saving ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>সংরক্ষণ হচ্ছে...</span>
+                <span>{language === 'bn' ? 'সংরক্ষণ হচ্ছে...' : 'Saving...'}</span>
               </>
             ) : (
               <>
