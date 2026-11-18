@@ -13,10 +13,13 @@ jobs:
     steps:
       - name: Send Daily Summary Request to Live Vercel App
         run: |
-          echo "Triggering Daily Summary on https://app-psi-eight-55.vercel.app/api/cron/daily-summary at $(date)"
-          response=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X GET "https://app-psi-eight-55.vercel.app/api/cron/daily-summary" \
+          CONCLUDED_DATE=$(date -u +%Y-%m-%d)
+          echo "Triggering Daily Summary for concluded business date $CONCLUDED_DATE at $(date)"
+          response=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST "https://app-psi-eight-55.vercel.app/api/cron/daily-summary" \
+            -H "Content-Type: application/json" \
             -H "Authorization: Bearer backup_secret_shop_2026_antigravity" \
-            -H "x-vercel-cron: 1")
+            -H "x-vercel-cron: 1" \
+            -d "{\"forceDate\": \"$CONCLUDED_DATE\"}")
           
           echo "$response"
           
