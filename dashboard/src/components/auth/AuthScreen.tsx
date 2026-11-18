@@ -12,6 +12,7 @@ import { requestNotificationPermission } from '@/lib/services/fcm';
 import { useRouter } from 'next/navigation';
 import { VaultDoorLock } from './VaultDoorLock';
 import { isPhoneDevice } from '@/lib/utils';
+import { recordVaultUnlock } from '@/lib/security';
 
 export function AuthScreen() {
   const router = useRouter();
@@ -165,10 +166,14 @@ export function AuthScreen() {
         {user ? (
           <VaultDoorLock
             expectedPin={pin}
-            onUnlock={() => setUnlocked(true)}
+            onUnlock={() => {
+              if (pin) recordVaultUnlock(pin).catch(() => {});
+              setUnlocked(true);
+            }}
             isSetupMode={!pin}
             onPinSet={async (newPin) => {
               setPin(newPin);
+              recordVaultUnlock(newPin).catch(() => {});
               setUnlocked(true);
               try {
                 await securitySettingsService.savePinHash(newPin, user.email);

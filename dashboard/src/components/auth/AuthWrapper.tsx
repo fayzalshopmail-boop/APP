@@ -18,6 +18,7 @@ import { AutoBackupTrigger } from './AutoBackupTrigger';
 import { requestNotificationPermission } from '@/lib/services/fcm';
 import { isPhoneDevice } from '@/lib/utils';
 import { NavigationBackHandler } from '@/components/layout/NavigationBackHandler';
+import { isVaultSessionValid, updateVaultActivity, clearVaultSession } from '@/lib/security';
 
 function TitleUpdater({ title }: { title: string }) {
   const pathname = usePathname();
@@ -30,6 +31,7 @@ function TitleUpdater({ title }: { title: string }) {
 export function AuthWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
+  const [sessionChecking, setSessionChecking] = useState(true);
   const { isUnlocked, user, setShop, shop } = useAppStore();
 
 
@@ -137,14 +139,108 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
     }
   }, [user?.email]);
 
+  // 1. Session Restoration on load / hard refresh
   useEffect(() => {
-    // If on phone and user is logged in, ensure app is unlocked automatically without PIN prompt
+    let isCurrent = true;
+
+    async function checkVaultSession() {
+      if (typeof window === 'undefined') return;
+
+      // Phone devices bypass vault lock completely
+      if (isPhoneDevice()) {
+        if (isCurrent) setSessionChecking(false);
+        return;
+      }
+
+      // Check live session validity
+      const currentPin = useAppStore.getState().pin;
+      const autoLockMinutes = useAppStore.getState().shop?.autoLockMinutes ?? 5;
+
+      if (currentPin) {
+        try {
+          const isValid = await isVaultSessionValid(currentPin, autoLockMinutes);
+          if (isValid && isCurrent) {
+            useAppStore.getState().setUnlocked(true);
+          }
+        } catch (err) {
+          console.warn('[AutoLock] Error checking vault session:', err);
+        }
+      }
+
+      if (isCurrent) {
+        setSessionChecking(false);
+      }
+    }
+
+    checkVaultSession();
+
+    // Multi-tab sync: if another tab locks the vault, lock this tab immediately
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'vsc_vault_unlocked' && !e.newValue) {
+        useAppStore.getState().setUnlocked(false);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      isCurrent = false;
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  // 2. Mobile automatic unlock
+  useEffect(() => {
     if (mounted && user && isPhoneDevice() && !isUnlocked) {
       useAppStore.getState().setUnlocked(true);
     }
   }, [mounted, user, isUnlocked]);
 
-  if (!mounted) {
+  // 3. Idle Auto-Lock Listener for PC / Desktop
+  useEffect(() => {
+    if (!mounted || sessionChecking || !user || user.role !== 'Owner' || !isUnlocked || isPhoneDevice()) {
+      return;
+    }
+
+    const autoLockMinutes = shop?.autoLockMinutes ?? 5;
+    if (autoLockMinutes <= 0) {
+      // 0 = Never / Manual lock only
+      return;
+    }
+
+    let lastActivity = Date.now();
+    let throttleTimer: NodeJS.Timeout | null = null;
+
+    const handleUserActivity = () => {
+      lastActivity = Date.now();
+      if (!throttleTimer) {
+        throttleTimer = setTimeout(() => {
+          updateVaultActivity();
+          throttleTimer = null;
+        }, 3000); // Throttle writes
+      }
+    };
+
+    const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
+    events.forEach((evt) => window.addEventListener(evt, handleUserActivity, { passive: true }));
+
+    const timeoutMs = autoLockMinutes * 60 * 1000;
+    const checkInterval = setInterval(() => {
+      const idleTime = Date.now() - lastActivity;
+      if (idleTime >= timeoutMs) {
+        console.log(`[AutoLock] Idle timeout of ${autoLockMinutes}m reached. Locking screen.`);
+        clearVaultSession();
+        useAppStore.getState().setUnlocked(false);
+      }
+    }, 3000);
+
+    return () => {
+      events.forEach((evt) => window.removeEventListener(evt, handleUserActivity));
+      clearInterval(checkInterval);
+      if (throttleTimer) clearTimeout(throttleTimer);
+    };
+  }, [mounted, sessionChecking, user, isUnlocked, shop?.autoLockMinutes]);
+
+  if (!mounted || sessionChecking) {
     // Prevent hydration mismatch while showing user an active loading state centered on screen
     return (
       <div className="fixed inset-0 z-50 min-h-screen w-full bg-[#0b0e14] flex flex-col items-center justify-center gap-3 text-gray-400">

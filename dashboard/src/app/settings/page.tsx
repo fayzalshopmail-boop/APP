@@ -8,7 +8,7 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
 import { AppUser, UserRole, userService } from '@/lib/services/user';
 import { ShopSettings, shopSettingsService, defaultShopSettings } from '@/lib/services/shopSettings';
 import { securitySettingsService } from '@/lib/services/securitySettings';
-import { hashPin, verifyPin } from '@/lib/security';
+import { hashPin, verifyPin, recordVaultUnlock } from '@/lib/security';
 import { telegramService } from '@/lib/services/telegramService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -62,6 +62,7 @@ export default function SettingsPage() {
       const hashedPin = await hashPin(cleanNewPin);
       await securitySettingsService.savePinHash(hashedPin, currentUser?.email);
       setPin(hashedPin);
+      recordVaultUnlock(hashedPin).catch(() => {});
       toast.success(language === 'bn' ? 'ভল্ট পিন সফলভাবে পরিবর্তন ও ক্লাউডে সুরক্ষিত করা হয়েছে!' : 'Vault PIN successfully updated and secured to cloud!');
       setIsChangingPin(false);
       setCurrentPinInput('');
@@ -1231,6 +1232,109 @@ export default function SettingsPage() {
                   </div>
                 </form>
               )}
+
+              {/* Idle Auto-Lock Configuration */}
+              <div className="border-t border-gray-800/80 pt-6 mt-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-amber-500/10 rounded-xl text-amber-400 border border-amber-500/20">
+                      <Clock className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm sm:text-base font-semibold text-white flex items-center gap-2">
+                        {language === 'bn' ? 'নিষ্ক্রিয় অবস্থায় অটো-লক (Idle Auto-Lock)' : 'Idle Auto-Lock'}
+                      </h3>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {language === 'bn' 
+                          ? 'পিসিতে কাজ না থাকলে কতক্ষণ পর স্বয়ংক্রিয়ভাবে স্ক্রিন লক হবে তা নির্ধারণ করুন।' 
+                          : 'Set how long before the screen automatically locks when idle.'}
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+                      (shopForm.autoLockMinutes ?? 5) > 0 
+                        ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' 
+                        : 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
+                    }`}>
+                      {(shopForm.autoLockMinutes ?? 5) > 0
+                        ? (language === 'bn' ? `⏱ ${shopForm.autoLockMinutes ?? 5} মিনিট পর লক হবে` : `⏱ Locks after ${shopForm.autoLockMinutes ?? 5} min`)
+                        : (language === 'bn' ? '🔓 শুধুমাত্র ম্যানুয়াল লক' : '🔓 Manual Lock Only')}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Preset Options Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
+                  {[
+                    { value: 1, labelBn: '১ মিনিট', labelEn: '1 Min', descBn: 'দ্রুততম' },
+                    { value: 3, labelBn: '৩ মিনিট', labelEn: '3 Min', descBn: 'কম সময়' },
+                    { value: 5, labelBn: '৫ মিনিট', labelEn: '5 Min', descBn: 'প্রস্তাবিত' },
+                    { value: 10, labelBn: '১০ মিনিট', labelEn: '10 Min', descBn: 'স্বাভাবিক' },
+                    { value: 15, labelBn: '১৫ মিনিট', labelEn: '15 Min', descBn: 'মাঝারি' },
+                    { value: 30, labelBn: '৩০ মিনিট', labelEn: '30 Min', descBn: 'বেশি সময়' },
+                    { value: 0, labelBn: 'কখনই না', labelEn: 'Never', descBn: 'ম্যানুয়াল' },
+                  ].map((opt) => {
+                    const isSelected = (shopForm.autoLockMinutes ?? 5) === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={async () => {
+                          const updated = { ...shopForm, autoLockMinutes: opt.value };
+                          setShopForm(updated);
+                          setGlobalShop(updated);
+                          try {
+                            await shopSettingsService.saveSettings(updated);
+                            toast.success(
+                              language === 'bn' 
+                                ? (opt.value === 0 ? 'ম্যানুয়াল লক মোড সক্রিয় করা হয়েছে' : `অটো-লক সময় ${opt.labelBn} সেট করা হয়েছে`) 
+                                : (opt.value === 0 ? 'Manual lock only mode active' : `Auto-lock timeout set to ${opt.labelEn}`)
+                            );
+                          } catch (e) {
+                            toast.error(language === 'bn' ? 'সেটিংস সংরক্ষণ ব্যর্থ হয়েছে' : 'Failed to save setting');
+                          }
+                        }}
+                        className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all ${
+                          isSelected
+                            ? 'bg-blue-600/20 border-blue-500 text-blue-300 shadow-sm shadow-blue-500/20 ring-1 ring-blue-500'
+                            : 'bg-[#1b1f30] border-gray-800 text-gray-300 hover:border-gray-700 hover:bg-[#20253a]'
+                        }`}
+                      >
+                        <span className="text-xs font-bold">{language === 'bn' ? opt.labelBn : opt.labelEn}</span>
+                        <span className="text-[10px] text-gray-400 mt-0.5">{opt.descBn}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Helpful Guide Notice */}
+                <div className="mt-3.5 p-3 rounded-xl bg-blue-500/5 border border-blue-500/15 flex items-start gap-2.5 text-xs text-gray-400">
+                  <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="text-gray-300 font-medium">
+                      {language === 'bn' ? 'স্মার্ট কাউন্টার নিরাপত্তা কার্যপদ্ধতি:' : 'Smart Counter Security Operation:'}
+                    </p>
+                    <ul className="list-disc list-inside space-y-0.5 text-gray-400">
+                      <li>
+                        {language === 'bn'
+                          ? 'আপনি সক্রিয় থাকলে হার্ড রিফ্রেশ (Ctrl+F5) বা পেজ রিলোড দিলেও বারবার পিন চাওয়া হবে না।'
+                          : 'While active, refreshing the page (Ctrl+F5) will not prompt for PIN repeatedly.'}
+                      </li>
+                      <li>
+                        {language === 'bn'
+                          ? 'কম্পিউটার ছেড়ে গেলে নির্ধারিত সময় নিষ্ক্রিয় থাকলে ভল্ট পিন দিয়ে স্বয়ংক্রিয়ভাবে লক হয়ে যাবে।'
+                          : 'Screen will lock automatically behind your Vault PIN after the configured idle duration.'}
+                      </li>
+                      <li>
+                        {language === 'bn'
+                          ? 'তাৎক্ষণিক লক করতে চাইলে যেকোনো সময় সাইডবারের নিচে "Lock Screen" বাটনে ক্লিক করতে পারেন।'
+                          : 'Click "Lock Screen" in the sidebar at any time to lock immediately.'}
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </motion.div>
           )}
 

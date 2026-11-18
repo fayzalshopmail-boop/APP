@@ -46,3 +46,110 @@ export async function verifyPin(
 
   return { valid: false, needsUpgrade: false };
 }
+
+// ==========================================
+// Vault Session & Idle Auto-Lock Management
+// ==========================================
+
+const VAULT_SESSION_KEY = 'vsc_vault_unlocked';
+const VAULT_LAST_ACTIVE_KEY = 'vsc_vault_last_active';
+const VAULT_SIG_KEY = 'vsc_vault_signature';
+
+async function computeVaultSignature(pinHash: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(`vsc_session_${pinHash}_${PIN_SALT}`);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Record a successful vault unlock session in localStorage with a cryptographic signature.
+ */
+export async function recordVaultUnlock(pinHash: string): Promise<void> {
+  if (typeof window === 'undefined' || !pinHash) return;
+  try {
+    const sig = await computeVaultSignature(pinHash);
+    localStorage.setItem(VAULT_SESSION_KEY, 'true');
+    localStorage.setItem(VAULT_LAST_ACTIVE_KEY, Date.now().toString());
+    localStorage.setItem(VAULT_SIG_KEY, sig);
+  } catch (e) {
+    console.warn('Failed to record vault unlock:', e);
+  }
+}
+
+/**
+ * Update the last active timestamp for the current unlocked vault session.
+ */
+export function updateVaultActivity(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const isUnlocked = localStorage.getItem(VAULT_SESSION_KEY);
+    if (isUnlocked === 'true') {
+      localStorage.setItem(VAULT_LAST_ACTIVE_KEY, Date.now().toString());
+    }
+  } catch {}
+}
+
+/**
+ * Verify whether the vault session is still valid within the configured idle auto-lock duration.
+ * @param pinHash Hashed PIN of the authenticated user
+ * @param autoLockMinutes Number of minutes before idle timeout. 0 means manual lock only.
+ */
+export async function isVaultSessionValid(
+  pinHash: string, 
+  autoLockMinutes = 5
+): Promise<boolean> {
+  if (typeof window === 'undefined' || !pinHash) return false;
+  try {
+    const isUnlocked = localStorage.getItem(VAULT_SESSION_KEY);
+    const lastActiveStr = localStorage.getItem(VAULT_LAST_ACTIVE_KEY);
+    const storedSig = localStorage.getItem(VAULT_SIG_KEY);
+
+    if (isUnlocked !== 'true' || !storedSig) {
+      return false;
+    }
+
+    // Cryptographic signature check prevents localStorage tampering
+    const expectedSig = await computeVaultSignature(pinHash);
+    if (storedSig.toLowerCase() !== expectedSig.toLowerCase()) {
+      clearVaultSession();
+      return false;
+    }
+
+    // If autoLockMinutes <= 0, auto-lock is disabled (Manual Lock Only)
+    if (autoLockMinutes <= 0) {
+      return true;
+    }
+
+    // Check timeout
+    const lastActive = Number(lastActiveStr) || 0;
+    const elapsedMs = Date.now() - lastActive;
+    const timeoutMs = autoLockMinutes * 60 * 1000;
+
+    if (elapsedMs > timeoutMs) {
+      // Expired due to idle timeout
+      clearVaultSession();
+      return false;
+    }
+
+    // Still valid! Refresh lastActive
+    localStorage.setItem(VAULT_LAST_ACTIVE_KEY, Date.now().toString());
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Completely clear the vault session (used on manual lock, logout, or idle timeout).
+ */
+export function clearVaultSession(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(VAULT_SESSION_KEY);
+    localStorage.removeItem(VAULT_LAST_ACTIVE_KEY);
+    localStorage.removeItem(VAULT_SIG_KEY);
+  } catch {}
+}
+

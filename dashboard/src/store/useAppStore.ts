@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { dropdownConfigService } from '@/lib/services/dropdownConfig';
 import { ShopSettings, defaultShopSettings } from '@/lib/services/shopSettings';
+import { recordVaultUnlock, clearVaultSession } from '@/lib/security';
 
 interface User {
   name: string;
@@ -73,7 +74,17 @@ export const useAppStore = create<AppState>()(
       pin: null,
       setPin: (pin) => set({ pin }),
       isUnlocked: false,
-      setUnlocked: (status) => set({ isUnlocked: status }),
+      setUnlocked: (status) => {
+        if (!status) {
+          clearVaultSession();
+        } else {
+          const currentPin = get().pin;
+          if (currentPin) {
+            recordVaultUnlock(currentPin).catch(() => {});
+          }
+        }
+        set({ isUnlocked: status });
+      },
 
       highlightCustomerId: null,
       setHighlightCustomerId: (highlightCustomerId) => set({ highlightCustomerId }),

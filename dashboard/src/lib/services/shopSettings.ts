@@ -30,6 +30,7 @@ export interface ShopSettings {
   lastAutoBackupDate?: number;
   language?: 'bn' | 'en';
   telegram?: TelegramSettings;
+  autoLockMinutes?: number; // 0 = Never / Manual lock only, 1, 3, 5, 10, 15, 30
 }
 
 export const defaultShopSettings: ShopSettings = {
@@ -40,6 +41,7 @@ export const defaultShopSettings: ShopSettings = {
   address: '',
   ownerName: 'Owner',
   language: 'bn',
+  autoLockMinutes: 5,
   telegram: {
     enabled: false,
     botToken: '',
@@ -99,6 +101,7 @@ export const shopSettingsService = {
       const settings: ShopSettings = {
         ...defaultShopSettings,
         ...shopData,
+        autoLockMinutes: typeof shopData.autoLockMinutes === 'number' ? shopData.autoLockMinutes : (defaultShopSettings.autoLockMinutes ?? 5),
         telegram: mergedTelegram
       };
 
@@ -133,6 +136,7 @@ export const shopSettingsService = {
     // 2. Save public shop profile to settings/shop WITHOUT raw secrets
     const sanitizedShopData = {
       ...cleanSettings,
+      autoLockMinutes: typeof cleanSettings.autoLockMinutes === 'number' ? cleanSettings.autoLockMinutes : 5,
       telegram: {
         enabled: Boolean(telegramData.enabled),
         botToken: '',
