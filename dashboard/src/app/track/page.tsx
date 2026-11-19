@@ -40,6 +40,7 @@ interface TrackData {
   completedAt: string | null;
   expectedDeliveryDate: string | null;
   isRescheduled?: boolean;
+  rescheduleCount?: number;
   rescheduleNote?: string | null;
   warranty: {
     hasWarranty: boolean;
@@ -381,7 +382,7 @@ function TrackContent() {
                     <span className="text-gray-500 block">
                       {trackData.isRescheduled ? 'পুনঃনির্ধারিত ডেলিভারি' : 'সম্ভাব্য ডেলিভারি'}
                     </span>
-                    <span className="text-gray-300 font-medium">
+                    <span className={`font-semibold ${trackData.isRescheduled ? 'text-amber-400' : 'text-gray-300'}`}>
                       {trackData.expectedDeliveryDate ? formatDate(trackData.expectedDeliveryDate) : 'দ্রুততম সময়ে'}
                     </span>
                   </div>

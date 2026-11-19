@@ -1,4 +1,4 @@
-import { collection, getDocs, getDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, limit, where } from 'firebase/firestore';
+import { collection, getDocs, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, limit, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { sanitizeForFirestore } from '../utils';
 
@@ -36,9 +36,6 @@ export interface RepairRecord {
   receivedByName?: string;
   createdAt?: string | Date | any;
   isBillPending?: boolean;
-  isRescheduled?: boolean;
-  rescheduleNote?: string;
-  rescheduleCount?: number;
 }
 
 export const normalizePhone = (p: string) => {
@@ -219,42 +216,6 @@ export const customerService = {
     }
   },
 
-  // Reschedule customer delivery date
-  rescheduleDelivery: async (
-    id: string, 
-    newDeliveryDate: string, 
-    note?: string
-  ): Promise<{ expectedDeliveryDate: string; isRescheduled: boolean; rescheduleCount: number; rescheduleNote: string }> => {
-    try {
-      if (!db) throw "Firebase DB is not initialized";
-      const docRef = doc(db, COLLECTION_NAME, id);
-      const snap = await getDoc(docRef);
-      const currentData = snap.exists() ? snap.data() : {};
-      const newCount = (currentData?.rescheduleCount || 0) + 1;
-
-      const payload = {
-        expectedDeliveryDate: newDeliveryDate,
-        isRescheduled: true,
-        rescheduledAt: serverTimestamp(),
-        rescheduleNote: (note || '').trim(),
-        rescheduleCount: newCount,
-        updatedAt: serverTimestamp()
-      };
-
-      await updateDoc(docRef, sanitizeForFirestore(payload));
-
-      return {
-        expectedDeliveryDate: newDeliveryDate,
-        isRescheduled: true,
-        rescheduleCount: newCount,
-        rescheduleNote: (note || '').trim()
-      };
-    } catch (error) {
-      console.error("Error rescheduling delivery: ", error);
-      throw error;
-    }
-  },
-
   // Delete a customer
   delete: async (id: string) => {
     try {
@@ -263,6 +224,32 @@ export const customerService = {
       await deleteDoc(docRef);
     } catch (error) {
       console.error("Error deleting customer: ", error);
+      throw error;
+    }
+  },
+
+  // Reschedule customer delivery date with optional note and audit counter
+  rescheduleDelivery: async (
+    customerId: string, 
+    newDeliveryDate: string, 
+    note?: string,
+    currentRescheduleCount = 0
+  ) => {
+    try {
+      if (!db) throw "Firebase DB is not initialized";
+      const docRef = doc(db, COLLECTION_NAME, customerId);
+      const updates = {
+        expectedDeliveryDate: newDeliveryDate,
+        isRescheduled: true,
+        rescheduledAt: new Date().toISOString(),
+        rescheduleNote: note ? note.trim() : '',
+        rescheduleCount: (currentRescheduleCount || 0) + 1,
+        updatedAt: serverTimestamp()
+      };
+      await updateDoc(docRef, sanitizeForFirestore(updates));
+      return updates;
+    } catch (error) {
+      console.error("Error rescheduling customer delivery: ", error);
       throw error;
     }
   }

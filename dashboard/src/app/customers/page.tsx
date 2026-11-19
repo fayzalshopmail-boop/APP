@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Edit, Trash2, MessageCircle, Download, FileText, Phone, PhoneCall, MapPin, Tv, Eye, Filter, X, Coins, Plus, Link2, TrendingUp, CalendarClock, Calendar } from 'lucide-react';
+import { Search, Edit, Trash2, MessageCircle, Download, FileText, Phone, PhoneCall, MapPin, Tv, Eye, Filter, X, Coins, Plus, Link2, TrendingUp, CalendarClock } from 'lucide-react';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { motion } from 'framer-motion';
 import { formatCurrency } from '@/lib/currency';
@@ -74,8 +74,8 @@ export default function CustomersPage() {
   const [paymentModalCustomer, setPaymentModalCustomer] = useState<Customer | null>(null);
   const [setBillCustomer, setSetBillCustomer] = useState<Customer | null>(null);
   const [invoiceModalCustomer, setInvoiceModalCustomer] = useState<Customer | null>(null);
-  const [partsModalCustomer, setPartsModalCustomer] = useState<{ id: string; name: string; pendingStatus: CustomerStatus } | null>(null);
   const [rescheduleCustomer, setRescheduleCustomer] = useState<Customer | null>(null);
+  const [partsModalCustomer, setPartsModalCustomer] = useState<{ id: string; name: string; pendingStatus: CustomerStatus } | null>(null);
 
 
   const [smsSettings, setSmsSettings] = useState<any>(null);
@@ -933,7 +933,7 @@ export default function CustomersPage() {
                     {customer.isBillPending ? (
                       <div>
                         <div className="text-amber-400 font-bold text-xs flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded w-fit">
-                          ⏳ {isBangla ? 'বিল পেন্ডিং' : 'Bill Pending'}
+                          ⏳ বিল পেন্ডিং
                         </div>
                         {customer.advance ? (
                           <div className="text-xs text-gray-400 mt-1">Adv: {formatCurrency(customer.advance)}</div>
@@ -958,41 +958,21 @@ export default function CustomersPage() {
                             <span>+{formatCurrency(Math.max(0, customer.totalBill - (customer.totalCost || 0)))}</span>
                           </div>
                         )}
+                        {customer.expectedDeliveryDate && (
+                          <div className="mt-1 pt-1 border-t border-gray-800/60 flex items-center justify-between text-[11px]">
+                            <span className="text-gray-400">{isBangla ? 'ডেলিভারি:' : 'Deliv:'}</span>
+                            <span className="font-semibold text-gray-200">{customer.expectedDeliveryDate}</span>
+                            {customer.isRescheduled && (
+                              <span 
+                                className="text-[9px] px-1 py-0.2 rounded bg-amber-500/15 text-amber-400 border border-amber-500/25 ml-1 font-bold"
+                                title={customer.rescheduleNote ? `নোট: ${customer.rescheduleNote}` : (isBangla ? 'পুনঃনির্ধারিত ডেলিভারি' : 'Rescheduled')}
+                              >
+                                {customer.rescheduleCount && customer.rescheduleCount > 1 ? `${customer.rescheduleCount}x` : '🔄'}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </>
-                    )}
-
-                    {/* Expected Delivery Date & Reschedule Trigger */}
-                    {customer.expectedDeliveryDate ? (
-                      <div className="mt-1.5 pt-1.5 border-t border-gray-800/60 flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => setRescheduleCustomer(customer)}
-                          className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border transition-colors ${
-                            customer.isRescheduled
-                              ? 'bg-amber-500/10 text-amber-300 border-amber-500/25 hover:bg-amber-500/20'
-                              : 'bg-blue-500/10 text-blue-300 border-blue-500/25 hover:bg-blue-500/20'
-                          }`}
-                          title={isBangla ? 'ডেলিভারি তারিখ পরিবর্তন করতে ক্লিক করুন' : 'Click to reschedule delivery date'}
-                        >
-                          <CalendarClock className="w-3 h-3 shrink-0" />
-                          <span>{customer.expectedDeliveryDate}</span>
-                          {customer.isRescheduled && (
-                            <span className="text-[9px] font-bold text-amber-400 ml-0.5">({isBangla ? 'রিসিডিউলড' : 'rescheduled'})</span>
-                          )}
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="mt-1.5 pt-1.5 border-t border-gray-800/60">
-                        <button
-                          type="button"
-                          onClick={() => setRescheduleCustomer(customer)}
-                          className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-blue-400 transition-colors"
-                          title={isBangla ? 'ডেলিভারি তারিখ নির্ধারণ করুন' : 'Set delivery date'}
-                        >
-                          <CalendarClock className="w-3 h-3 shrink-0" />
-                          <span>{isBangla ? '+ তারিখ দিন' : '+ Set Date'}</span>
-                        </button>
-                      </div>
                     )}
                   </td>
                   <td className="px-4 py-3.5">
@@ -1020,6 +1000,16 @@ export default function CustomersPage() {
                           {isBangla ? "জমা নিন" : "Pay"}
                         </Button>
                       ) : null}
+                      {/* Reschedule Delivery Date Button */}
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => setRescheduleCustomer(customer)} 
+                        className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-colors h-8 w-8" 
+                        title={isBangla ? "ডেলিভারি রিসিডিউল / তারিখ পরিবর্তন" : "Reschedule Delivery Date"}
+                      >
+                        <CalendarClock className="w-4 h-4" />
+                      </Button>
                       {/* Copy Tracking Link Button */}
                       <Button 
                         variant="ghost" 
@@ -1035,15 +1025,6 @@ export default function CustomersPage() {
                         title={isBangla ? "অনলাইন ট্র্যাকিং লিংক কপি করুন" : "Copy Online Tracking Link"}
                       >
                         <Link2 className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => setRescheduleCustomer(customer)} 
-                        className="text-gray-400 hover:text-amber-400 hover:bg-amber-500/10 transition-colors h-8 w-8" 
-                        title={isBangla ? "ডেলিভারি তারিখ রিসিডিউল করুন" : "Reschedule Delivery Date"}
-                      >
-                        <CalendarClock className="w-4 h-4" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => setInvoiceModalCustomer(customer)} className="text-gray-400 hover:text-white hover:bg-gray-800 transition-colors h-8 w-8" 
                         title={isBangla ? "ইনভয়েস প্রিন্ট" : "Print Invoice"}
@@ -1186,21 +1167,28 @@ export default function CustomersPage() {
                   {customer.deviceDetails}
                 </p>
               )}
+            </div>
 
-              {customer.expectedDeliveryDate && (
-                <div className="flex items-center justify-between text-[10px] text-gray-400 border-t border-gray-800/40 pt-1">
-                  <span className="flex items-center gap-1">
-                    <CalendarClock className="w-3 h-3 text-blue-400 shrink-0" />
-                    <span>{isBangla ? 'ডেলিভারি:' : 'Delivery:'} <strong className="text-gray-300">{customer.expectedDeliveryDate}</strong></span>
-                  </span>
+            {/* Delivery Date Badge if set */}
+            {customer.expectedDeliveryDate && (
+              <div className="flex items-center justify-between text-[11px] px-2.5 py-1 rounded-lg bg-[#1b1f30] border border-gray-800/80">
+                <span className="text-gray-400 flex items-center gap-1">
+                  <CalendarClock className="w-3 h-3 text-blue-400" />
+                  <span>{customer.isRescheduled ? (isBangla ? 'রিসিডিউলড ডেলিভারি:' : 'Rescheduled:') : (isBangla ? 'সম্ভাব্য ডেলিভারি:' : 'Expected Delivery:')}</span>
+                </span>
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold text-gray-200">{customer.expectedDeliveryDate}</span>
                   {customer.isRescheduled && (
-                    <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1 py-0.2 rounded">
-                      {isBangla ? 'রিসিডিউলড' : 'rescheduled'}
+                    <span 
+                      className="text-[9px] px-1 py-0.2 rounded bg-amber-500/15 text-amber-400 border border-amber-500/25 font-bold"
+                      title={customer.rescheduleNote ? `নোট: ${customer.rescheduleNote}` : undefined}
+                    >
+                      {customer.rescheduleCount && customer.rescheduleCount > 1 ? `${customer.rescheduleCount}x` : '🔄'}
                     </span>
                   )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Financials Strip (Sleek Horizontal Bar) */}
             <div className="flex items-center justify-between bg-secondary/40 rounded-lg px-2.5 py-1 text-xs border border-gray-800/50">
@@ -1271,12 +1259,12 @@ export default function CustomersPage() {
                   <span>WA</span>
                 </a>
 
-                {/* Reschedule Delivery Button */}
+                {/* Reschedule Button */}
                 <button
                   type="button"
                   onClick={() => setRescheduleCustomer(customer)}
                   className="flex items-center gap-1 py-1 px-2 bg-amber-500/15 hover:bg-amber-500/25 active:scale-95 text-amber-400 border border-amber-500/30 rounded-lg text-[11px] font-semibold transition-all"
-                  title={isBangla ? "ডেলিভারি রিসিডিউল করুন" : "Reschedule Delivery"}
+                  title={isBangla ? "ডেলিভারি রিসিডিউল / পরিবর্তন" : "Reschedule Delivery"}
                 >
                   <CalendarClock className="w-3 h-3" />
                   <span>{isBangla ? "রিসিডিউল" : "Reschedule"}</span>
@@ -1397,21 +1385,19 @@ export default function CustomersPage() {
         allCustomers={customers}
         onOpenSetBill={(c) => setSetBillCustomer(c)}
         onCustomerUpdated={(updated) => {
-          setCustomers(prev => prev.map(c => c.id === updated.id ? updated : c));
-          setProfileSidebarCustomer(updated);
+          setCustomers(prev => prev.map(c => c.id === updated.id ? { ...c, ...updated } : c));
+          setProfileSidebarCustomer(prev => prev && prev.id === updated.id ? { ...prev, ...updated } : prev);
         }}
       />
 
       <RescheduleDeliveryModal
-        isOpen={Boolean(rescheduleCustomer)}
+        isOpen={!!rescheduleCustomer}
         onClose={() => setRescheduleCustomer(null)}
         customer={rescheduleCustomer}
+        smsSettings={smsSettings}
         onSuccess={(updated) => {
-          setCustomers(prev => prev.map(c => c.id === updated.id ? updated : c));
-          if (profileSidebarCustomer?.id === updated.id) {
-            setProfileSidebarCustomer(updated);
-          }
-          setRescheduleCustomer(null);
+          setCustomers(prev => prev.map(c => c.id === updated.id ? { ...c, ...updated } : c));
+          setProfileSidebarCustomer(prev => prev && prev.id === updated.id ? { ...prev, ...updated } : prev);
         }}
       />
 

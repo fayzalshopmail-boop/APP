@@ -63,16 +63,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <script
           dangerouslySetInnerHTML={{
-            __html: `if ('serviceWorker' in navigator) { 
-              function regSW() {
-                navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function(){});
-              }
-              if (document.readyState === 'complete' || document.readyState === 'interactive') {
-                regSW();
-              } else {
-                window.addEventListener('load', regSW);
-              }
-            }`,
+            __html: `if ('serviceWorker' in navigator) { window.addEventListener('load', function() { navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function(){}); }); }`,
           }}
         />
       </head>

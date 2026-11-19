@@ -9,7 +9,7 @@ import { transactionService } from '@/lib/services/transaction';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { useAppStore } from '@/store/useAppStore';
 import { getWarrantyStatus } from '@/lib/warranty';
-import { RescheduleDeliveryModal } from './RescheduleDeliveryModal';
+import { RescheduleDeliveryModal } from '@/components/ui/RescheduleDeliveryModal';
 import toast from 'react-hot-toast';
 
 interface CustomerProfileSidebarProps {
@@ -18,22 +18,20 @@ interface CustomerProfileSidebarProps {
   customer: Customer | null;
   allCustomers: Customer[];
   onOpenSetBill?: (customer: Customer) => void;
-  onCustomerUpdated?: (updatedCustomer: Customer) => void;
+  onCustomerUpdated?: (updated: Customer) => void;
 }
 
-export function CustomerProfileSidebar({ isOpen, onClose, customer: propCustomer, allCustomers, onOpenSetBill, onCustomerUpdated }: CustomerProfileSidebarProps) {
+export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers, onOpenSetBill, onCustomerUpdated }: CustomerProfileSidebarProps) {
   const { t, language } = useTranslation();
   const { user } = useAppStore();
   const isOwnerOrManager = user?.role === 'Owner' || user?.role === 'Manager';
-  const [advanceReceivedByMap, setAdvanceReceivedByMap] = useState<Record<string, string>>({});
-  const [currentCustomer, setCurrentCustomer] = useState<Customer | null>(propCustomer);
+  const [currentCustomer, setCurrentCustomer] = useState<Customer | null>(customer);
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
+  const [advanceReceivedByMap, setAdvanceReceivedByMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    setCurrentCustomer(propCustomer);
-  }, [propCustomer]);
-
-  const customer = currentCustomer;
+    setCurrentCustomer(customer);
+  }, [customer]);
 
   useEffect(() => {
     if (isOpen) {
@@ -58,12 +56,13 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer: propCustomer
   }, [customer?.id]);
 
   if (!customer) return null;
+  const activeCust = currentCustomer || customer;
 
   // Combine current active job and all historical repairs
   const rawHistory: (Customer | RepairRecord)[] = [
-    customer,
-    ...(customer.repairHistory || []),
-    ...allCustomers.filter(c => c.id !== customer.id && normalizePhone(c.phone) === normalizePhone(customer.phone))
+    activeCust,
+    ...(activeCust.repairHistory || []),
+    ...allCustomers.filter(c => c.id !== activeCust.id && normalizePhone(c.phone) === normalizePhone(activeCust.phone))
   ];
 
   // Deduplicate by id if needed
@@ -115,7 +114,6 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer: propCustomer
   };
 
   return (
-    <>
     <AnimatePresence>
       {isOpen && (
         <>
@@ -162,7 +160,7 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer: propCustomer
                         className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-400 border border-blue-500/25 select-all" 
                         title="সার্ভিস / প্রোডাক্ট আইডি"
                       >
-                        #{customer.customId}
+                        #{activeCust.customId}
                       </span>
                     )}
                   </div>
@@ -172,7 +170,7 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer: propCustomer
                     type="button"
                     onClick={() => {
                       if (typeof window !== 'undefined') {
-                        const trackUrl = `${window.location.origin}/track?id=${customer.customId || customer.id}`;
+                        const trackUrl = `${window.location.origin}/track?id=${activeCust.customId || activeCust.id}`;
                         navigator.clipboard.writeText(trackUrl);
                         toast.success(language === 'bn' ? 'অনলাইন ট্র্যাকিং লিংক কপি হয়েছে!' : 'Tracking link copied!');
                       }
@@ -193,12 +191,12 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer: propCustomer
                       <span 
                         className="font-medium tracking-wide text-gray-200 select-all"
                       >
-                        {customer.phone}
+                        {activeCust.phone}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <a 
-                        href={`tel:${customer.phone}`}
+                        href={`tel:${activeCust.phone}`}
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
                         title={language === 'bn' ? 'কাস্টমারকে কল দিন' : 'Call Customer'}
                       >
@@ -208,8 +206,8 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer: propCustomer
                       <button
                         type="button"
                         onClick={() => setIsRescheduleOpen(true)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30 rounded-lg text-xs font-semibold transition-colors"
-                        title={language === 'bn' ? 'ডেলিভারি তারিখ রিসিডিউল করুন' : 'Reschedule Delivery Date'}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30 rounded-lg text-xs font-semibold shadow-sm transition-colors"
+                        title={language === 'bn' ? 'ডেলিভারি তারিখ রিসিডিউল / পরিবর্তন' : 'Reschedule Delivery Date'}
                       >
                         <CalendarClock className="w-3.5 h-3.5" />
                         <span>{language === 'bn' ? 'রিসিডিউল' : 'Reschedule'}</span>
@@ -220,7 +218,7 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer: propCustomer
                     <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center">
                       <MapPin className="w-4 h-4 text-orange-400" />
                     </div>
-                    <span className="text-sm">{customer.address}</span>
+                    <span className="text-sm">{activeCust.address}</span>
                   </div>
                 </div>
 
@@ -306,29 +304,39 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer: propCustomer
                             <span>{formatJobDate(job.createdAt)}</span>
                           </div>
                         )}
-                        {job.expectedDeliveryDate && (
-                          <div 
-                            className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md border ${
-                              job.isRescheduled 
-                                ? 'bg-amber-500/10 text-amber-300 border-amber-500/25' 
-                                : 'bg-blue-500/10 text-blue-300 border-blue-500/25'
-                            }`}
-                            title={job.rescheduleNote ? `${language === 'bn' ? 'মন্তব্য' : 'Note'}: ${job.rescheduleNote}` : undefined}
-                          >
-                            <CalendarClock className="w-3 h-3 shrink-0" />
+                        {(job as any).expectedDeliveryDate && (
+                          <div className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md border ${
+                            (job as any).isRescheduled 
+                              ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' 
+                              : 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                          }`} title={(job as any).rescheduleNote ? `নোট: ${(job as any).rescheduleNote}` : undefined}>
+                            <CalendarClock className="w-3 h-3" />
                             <span>
-                              {job.isRescheduled ? (language === 'bn' ? 'রিসিডিউলড: ' : 'Rescheduled: ') : (language === 'bn' ? 'ডেলিভারি: ' : 'Delivery: ')}
-                              {formatJobDate(job.expectedDeliveryDate)}
+                              {(job as any).isRescheduled ? (language === 'bn' ? 'রিসিডিউল: ' : 'Rescheduled: ') : (language === 'bn' ? 'ডেলিভারি: ' : 'Delivery: ')}
+                              {(job as any).expectedDeliveryDate}
                             </span>
                           </div>
                         )}
                       </div>
 
-                      {job.id === customer.id && customer.isBillPending && onOpenSetBill && (
-                        <div className="mb-3">
+                      {job.id === activeCust.id && (
+                        <div className="mt-2.5">
                           <button 
                             type="button"
-                            onClick={() => onOpenSetBill(customer)}
+                            onClick={() => setIsRescheduleOpen(true)}
+                            className="w-full py-1.5 px-3 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/25 text-blue-400 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+                          >
+                            <CalendarClock className="w-3.5 h-3.5" />
+                            <span>{language === 'bn' ? 'ডেলিভারি তারিখ রিসিডিউল / পরিবর্তন' : 'Reschedule Delivery Date'}</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {job.id === activeCust.id && activeCust.isBillPending && onOpenSetBill && (
+                        <div className="mt-2.5 mb-1">
+                          <button 
+                            type="button"
+                            onClick={() => onOpenSetBill(activeCust)}
                             className="w-full py-2 px-3 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-400 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-sm"
                           >
                             <Coins className="w-3.5 h-3.5" />
@@ -410,19 +418,18 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer: propCustomer
           </motion.div>
         </>
       )}
-    </AnimatePresence>
 
-    {currentCustomer && (
-      <RescheduleDeliveryModal
-        isOpen={isRescheduleOpen}
-        onClose={() => setIsRescheduleOpen(false)}
-        customer={currentCustomer}
-        onSuccess={(updated) => {
-          setCurrentCustomer(updated);
-          onCustomerUpdated?.(updated);
-        }}
-      />
-    )}
-    </>
+      {customer && (
+        <RescheduleDeliveryModal
+          isOpen={isRescheduleOpen}
+          onClose={() => setIsRescheduleOpen(false)}
+          customer={activeCust}
+          onSuccess={(updated) => {
+            setCurrentCustomer(updated);
+            onCustomerUpdated?.(updated);
+          }}
+        />
+      )}
+    </AnimatePresence>
   );
 }

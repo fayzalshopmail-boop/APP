@@ -1,5 +1,5 @@
 // Service Worker for VSC POS - 100% Offline-First PWA
-const CACHE_NAME = 'vsc-pos-cache-v10';
+const CACHE_NAME = 'vsc-pos-cache-v9';
 
 // Pre-cache core application shell routes and assets
 const PRECACHE_ASSETS = [
@@ -30,17 +30,7 @@ const PRECACHE_ASSETS = [
   '/firebase/firebase-messaging-compat.js'
 ];
 
-// Core discovery pages to scan for Next.js static JS/CSS runtime chunks
-const DISCOVERY_PAGES = [
-  '/',
-  '/customers',
-  '/inventory',
-  '/due',
-  '/expenses',
-  '/settings'
-];
-
-// Install: Cache all core assets AND automatically discover & cache Next.js runtime chunks across pages
+// Install: Cache all core assets AND automatically discover & cache Next.js runtime chunks
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
@@ -56,33 +46,22 @@ self.addEventListener('install', (event) => {
         )
       );
 
-      // 2. Discover and pre-cache scripts & CSS referenced across core pages
+      // 2. Discover and pre-cache scripts & CSS referenced in the root HTML
       try {
-        const chunkUrls = new Set();
-        const scriptRegex = /(?:src=["']|\\"src\\":\\")(\/_next\/static\/[^"'\\]+)/g;
-        const cssRegex = /(?:href=["']|\\"href\\":\\")(\/_next\/static\/[^"'\\]+)/g;
+        const rootRes = await fetch('/');
+        if (rootRes && rootRes.status === 200) {
+          const html = await rootRes.clone().text();
+          await cache.put('/', rootRes);
 
-        await Promise.allSettled(
-          DISCOVERY_PAGES.map(async (pagePath) => {
-            try {
-              const res = await fetch(pagePath);
-              if (res && res.status === 200) {
-                const html = await res.clone().text();
-                await cache.put(pagePath, res);
+          const scriptRegex = /src="(\/_next\/static\/[^"]+)"/g;
+          const cssRegex = /href="(\/_next\/static\/[^"]+)"/g;
+          const chunkUrls = [];
+          let m;
+          while ((m = scriptRegex.exec(html)) !== null) chunkUrls.push(m[1]);
+          while ((m = cssRegex.exec(html)) !== null) chunkUrls.push(m[1]);
 
-                let m;
-                while ((m = scriptRegex.exec(html)) !== null) chunkUrls.add(m[1]);
-                while ((m = cssRegex.exec(html)) !== null) chunkUrls.add(m[1]);
-              }
-            } catch {
-              // Ignore single page fetch errors during build/install
-            }
-          })
-        );
-
-        if (chunkUrls.size > 0) {
           await Promise.allSettled(
-            Array.from(chunkUrls).map((chunk) =>
+            chunkUrls.map((chunk) =>
               fetch(chunk).then((res) => {
                 if (res && res.status === 200) {
                   return cache.put(chunk, res);
@@ -90,7 +69,7 @@ self.addEventListener('install', (event) => {
               }).catch(() => {})
             )
           );
-          console.log(`[SW] Pre-cached ${chunkUrls.size} Next.js runtime chunks for offline launch`);
+          console.log(`[SW] Pre-cached ${chunkUrls.length} Next.js runtime chunks for offline launch`);
         }
       } catch (err) {
         console.warn('[SW] Could not auto-discover Next.js runtime chunks:', err);
@@ -146,6 +125,8 @@ self.addEventListener('fetch', (event) => {
   }
 
   // 4. Next.js Static Chunks (/_next/static/...) -> Cache First (Immutable with Content Hashes)
+  // CRITICAL FIX: Next.js 16 production Turbopack chunks contain 'turbopack-' in their filename.
+  // They MUST be intercepted and served from cache offline!
   if (url.pathname.startsWith('/_next/static/')) {
     event.respondWith(
       caches.match(request).then((cached) => {
@@ -159,25 +140,7 @@ self.addEventListener('fetch', (event) => {
             }
             return res;
           })
-          .catch(async () => {
-            const fallback = await caches.match(request);
-            if (fallback) return fallback;
-
-            // Safe fallback response to prevent Service Worker TypeError crash
-            if (url.pathname.endsWith('.js')) {
-              return new Response('/* Offline fallback script */', {
-                status: 200,
-                headers: { 'Content-Type': 'application/javascript; charset=utf-8' }
-              });
-            }
-            if (url.pathname.endsWith('.css')) {
-              return new Response('/* Offline fallback style */', {
-                status: 200,
-                headers: { 'Content-Type': 'text/css; charset=utf-8' }
-              });
-            }
-            return new Response('', { status: 404, statusText: 'Offline asset not found' });
-          });
+          .catch(() => caches.match(request));
       })
     );
     return;
@@ -215,11 +178,7 @@ self.addEventListener('fetch', (event) => {
             }
             return res;
           })
-          .catch(async () => {
-            const fallback = await caches.match(request);
-            if (fallback) return fallback;
-            return new Response('', { status: 404, statusText: 'Offline media asset not found' });
-          });
+          .catch(() => caches.match(request));
       })
     );
     return;
