@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Edit, Trash2, MessageCircle, Download, FileText, Phone, PhoneCall, MapPin, Tv, Eye, Filter, X, Coins, Plus, Link2, TrendingUp } from 'lucide-react';
+import { Search, Edit, Trash2, MessageCircle, Download, FileText, Phone, PhoneCall, MapPin, Tv, Eye, Filter, X, Coins, Plus, Link2, TrendingUp, CalendarClock, Calendar } from 'lucide-react';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { motion } from 'framer-motion';
 import { formatCurrency } from '@/lib/currency';
@@ -18,6 +18,7 @@ import { StatusDropdown } from '@/components/ui/StatusDropdown';
 import { PaymentModal } from '@/components/ui/PaymentModal';
 import { SetBillModal } from '@/components/ui/SetBillModal';
 import { CustomerProfileSidebar } from '@/components/ui/CustomerProfileSidebar';
+import { RescheduleDeliveryModal } from '@/components/ui/RescheduleDeliveryModal';
 
 const CustomerModal = dynamic(
   () => import('@/components/ui/CustomerModal').then((m) => m.CustomerModal),
@@ -74,6 +75,7 @@ export default function CustomersPage() {
   const [setBillCustomer, setSetBillCustomer] = useState<Customer | null>(null);
   const [invoiceModalCustomer, setInvoiceModalCustomer] = useState<Customer | null>(null);
   const [partsModalCustomer, setPartsModalCustomer] = useState<{ id: string; name: string; pendingStatus: CustomerStatus } | null>(null);
+  const [rescheduleCustomer, setRescheduleCustomer] = useState<Customer | null>(null);
 
 
   const [smsSettings, setSmsSettings] = useState<any>(null);
@@ -931,7 +933,7 @@ export default function CustomersPage() {
                     {customer.isBillPending ? (
                       <div>
                         <div className="text-amber-400 font-bold text-xs flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded w-fit">
-                          ⏳ বিল পেন্ডিং
+                          ⏳ {isBangla ? 'বিল পেন্ডিং' : 'Bill Pending'}
                         </div>
                         {customer.advance ? (
                           <div className="text-xs text-gray-400 mt-1">Adv: {formatCurrency(customer.advance)}</div>
@@ -957,6 +959,40 @@ export default function CustomersPage() {
                           </div>
                         )}
                       </>
+                    )}
+
+                    {/* Expected Delivery Date & Reschedule Trigger */}
+                    {customer.expectedDeliveryDate ? (
+                      <div className="mt-1.5 pt-1.5 border-t border-gray-800/60 flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setRescheduleCustomer(customer)}
+                          className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border transition-colors ${
+                            customer.isRescheduled
+                              ? 'bg-amber-500/10 text-amber-300 border-amber-500/25 hover:bg-amber-500/20'
+                              : 'bg-blue-500/10 text-blue-300 border-blue-500/25 hover:bg-blue-500/20'
+                          }`}
+                          title={isBangla ? 'ডেলিভারি তারিখ পরিবর্তন করতে ক্লিক করুন' : 'Click to reschedule delivery date'}
+                        >
+                          <CalendarClock className="w-3 h-3 shrink-0" />
+                          <span>{customer.expectedDeliveryDate}</span>
+                          {customer.isRescheduled && (
+                            <span className="text-[9px] font-bold text-amber-400 ml-0.5">({isBangla ? 'রিসিডিউলড' : 'rescheduled'})</span>
+                          )}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="mt-1.5 pt-1.5 border-t border-gray-800/60">
+                        <button
+                          type="button"
+                          onClick={() => setRescheduleCustomer(customer)}
+                          className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-blue-400 transition-colors"
+                          title={isBangla ? 'ডেলিভারি তারিখ নির্ধারণ করুন' : 'Set delivery date'}
+                        >
+                          <CalendarClock className="w-3 h-3 shrink-0" />
+                          <span>{isBangla ? '+ তারিখ দিন' : '+ Set Date'}</span>
+                        </button>
+                      </div>
                     )}
                   </td>
                   <td className="px-4 py-3.5">
@@ -999,6 +1035,15 @@ export default function CustomersPage() {
                         title={isBangla ? "অনলাইন ট্র্যাকিং লিংক কপি করুন" : "Copy Online Tracking Link"}
                       >
                         <Link2 className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => setRescheduleCustomer(customer)} 
+                        className="text-gray-400 hover:text-amber-400 hover:bg-amber-500/10 transition-colors h-8 w-8" 
+                        title={isBangla ? "ডেলিভারি তারিখ রিসিডিউল করুন" : "Reschedule Delivery Date"}
+                      >
+                        <CalendarClock className="w-4 h-4" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => setInvoiceModalCustomer(customer)} className="text-gray-400 hover:text-white hover:bg-gray-800 transition-colors h-8 w-8" 
                         title={isBangla ? "ইনভয়েস প্রিন্ট" : "Print Invoice"}
@@ -1141,6 +1186,20 @@ export default function CustomersPage() {
                   {customer.deviceDetails}
                 </p>
               )}
+
+              {customer.expectedDeliveryDate && (
+                <div className="flex items-center justify-between text-[10px] text-gray-400 border-t border-gray-800/40 pt-1">
+                  <span className="flex items-center gap-1">
+                    <CalendarClock className="w-3 h-3 text-blue-400 shrink-0" />
+                    <span>{isBangla ? 'ডেলিভারি:' : 'Delivery:'} <strong className="text-gray-300">{customer.expectedDeliveryDate}</strong></span>
+                  </span>
+                  {customer.isRescheduled && (
+                    <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1 py-0.2 rounded">
+                      {isBangla ? 'রিসিডিউলড' : 'rescheduled'}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Financials Strip (Sleek Horizontal Bar) */}
@@ -1211,6 +1270,17 @@ export default function CustomersPage() {
                   <MessageCircle className="w-3 h-3" />
                   <span>WA</span>
                 </a>
+
+                {/* Reschedule Delivery Button */}
+                <button
+                  type="button"
+                  onClick={() => setRescheduleCustomer(customer)}
+                  className="flex items-center gap-1 py-1 px-2 bg-amber-500/15 hover:bg-amber-500/25 active:scale-95 text-amber-400 border border-amber-500/30 rounded-lg text-[11px] font-semibold transition-all"
+                  title={isBangla ? "ডেলিভারি রিসিডিউল করুন" : "Reschedule Delivery"}
+                >
+                  <CalendarClock className="w-3 h-3" />
+                  <span>{isBangla ? "রিসিডিউল" : "Reschedule"}</span>
+                </button>
 
                 {/* Set Bill Button or Receive Due Button */}
                 {customer.isBillPending ? (
@@ -1326,6 +1396,23 @@ export default function CustomersPage() {
         customer={profileSidebarCustomer}
         allCustomers={customers}
         onOpenSetBill={(c) => setSetBillCustomer(c)}
+        onCustomerUpdated={(updated) => {
+          setCustomers(prev => prev.map(c => c.id === updated.id ? updated : c));
+          setProfileSidebarCustomer(updated);
+        }}
+      />
+
+      <RescheduleDeliveryModal
+        isOpen={Boolean(rescheduleCustomer)}
+        onClose={() => setRescheduleCustomer(null)}
+        customer={rescheduleCustomer}
+        onSuccess={(updated) => {
+          setCustomers(prev => prev.map(c => c.id === updated.id ? updated : c));
+          if (profileSidebarCustomer?.id === updated.id) {
+            setProfileSidebarCustomer(updated);
+          }
+          setRescheduleCustomer(null);
+        }}
       />
 
       <SetBillModal

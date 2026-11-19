@@ -1,7 +1,7 @@
 'use client';
 
 import { Customer, RepairRecord, normalizePhone } from '@/lib/services/customer';
-import { X, User, Phone, PhoneCall, MapPin, Tv, Shield, History, Coins, UserCheck, Calendar, TrendingUp, Link2, Copy } from 'lucide-react';
+import { X, User, Phone, PhoneCall, MapPin, Tv, Shield, History, Coins, UserCheck, Calendar, CalendarClock, TrendingUp, Link2, Copy } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
@@ -9,6 +9,7 @@ import { transactionService } from '@/lib/services/transaction';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { useAppStore } from '@/store/useAppStore';
 import { getWarrantyStatus } from '@/lib/warranty';
+import { RescheduleDeliveryModal } from './RescheduleDeliveryModal';
 import toast from 'react-hot-toast';
 
 interface CustomerProfileSidebarProps {
@@ -17,13 +18,22 @@ interface CustomerProfileSidebarProps {
   customer: Customer | null;
   allCustomers: Customer[];
   onOpenSetBill?: (customer: Customer) => void;
+  onCustomerUpdated?: (updatedCustomer: Customer) => void;
 }
 
-export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers, onOpenSetBill }: CustomerProfileSidebarProps) {
+export function CustomerProfileSidebar({ isOpen, onClose, customer: propCustomer, allCustomers, onOpenSetBill, onCustomerUpdated }: CustomerProfileSidebarProps) {
   const { t, language } = useTranslation();
   const { user } = useAppStore();
   const isOwnerOrManager = user?.role === 'Owner' || user?.role === 'Manager';
   const [advanceReceivedByMap, setAdvanceReceivedByMap] = useState<Record<string, string>>({});
+  const [currentCustomer, setCurrentCustomer] = useState<Customer | null>(propCustomer);
+  const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
+
+  useEffect(() => {
+    setCurrentCustomer(propCustomer);
+  }, [propCustomer]);
+
+  const customer = currentCustomer;
 
   useEffect(() => {
     if (isOpen) {
@@ -105,6 +115,7 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
   };
 
   return (
+    <>
     <AnimatePresence>
       {isOpen && (
         <>
@@ -185,14 +196,25 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
                         {customer.phone}
                       </span>
                     </div>
-                    <a 
-                      href={`tel:${customer.phone}`}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors shrink-0"
-                      title={language === 'bn' ? 'কাস্টমারকে কল দিন' : 'Call Customer'}
-                    >
-                      <PhoneCall className="w-3.5 h-3.5" />
-                      <span>{language === 'bn' ? 'কল' : 'Call'}</span>
-                    </a>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <a 
+                        href={`tel:${customer.phone}`}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
+                        title={language === 'bn' ? 'কাস্টমারকে কল দিন' : 'Call Customer'}
+                      >
+                        <PhoneCall className="w-3.5 h-3.5" />
+                        <span>{language === 'bn' ? 'কল' : 'Call'}</span>
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => setIsRescheduleOpen(true)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30 rounded-lg text-xs font-semibold transition-colors"
+                        title={language === 'bn' ? 'ডেলিভারি তারিখ রিসিডিউল করুন' : 'Reschedule Delivery Date'}
+                      >
+                        <CalendarClock className="w-3.5 h-3.5" />
+                        <span>{language === 'bn' ? 'রিসিডিউল' : 'Reschedule'}</span>
+                      </button>
+                    </div>
                   </div>
                   <div className="flex items-center gap-3 text-gray-300">
                     <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center">
@@ -284,6 +306,22 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
                             <span>{formatJobDate(job.createdAt)}</span>
                           </div>
                         )}
+                        {job.expectedDeliveryDate && (
+                          <div 
+                            className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md border ${
+                              job.isRescheduled 
+                                ? 'bg-amber-500/10 text-amber-300 border-amber-500/25' 
+                                : 'bg-blue-500/10 text-blue-300 border-blue-500/25'
+                            }`}
+                            title={job.rescheduleNote ? `${language === 'bn' ? 'মন্তব্য' : 'Note'}: ${job.rescheduleNote}` : undefined}
+                          >
+                            <CalendarClock className="w-3 h-3 shrink-0" />
+                            <span>
+                              {job.isRescheduled ? (language === 'bn' ? 'রিসিডিউলড: ' : 'Rescheduled: ') : (language === 'bn' ? 'ডেলিভারি: ' : 'Delivery: ')}
+                              {formatJobDate(job.expectedDeliveryDate)}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       {job.id === customer.id && customer.isBillPending && onOpenSetBill && (
@@ -373,5 +411,18 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
         </>
       )}
     </AnimatePresence>
+
+    {currentCustomer && (
+      <RescheduleDeliveryModal
+        isOpen={isRescheduleOpen}
+        onClose={() => setIsRescheduleOpen(false)}
+        customer={currentCustomer}
+        onSuccess={(updated) => {
+          setCurrentCustomer(updated);
+          onCustomerUpdated?.(updated);
+        }}
+      />
+    )}
+    </>
   );
 }

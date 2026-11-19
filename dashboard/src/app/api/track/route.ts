@@ -171,6 +171,8 @@ export async function GET(req: NextRequest) {
       deliveredAt: deliveredAtIso,
       completedAt: completedAtIso,
       expectedDeliveryDate: cData.expectedDeliveryDate || null,
+      isRescheduled: Boolean(cData.isRescheduled),
+      rescheduleNote: cData.rescheduleNote || null,
       warranty: warrantyStatus,
       shop: shopInfo
     };

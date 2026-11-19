@@ -1,4 +1,4 @@
-import { collection, getDocs, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, limit, where } from 'firebase/firestore';
+import { collection, getDocs, getDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, limit, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { sanitizeForFirestore } from '../utils';
 
@@ -36,6 +36,9 @@ export interface RepairRecord {
   receivedByName?: string;
   createdAt?: string | Date | any;
   isBillPending?: boolean;
+  isRescheduled?: boolean;
+  rescheduleNote?: string;
+  rescheduleCount?: number;
 }
 
 export const normalizePhone = (p: string) => {
@@ -79,6 +82,10 @@ export interface Customer {
   deliveredAt?: string | Date | any;
   repairHistory?: RepairRecord[];
   isBillPending?: boolean;
+  isRescheduled?: boolean;
+  rescheduledAt?: string | Date | any;
+  rescheduleNote?: string;
+  rescheduleCount?: number;
 }
 
 const COLLECTION_NAME = 'customers';
@@ -208,6 +215,42 @@ export const customerService = {
       await updateDoc(docRef, sanitizeForFirestore(updates));
     } catch (error) {
       console.error("Error updating customer: ", error);
+      throw error;
+    }
+  },
+
+  // Reschedule customer delivery date
+  rescheduleDelivery: async (
+    id: string, 
+    newDeliveryDate: string, 
+    note?: string
+  ): Promise<{ expectedDeliveryDate: string; isRescheduled: boolean; rescheduleCount: number; rescheduleNote: string }> => {
+    try {
+      if (!db) throw "Firebase DB is not initialized";
+      const docRef = doc(db, COLLECTION_NAME, id);
+      const snap = await getDoc(docRef);
+      const currentData = snap.exists() ? snap.data() : {};
+      const newCount = (currentData?.rescheduleCount || 0) + 1;
+
+      const payload = {
+        expectedDeliveryDate: newDeliveryDate,
+        isRescheduled: true,
+        rescheduledAt: serverTimestamp(),
+        rescheduleNote: (note || '').trim(),
+        rescheduleCount: newCount,
+        updatedAt: serverTimestamp()
+      };
+
+      await updateDoc(docRef, sanitizeForFirestore(payload));
+
+      return {
+        expectedDeliveryDate: newDeliveryDate,
+        isRescheduled: true,
+        rescheduleCount: newCount,
+        rescheduleNote: (note || '').trim()
+      };
+    } catch (error) {
+      console.error("Error rescheduling delivery: ", error);
       throw error;
     }
   },
