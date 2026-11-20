@@ -247,7 +247,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 xl:gap-4 shrink-0">
         <StatCard 
           title={isBangla ? "মোট কাস্টমার" : "Total Customers"} 
-          value={isLoading ? '...' : filteredStats.totalCustomers.toString()} 
+          value={isLoading ? '…' : filteredStats.totalCustomers.toString()} 
           subtitle={
             timeFilter === 'Today' 
               ? (isBangla ? 'আজকের কাস্টমার' : "Today's Customers") 
@@ -267,7 +267,7 @@ export default function Dashboard() {
         />
         <StatCard 
           title={isBangla ? "সংগৃহীত রাজস্ব" : "Total Revenue"} 
-          value={isLoading ? '...' : formatCurrency(filteredStats.totalRevenue)} 
+          value={isLoading ? '…' : formatCurrency(filteredStats.totalRevenue)} 
           subtitle={
             timeFilter === 'Today' 
               ? (isBangla ? 'আজকের নেট আদায়' : "Today's Collection") 
@@ -285,7 +285,7 @@ export default function Dashboard() {
         />
         <StatCard 
           title={isBangla ? "পেন্ডিং কাজ" : "Pending Repairs"} 
-          value={isLoading ? '...' : filteredStats.pendingJobs.toString()} 
+          value={isLoading ? '…' : filteredStats.pendingJobs.toString()} 
           subtitle={isBangla ? "চলমান মেরামত কাজ" : "Under active repair"} 
           icon={<Tv className="w-5 h-5 text-orange-500" />} 
           iconBgColor="bg-orange-500/10" 
@@ -295,7 +295,7 @@ export default function Dashboard() {
         />
         <StatCard 
           title={isBangla ? "সম্পন্ন মেরামত" : "Completed Repairs"} 
-          value={isLoading ? '...' : filteredStats.completedRepairs.toString()} 
+          value={isLoading ? '…' : filteredStats.completedRepairs.toString()} 
           subtitle={
             timeFilter === 'Today' 
               ? (isBangla ? 'আজকের ডেলিভারি' : "Today's Deliveries") 
@@ -346,34 +346,34 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 xl:gap-4">
-          <Link href="/reports" className="bg-secondary/40 hover:bg-secondary/70 p-2.5 sm:p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-all block">
+          <Link href="/reports" className="bg-secondary/40 hover:bg-secondary/70 p-2.5 sm:p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-colors block">
             <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider block">{isBangla ? "নেট ক্যাশ জমা" : "Net Cash In"}</span>
             <div className="text-base sm:text-lg xl:text-xl font-bold text-emerald-400 mt-0.5 truncate">
-              {isLoading ? '...' : formatCurrency(filteredStats.totalRevenue)}
+              {isLoading ? '…' : formatCurrency(filteredStats.totalRevenue)}
             </div>
             <span className="text-[10px] text-gray-500">{isBangla ? "রিফান্ড বাদ দেওয়া" : "Excl. refunds"}</span>
           </Link>
 
-          <Link href="/expenses" className="bg-secondary/40 hover:bg-secondary/70 p-2.5 sm:p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-all block">
+          <Link href="/expenses" className="bg-secondary/40 hover:bg-secondary/70 p-2.5 sm:p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-colors block">
             <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider block">{isBangla ? "দোকানের মোট খরচ" : "Total Expenses"}</span>
             <div className="text-base sm:text-lg xl:text-xl font-bold text-rose-400 mt-0.5 truncate">
-              {isLoading ? '...' : formatCurrency(filteredStats.totalExpenses)}
+              {isLoading ? '…' : formatCurrency(filteredStats.totalExpenses)}
             </div>
             <span className="text-[10px] text-gray-500">{isBangla ? "পার্টস ও সাধারণ খরচ" : "Parts & overheads"}</span>
           </Link>
 
-          <Link href="/reports" className="bg-secondary/40 hover:bg-secondary/70 p-2.5 sm:p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-all block">
+          <Link href="/reports" className="bg-secondary/40 hover:bg-secondary/70 p-2.5 sm:p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-colors block">
             <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider block">{isBangla ? "আসল লাভ (নিট ব্যালেন্স)" : "Net Profit Balance"}</span>
             <div className={`text-base sm:text-lg xl:text-xl font-bold mt-0.5 truncate ${filteredStats.netProfit >= 0 ? 'text-indigo-400' : 'text-rose-400'}`}>
-              {isLoading ? '...' : formatCurrency(filteredStats.netProfit)}
+              {isLoading ? '…' : formatCurrency(filteredStats.netProfit)}
             </div>
             <span className="text-[10px] text-gray-500">{isBangla ? "জমা থেকে খরচ বাদ" : "Revenue minus expense"}</span>
           </Link>
 
-          <Link href="/due" className="bg-secondary/40 hover:bg-secondary/70 p-2.5 sm:p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-all block">
+          <Link href="/due" className="bg-secondary/40 hover:bg-secondary/70 p-2.5 sm:p-3 rounded-xl border border-gray-800/40 hover:border-gray-700/60 transition-colors block">
             <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider block">{isBangla ? "গ্রাহকদের মোট বাকি" : "Total Customer Dues"}</span>
             <div className="text-base sm:text-lg xl:text-xl font-bold text-amber-400 mt-0.5 truncate">
-              {isLoading ? '...' : formatCurrency(filteredStats.totalPendingDues)}
+              {isLoading ? '…' : formatCurrency(filteredStats.totalPendingDues)}
             </div>
             <span className="text-[10px] text-gray-500">{isBangla ? "আদায়ের অপেক্ষায়" : "Pending collection"}</span>
           </Link>
@@ -409,7 +409,7 @@ export default function Dashboard() {
             window.dispatchEvent(new CustomEvent('app:open-add-customer'));
           }
         }}
-        className="sm:hidden fixed bottom-24 right-4 z-40 w-13 h-13 bg-gradient-to-tr from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 active:scale-90 text-white rounded-full flex items-center justify-center shadow-2xl shadow-blue-600/50 border border-blue-400/30 transition-all focus:outline-none"
+        className="sm:hidden fixed bottom-24 right-4 z-40 w-13 h-13 bg-gradient-to-tr from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 active:scale-90 text-white rounded-full flex items-center justify-center shadow-2xl shadow-blue-600/50 border border-blue-400/30 transition-transform transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         title={t('topbar.addCustomer')}
         aria-label={t('topbar.addCustomer')}
       >

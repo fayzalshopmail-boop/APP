@@ -580,13 +580,15 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-4">
                   {shopForm.logoUrl ? (
                     <div className="relative group">
-                      <img src={shopForm.logoUrl} alt="Logo Preview" className="w-12 h-12 rounded-xl object-contain " />
+                      <img src={shopForm.logoUrl} alt="Logo Preview" width={48} height={48} className="w-12 h-12 rounded-xl object-contain" />
                       <button 
+                        type="button"
                         onClick={() => setShopForm({ ...shopForm, logoUrl: '' })}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                         title={language === 'bn' ? "লোগো মুছুন" : "Remove Logo"}
+                        aria-label={language === 'bn' ? "লোগো মুছুন" : "Remove Logo"}
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-3 h-3" aria-hidden="true" />
                       </button>
                     </div>
                   ) : (
@@ -666,7 +668,7 @@ export default function SettingsPage() {
                     value={shopForm.address}
                     onChange={(e) => setShopForm({ ...shopForm, address: e.target.value })}
                     className="w-full bg-popover border border-gray-800 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50 h-24 resize-none" 
-                    placeholder={language === 'bn' ? "দোকানের সম্পূর্ণ ঠিকানা..." : "Full shop address..."}
+                    placeholder={language === 'bn' ? "দোকানের সম্পূর্ণ ঠিকানা…" : "Full shop address…"}
                   />
                 </div>
               </div>
@@ -727,7 +729,7 @@ export default function SettingsPage() {
                   }}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 relative"></div>
+                <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-blue-400 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-transform peer-checked:bg-blue-600 relative"></div>
               </label>
             </div>
 
@@ -1024,8 +1026,8 @@ export default function SettingsPage() {
                 >
                   {savingTelegram ? (
                     <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>{language === 'bn' ? 'সংরক্ষণ হচ্ছে...' : 'Saving...'}</span>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                      <span>{language === 'bn' ? 'সংরক্ষণ হচ্ছে…' : 'Saving…'}</span>
                     </>
                   ) : (
                     <>

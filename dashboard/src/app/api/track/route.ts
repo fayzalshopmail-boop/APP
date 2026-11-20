@@ -185,6 +185,7 @@ export async function GET(req: NextRequest) {
       deviceBrand: cData.deviceBrand || 'Device',
       deviceType: cData.deviceType || 'TV',
       deviceProblem: cData.deviceProblem || 'N/A',
+      displayAction: cData.displayAction || '',
       deviceDetails: cData.deviceDetails || '',
       serialNumber: cData.serialNumber || '',
       status: cData.status || 'Received',

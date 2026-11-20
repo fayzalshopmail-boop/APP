@@ -21,7 +21,7 @@ export function StatCard({ title, value, subtitle, icon, iconBgColor, iconColor,
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay }}
-      className={`bg-card/90 rounded-xl sm:rounded-2xl p-3 sm:p-3.5 xl:p-4 border border-gray-800/70 hover:border-gray-700 active:scale-[0.98] transition-all relative flex flex-col justify-between ${href ? 'cursor-pointer hover:shadow-lg hover:shadow-blue-500/5 group' : ''}`}
+      className={`bg-card/90 rounded-xl sm:rounded-2xl p-3 sm:p-3.5 xl:p-4 border border-gray-800/70 hover:border-gray-700 active:scale-[0.98] transition-colors relative flex flex-col justify-between ${href ? 'cursor-pointer hover:shadow-lg hover:shadow-blue-500/5 group' : ''}`}
     >
       {/* Top Row: Title & Compact Icon Badge */}
       <div className="flex items-center justify-between gap-1.5 mb-1 sm:mb-1.5">

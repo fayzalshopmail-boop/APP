@@ -324,7 +324,8 @@ export default function ExpensesPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             <Input 
               type="text" 
-              placeholder={language === 'bn' ? 'খরচের বিবরণ বা ক্যাটাগরি...' : 'Expense title or category...'} 
+              aria-label={language === 'bn' ? 'খরচ খুঁজুন' : 'Search expenses'}
+              placeholder={language === 'bn' ? 'খরচের বিবরণ বা ক্যাটাগরি…' : 'Expense title or category…'} 
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-9 bg-popover/80 border-gray-800 h-9 sm:h-10 text-xs sm:text-sm rounded-xl focus:border-blue-500"
@@ -415,8 +416,9 @@ export default function ExpensesPage() {
                               onClick={() => handleOpenEditModal(expense)}
                               className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
                               title={language === 'bn' ? 'এডিট করুন' : 'Edit'}
+                              aria-label={language === 'bn' ? 'এডিট করুন' : 'Edit'}
                             >
-                              <Edit2 className="w-4 h-4" />
+                              <Edit2 className="w-4 h-4" aria-hidden="true" />
                             </Button>
                             <Button 
                               variant="ghost"
@@ -424,8 +426,9 @@ export default function ExpensesPage() {
                               onClick={() => handleDeleteRequest(expense.id)}
                               className="text-red-500 hover:text-red-400 hover:bg-red-500/10"
                               title={language === 'bn' ? 'মুছে ফেলুন' : 'Delete'}
+                              aria-label={language === 'bn' ? 'মুছে ফেলুন' : 'Delete'}
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-4 h-4" aria-hidden="true" />
                             </Button>
                           </div>
                         </td>
@@ -542,7 +545,7 @@ export default function ExpensesPage() {
                 required
                 value={formData.title}
                 onChange={(e) => setFormData({...formData, title: e.target.value})}
-                placeholder={language === 'bn' ? 'যেমন: বিকালের চা-নাস্তা, বিদ্যুৎ বিল...' : 'e.g. Afternoon Tea, Electricity Bill...'}
+                placeholder={language === 'bn' ? 'যেমন: বিকালের চা-নাস্তা, বিদ্যুৎ বিল…' : 'e.g. Afternoon Tea, Electricity Bill…'}
               />
             </div>
 

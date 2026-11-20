@@ -288,7 +288,7 @@ export default function SuppliersPage() {
           <div className="relative flex-1 max-w-md">
             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <Input 
-              placeholder={language === 'bn' ? 'নাম, প্রতিষ্ঠান বা মোবাইল দিয়ে খুঁজুন...' : 'Search by name, company or phone...'} 
+              placeholder={language === 'bn' ? 'নাম, প্রতিষ্ঠান বা মোবাইল দিয়ে খুঁজুন…' : 'Search by name, company or phone…'} 
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-9 bg-popover/80 border-gray-800 h-9 sm:h-10 text-xs sm:text-sm rounded-xl focus:border-blue-500"
@@ -397,8 +397,9 @@ export default function SuppliersPage() {
                             onClick={() => openEditModal(s)} 
                             className="text-gray-400 hover:text-blue-400"
                             title={language === 'bn' ? 'এডিট করুন' : 'Edit'}
+                            aria-label={language === 'bn' ? 'এডিট করুন' : 'Edit'}
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="w-4 h-4" aria-hidden="true" />
                           </Button>
                           <Button 
                             variant="ghost" 
@@ -406,8 +407,9 @@ export default function SuppliersPage() {
                             onClick={() => setConfirmModal({ isOpen: true, id: s.id })} 
                             className="text-gray-400 hover:text-red-400"
                             title={language === 'bn' ? 'মুছে ফেলুন' : 'Delete'}
+                            aria-label={language === 'bn' ? 'মুছে ফেলুন' : 'Delete'}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4" aria-hidden="true" />
                           </Button>
                         </div>
                       </td>
@@ -585,7 +587,7 @@ export default function SuppliersPage() {
               </div>
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1.5">{language === 'bn' ? 'ঠিকানা (ঐচ্ছিক)' : 'Address (Optional)'}</label>
-              <Input value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} placeholder={language === 'bn' ? 'দোকানের ঠিকানা...' : 'Shop address...'} />
+              <Input value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} placeholder={language === 'bn' ? 'দোকানের ঠিকানা…' : 'Shop address…'} />
             </div>
             {editingSupplier && (
               <div>
@@ -638,7 +640,7 @@ export default function SuppliersPage() {
                     max={paymentModalSupplier.due}
                     value={paymentAmount}
                     onChange={(e) => setPaymentAmount(e.target.value)}
-                    placeholder={language === 'bn' ? 'টাকার পরিমাণ লিখুন...' : 'Enter amount...'}
+                    placeholder={language === 'bn' ? 'টাকার পরিমাণ লিখুন…' : 'Enter amount…'}
                     className="h-12 text-lg"
                   />
                 </div>
@@ -673,7 +675,7 @@ export default function SuppliersPage() {
                     min="1"
                     value={billAmount}
                     onChange={(e) => setBillAmount(e.target.value)}
-                    placeholder={language === 'bn' ? 'বিলের পরিমাণ লিখুন...' : 'Enter bill amount...'}
+                    placeholder={language === 'bn' ? 'বিলের পরিমাণ লিখুন…' : 'Enter bill amount…'}
                     className="h-12 text-lg"
                   />
                 </div>

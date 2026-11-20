@@ -14,7 +14,7 @@ import {
  DialogTitle,
 } from "@/components/ui/dialog";
 import { Customer, normalizePhone } from '@/lib/services/customer';
-import { User, Phone, MapPin, Loader2, Tv, Wrench, Tag, FileText, Settings2, Camera, CheckCircle, X, RotateCcw } from 'lucide-react';
+import { User, Phone, MapPin, Loader2, Tv, Wrench, Tag, FileText, Settings2, Camera, CheckCircle, X, RotateCcw, Layers, ChevronDown } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { ManageOptionsModal } from './ManageOptionsModal';
@@ -50,6 +50,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  deviceBrand: '',
  deviceType: '',
  deviceProblem: '',
+ displayAction: '',
  deviceDetails: '',
  serialNumber: '',
  totalBill: 0,
@@ -91,6 +92,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
    address: '',
    deviceType: '',
    deviceProblem: '',
+   displayAction: '',
    deviceBrand: '',
    deviceDetails: '',
    serialNumber: '',
@@ -124,6 +126,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
  deviceBrand: initialData.deviceBrand || '',
  deviceType: initialData.deviceType || '',
  deviceProblem: initialData.deviceProblem || '',
+ displayAction: (initialData as any).displayAction || '',
  deviceDetails: initialData.deviceDetails || '',
  serialNumber: initialData.serialNumber || '',
  totalBill: initialData.isBillPending ? 0 : (initialData.totalBill || 0),
@@ -262,9 +265,15 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
    ? (chinaSubBrand.trim() ? `China (${chinaSubBrand.trim()})` : 'China')
    : formData.deviceBrand;
 
+ const isDisplay = /display|ডিসপ্লে/i.test(formData.deviceProblem);
+ const finalDisplayAction = formData.deviceProblem 
+   ? (formData.displayAction || (isDisplay ? 'Replace' : 'Repair'))
+   : '';
+
  await onSave({ 
    ...formData, 
    deviceBrand: finalDeviceBrand,
+   displayAction: finalDisplayAction,
    totalBill: numBill, 
    due, 
    isBillPending: isPending,
@@ -418,7 +427,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
    <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
      {language === 'bn' ? 'ডিভাইসের ধরন' : 'Device Type'}
    </label>
-   <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceTypes')} className="h-6 w-6 text-gray-500 hover:text-blue-400 p-0" title={language === 'bn' ? 'ধরন ম্যানেজ করুন' : 'Manage Types'}>
+   <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceTypes')} className="h-6 w-6 text-gray-500 hover:text-blue-400 p-0" title={language === 'bn' ? 'ধরন ম্যানেজ করুন' : 'Manage Types'} aria-label={language === 'bn' ? 'ধরন ম্যানেজ করুন' : 'Manage Types'}>
    <Settings2 className="w-3.5 h-3.5" />
    </Button>
    </div>
@@ -437,7 +446,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
      <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
        {language === 'bn' ? 'ডিভাইস ব্র্যান্ড' : 'Device Brand'}
      </label>
-     <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceBrands')} className="h-6 w-6 text-gray-500 hover:text-blue-400 p-0" title={language === 'bn' ? 'ব্র্যান্ড ম্যানেজ করুন' : 'Manage Brands'}>
+     <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceBrands')} className="h-6 w-6 text-gray-500 hover:text-blue-400 p-0" title={language === 'bn' ? 'ব্র্যান্ড ম্যানেজ করুন' : 'Manage Brands'} aria-label={language === 'bn' ? 'ব্র্যান্ড ম্যানেজ করুন' : 'Manage Brands'}>
      <Settings2 className="w-3.5 h-3.5" />
      </Button>
      </div>
@@ -456,7 +465,7 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
               setFormData(prev => ({ ...prev, deviceBrand: finalBrand }));
             }}
             className="pl-20 pr-8 text-sm bg-secondary border-amber-500/40 focus-visible:ring-amber-500/50" 
-            placeholder={language === 'bn' ? 'যেমন: Sunny, Vision...' : 'e.g. Sunny, Vision...'}
+            placeholder={language === 'bn' ? 'যেমন: Sunny, Vision…' : 'e.g. Sunny, Vision…'}
           />
           <button
             type="button"
@@ -500,34 +509,107 @@ export function CustomerModal({ isOpen, onClose, onSave, initialData, existingAd
      <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
        {language === 'bn' ? 'প্রধান সমস্যা' : 'Primary Issue'}
      </label>
-     <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceProblems')} className="h-6 w-6 text-gray-500 hover:text-blue-400 p-0" title={language === 'bn' ? 'সমস্যা ম্যানেজ করুন' : 'Manage Problems'}>
+     <Button variant="ghost" size="icon" type="button" onClick={() => setManageCategory('deviceProblems')} className="h-6 w-6 text-gray-500 hover:text-blue-400 p-0" title={language === 'bn' ? 'সমস্যা ম্যানেজ করুন' : 'Manage Problems'} aria-label={language === 'bn' ? 'সমস্যা ম্যানেজ করুন' : 'Manage Problems'}>
      <Settings2 className="w-3.5 h-3.5" />
      </Button>
      </div>
-     <CustomSelect 
-     value={formData.deviceProblem}
-     onChange={(val) => setFormData({ ...formData, deviceProblem: val })}
-     options={currentProblems}
-     placeholder={language === 'bn' ? 'সমস্যা নির্বাচন করুন' : 'Select Problem'}
-     icon={<Wrench className="w-4 h-4" />}
-     />
-     </div>
+     {formData.deviceProblem ? (
+       <div className="relative flex items-center h-10 w-full bg-secondary border border-blue-500/40 rounded-lg px-2 gap-2 focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:border-blue-500/50 transition-colors">
+         {/* Problem Badge on Left */}
+         <div 
+           className="px-2 py-0.5 rounded bg-blue-500/15 border border-blue-500/30 text-blue-400 text-xs font-bold select-none shrink-0 flex items-center gap-1.5 max-w-[130px] sm:max-w-[150px] truncate"
+           title={formData.deviceProblem}
+         >
+           <Wrench className="w-3.5 h-3.5 shrink-0 text-blue-400" />
+           <span className="truncate">{formData.deviceProblem}</span>
+         </div>
+
+         {/* Action Dropdown inside the same field */}
+         <div className="relative flex-1 min-w-0 flex items-center">
+           <select
+             value={(() => {
+               const isDisplay = /display|ডিসপ্লে/i.test(formData.deviceProblem);
+               if (isDisplay) {
+                 if (formData.displayAction === 'Change') return 'Replace';
+                 if (formData.displayAction === 'Repair in Shop') return 'Repair in Workshop';
+                 return formData.displayAction || 'Replace';
+               }
+               return formData.displayAction || 'Repair';
+             })()}
+             onChange={(e) => setFormData(prev => ({ ...prev, displayAction: e.target.value }))}
+             className="w-full bg-transparent text-xs sm:text-sm text-gray-200 font-medium focus:outline-none cursor-pointer pr-6 appearance-none pl-1 py-1 selection:bg-blue-600 truncate"
+           >
+             {/display|ডিসপ্লে/i.test(formData.deviceProblem) ? (
+               <>
+                 <option value="Replace" className="bg-[#181c24] text-gray-100 py-1.5">
+                   {language === 'bn' ? 'Replace (ডিসপ্লে পরিবর্তন)' : 'Replace'}
+                 </option>
+                 <option value="Repair in Workshop" className="bg-[#181c24] text-gray-100 py-1.5">
+                   {language === 'bn' ? 'Repair in Workshop (দোকানে নিজস্ব মেরামত)' : 'Repair in Workshop'}
+                 </option>
+                 <option value="Repair in Outside" className="bg-[#181c24] text-gray-100 py-1.5">
+                   {language === 'bn' ? 'Repair in Outside (বাইরে থেকে মেরামত)' : 'Repair in Outside'}
+                 </option>
+               </>
+             ) : (
+               <>
+                 <option value="Repair" className="bg-[#181c24] text-gray-100 py-1.5">
+                   {language === 'bn' ? 'Repair (মেরামত)' : 'Repair'}
+                 </option>
+                 <option value="Replace" className="bg-[#181c24] text-gray-100 py-1.5">
+                   {language === 'bn' ? 'Replace (পরিবর্তন / বদল)' : 'Replace'}
+                 </option>
+               </>
+             )}
+           </select>
+           <ChevronDown className="w-4 h-4 text-gray-400 pointer-events-none absolute right-0.5 shrink-0" />
+         </div>
+
+         {/* Clear button to reset problem and return to dropdown */}
+         <button
+           type="button"
+           onClick={() => {
+             setFormData(prev => ({ ...prev, deviceProblem: '', displayAction: '' }));
+           }}
+           className="text-gray-400 hover:text-red-400 p-1 rounded transition-colors shrink-0"
+           title={language === 'bn' ? 'অন্য সমস্যা সিলেক্ট করতে ড্রপডাউনে ফিরুন' : 'Back to problem dropdown'}
+         >
+           <X className="w-4 h-4" />
+         </button>
+       </div>
+     ) : (
+       <CustomSelect 
+         value={formData.deviceProblem}
+         onChange={(val) => {
+           const isDisp = /display|ডিসপ্লে/i.test(val);
+           setFormData(prev => ({ 
+             ...prev, 
+             deviceProblem: val,
+             displayAction: isDisp ? 'Replace' : 'Repair'
+           }));
+         }}
+         options={currentProblems}
+         placeholder={language === 'bn' ? 'সমস্যা নির্বাচন করুন' : 'Select Problem'}
+         icon={<Wrench className="w-4 h-4" />}
+       />
+     )}
+   </div>
 
    {/* Device Details */}
- <div className="space-y-1.5">
- <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-   {language === 'bn' ? 'মডেল বা বিবরণ' : 'Device Details / Model'}
- </label>
- <div className="relative">
- <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
- <Input 
- value={formData.deviceDetails}
- onChange={(e) => setFormData({ ...formData, deviceDetails: e.target.value })}
- className="pl-10 text-sm" 
- placeholder={language === 'bn' ? 'যেমন: ৫৫ ইঞ্চি ব্রাভিয়া' : 'e.g. 55 inch Bravia'}
- />
- </div>
- </div>
+   <div className="space-y-1.5">
+     <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+       {language === 'bn' ? 'মডেল বা বিবরণ' : 'Device Details / Model'}
+     </label>
+     <div className="relative">
+       <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+       <Input 
+         value={formData.deviceDetails}
+         onChange={(e) => setFormData({ ...formData, deviceDetails: e.target.value })}
+         className="pl-10 text-sm" 
+         placeholder={language === 'bn' ? 'যেমন: ৫৫ ইঞ্চি ব্রাভিয়া' : 'e.g. 55 inch Bravia'}
+       />
+     </div>
+   </div>
  </div>
 
  {/* Serial Number */}

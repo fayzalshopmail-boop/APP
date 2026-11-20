@@ -418,7 +418,7 @@ export default function StaffAttendancePage() {
       <div className="flex flex-col items-center justify-center min-h-[60vh] w-full gap-3 text-gray-400">
         <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
         <p className="text-sm">
-          {language === 'bn' ? 'সেটিংস কর্মী ব্যবস্থাপনায় রিডাইরেক্ট করা হচ্ছে...' : 'Redirecting to staff management...'}
+          {language === 'bn' ? 'সেটিংস কর্মী ব্যবস্থাপনায় রিডাইরেক্ট করা হচ্ছে…' : 'Redirecting to staff management…'}
         </p>
       </div>
     );
@@ -447,7 +447,7 @@ export default function StaffAttendancePage() {
           <div className="py-10 flex flex-col items-center justify-center gap-2.5 text-gray-400">
             <Loader2 className="w-7 h-7 animate-spin text-blue-500" />
             <p className="text-xs font-medium">
-              {language === 'bn' ? 'হাজিরা লোড হচ্ছে...' : 'Loading attendance...'}
+              {language === 'bn' ? 'হাজিরা লোড হচ্ছে…' : 'Loading attendance…'}
             </p>
           </div>
         ) : !todayRecord ? (
@@ -470,8 +470,8 @@ export default function StaffAttendancePage() {
             >
               {actionLoading ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>{language === 'bn' ? 'যাচাই ও হাজিরা গ্রহণ হচ্ছে...' : 'Verifying and checking in...'}</span>
+                  <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+                  <span>{language === 'bn' ? 'যাচাই ও হাজিরা গ্রহণ হচ্ছে…' : 'Verifying and checking in…'}</span>
                 </>
               ) : (
                 <>
@@ -514,7 +514,7 @@ export default function StaffAttendancePage() {
                     type="text"
                     value={noteInput}
                     onChange={(e) => setNoteInput(e.target.value)}
-                    placeholder={language === 'bn' ? 'মন্তব্য লিখুন (যেমন: সকালের শিফট)...' : 'Write a note (e.g. morning shift)...'}
+                    placeholder={language === 'bn' ? 'মন্তব্য লিখুন (যেমন: সকালের শিফট)…' : 'Write a note (e.g. morning shift)…'}
                     className="w-full bg-[#181d2e] border border-gray-700/80 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-blue-500 transition-colors"
                   />
                   <button
@@ -548,7 +548,7 @@ export default function StaffAttendancePage() {
                   {language === 'bn' ? 'চলমান কাজের সময়' : 'Working Time'}
                 </div>
                 <div className="text-xl sm:text-2xl font-bold text-emerald-400 font-mono mt-0.5">
-                  {elapsedWorkingTime || (language === 'bn' ? 'গণনা হচ্ছে...' : 'Calculating...')}
+                  {elapsedWorkingTime || (language === 'bn' ? 'গণনা হচ্ছে…' : 'Calculating…')}
                 </div>
               </div>
               <div className="text-right">
@@ -570,8 +570,8 @@ export default function StaffAttendancePage() {
             >
               {actionLoading ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>{language === 'bn' ? 'ছুটি সম্পন্ন হচ্ছে...' : 'Checking out...'}</span>
+                  <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+                  <span>{language === 'bn' ? 'ছুটি সম্পন্ন হচ্ছে…' : 'Checking out…'}</span>
                 </>
               ) : (
                 <>
@@ -597,7 +597,7 @@ export default function StaffAttendancePage() {
                     type="text"
                     value={noteInput}
                     onChange={(e) => setNoteInput(e.target.value)}
-                    placeholder={language === 'bn' ? 'প্রস্থান নোট লিখুন...' : 'Write checkout note...'}
+                    placeholder={language === 'bn' ? 'প্রস্থান নোট লিখুন…' : 'Write checkout note…'}
                     className="w-full bg-[#181d2e] border border-gray-700/80 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-rose-500 transition-colors"
                   />
                   <button
@@ -775,7 +775,7 @@ export default function StaffAttendancePage() {
           <LogOut className="w-4 h-4" />
           <span>
             {loggingOut 
-              ? (language === 'bn' ? 'লগআউট হচ্ছে...' : 'Logging out...') 
+              ? (language === 'bn' ? 'লগআউট হচ্ছে…' : 'Logging out…') 
               : (language === 'bn' ? 'অ্যাকাউন্ট থেকে লগআউট (Log Out)' : 'Log Out from Account')}
           </span>
         </Button>

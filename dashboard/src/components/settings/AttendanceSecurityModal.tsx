@@ -105,7 +105,7 @@ export function AttendanceSecurityModal({ isOpen, onClose, onSaved }: Attendance
   const handleDetectCurrentGps = async () => {
     try {
       setDetectingGps(true);
-      toast.loading('বর্তমান GPS অবস্থান খোঁজা হচ্ছে...', { id: 'gps-toast' });
+      toast.loading('বর্তমান GPS অবস্থান খোঁজা হচ্ছে…', { id: 'gps-toast' });
 
       if (typeof window !== 'undefined' && !window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
         toast.error('ব্রাউজারের নিরাপত্তা নিয়মে লোকাল HTTP আইপিতে সরাসরি GPS পারমিশন দেয় না। অনুগ্রহ করে নিচে অক্ষাংশ/দ্রাঘিমাংশ সরাসরি লিখুন অথবা লাইভ HTTPS ডোমেইনে ব্যবহার করুন।', { 
@@ -136,7 +136,7 @@ export function AttendanceSecurityModal({ isOpen, onClose, onSaved }: Attendance
   const handleLockCurrentIp = async () => {
     try {
       setDetectingIp(true);
-      toast.loading('বর্তমান Wi-Fi আইপি ও সাবনেট শনাক্ত করা হচ্ছে...', { id: 'ip-toast' });
+      toast.loading('বর্তমান Wi-Fi আইপি ও সাবনেট শনাক্ত করা হচ্ছে…', { id: 'ip-toast' });
       const ip = await getCurrentClientIp();
       const newIps: string[] = [];
 
@@ -344,8 +344,8 @@ export function AttendanceSecurityModal({ isOpen, onClose, onSaved }: Attendance
 
         {loading ? (
           <div className="py-16 flex flex-col items-center justify-center gap-3 text-gray-400">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-            <p className="text-xs sm:text-sm">সেটিংস লোড হচ্ছে...</p>
+            <Loader2 className="w-8 h-8 animate-spin text-blue-500" aria-hidden="true" />
+            <p className="text-xs sm:text-sm">সেটিংস লোড হচ্ছে…</p>
           </div>
         ) : (
           <div className="space-y-4 sm:space-y-5 pt-2">
@@ -372,8 +372,10 @@ export function AttendanceSecurityModal({ isOpen, onClose, onSaved }: Attendance
 
               <button
                 type="button"
+                role="switch"
+                aria-checked={settings.enabled}
                 onClick={() => setSettings(prev => ({ ...prev, enabled: !prev.enabled }))}
-                className={`relative inline-flex h-6 sm:h-7 w-12 sm:w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                className={`relative inline-flex h-6 sm:h-7 w-12 sm:w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                   settings.enabled ? 'bg-blue-600' : 'bg-gray-700'
                 }`}
                 aria-label="Toggle Security"
@@ -392,11 +394,20 @@ export function AttendanceSecurityModal({ isOpen, onClose, onSaved }: Attendance
                 যাচাইয়ের ধরন (Security Mode)
               </label>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4" role="radiogroup" aria-label="Security Mode">
                 {/* Strict Mode */}
                 <div 
+                  role="radio"
+                  aria-checked={settings.mode === 'strict'}
+                  tabIndex={0}
                   onClick={() => setSettings(prev => ({ ...prev, mode: 'strict' }))}
-                  className={`p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border cursor-pointer transition-all select-none ${
+                  onKeyDown={(e) => {
+                    if (e.key === ' ' || e.key === 'Enter') {
+                      e.preventDefault();
+                      setSettings(prev => ({ ...prev, mode: 'strict' }));
+                    }
+                  }}
+                  className={`p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border cursor-pointer transition-colors select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                     settings.mode === 'strict'
                       ? 'bg-blue-500/10 border-blue-500 text-white shadow-md shadow-blue-500/10'
                       : 'bg-secondary/30 border-gray-800 hover:border-gray-700 text-gray-400'
@@ -404,10 +415,10 @@ export function AttendanceSecurityModal({ isOpen, onClose, onSaved }: Attendance
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Lock className={`w-4 h-4 shrink-0 ${settings.mode === 'strict' ? 'text-blue-400' : 'text-gray-500'}`} />
+                      <Lock aria-hidden="true" className={`w-4 h-4 shrink-0 ${settings.mode === 'strict' ? 'text-blue-400' : 'text-gray-500'}`} />
                       <span className="text-xs sm:text-sm font-bold text-white">Strict Mode (উভয়টি বাধ্যতামূলক)</span>
                     </div>
-                    {settings.mode === 'strict' && <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />}
+                    {settings.mode === 'strict' && <CheckCircle2 aria-hidden="true" className="w-4 h-4 text-blue-400 shrink-0" />}
                   </div>
                   <p className="text-[11px] sm:text-xs mt-1.5 text-gray-400 leading-snug">
                     দোকানের Wi-Fi <strong>এবং</strong> নির্দিষ্ট দূরত্বের মধ্যে থাকতে হবে। সর্বোচ্চ নিরাপদ।
@@ -416,8 +427,17 @@ export function AttendanceSecurityModal({ isOpen, onClose, onSaved }: Attendance
 
                 {/* Flexible Mode */}
                 <div 
+                  role="radio"
+                  aria-checked={settings.mode === 'flexible'}
+                  tabIndex={0}
                   onClick={() => setSettings(prev => ({ ...prev, mode: 'flexible' }))}
-                  className={`p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border cursor-pointer transition-all select-none ${
+                  onKeyDown={(e) => {
+                    if (e.key === ' ' || e.key === 'Enter') {
+                      e.preventDefault();
+                      setSettings(prev => ({ ...prev, mode: 'flexible' }));
+                    }
+                  }}
+                  className={`p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border cursor-pointer transition-colors select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                     settings.mode === 'flexible'
                       ? 'bg-indigo-500/10 border-indigo-500 text-white shadow-md shadow-indigo-500/10'
                       : 'bg-secondary/30 border-gray-800 hover:border-gray-700 text-gray-400'
@@ -425,10 +445,10 @@ export function AttendanceSecurityModal({ isOpen, onClose, onSaved }: Attendance
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Sparkles className={`w-4 h-4 shrink-0 ${settings.mode === 'flexible' ? 'text-indigo-400' : 'text-gray-500'}`} />
+                      <Sparkles aria-hidden="true" className={`w-4 h-4 shrink-0 ${settings.mode === 'flexible' ? 'text-indigo-400' : 'text-gray-500'}`} />
                       <span className="text-xs sm:text-sm font-bold text-white">Flexible Mode (যেকোনো একটি)</span>
                     </div>
-                    {settings.mode === 'flexible' && <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0" />}
+                    {settings.mode === 'flexible' && <CheckCircle2 aria-hidden="true" className="w-4 h-4 text-indigo-400 shrink-0" />}
                   </div>
                   <p className="text-[11px] sm:text-xs mt-1.5 text-gray-400 leading-snug">
                     Wi-Fi অথবা GPS যেকোনো একটি মিললেই হাজিরা গ্রহণ করবে। দুর্বল নেট বা জিপিএসে উপযোগী।

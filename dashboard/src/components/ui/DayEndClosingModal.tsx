@@ -283,17 +283,23 @@ export function DayEndClosingModal({ isOpen, onClose, onSuccess }: DayEndClosing
               </DialogDescription>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-400 hover:text-white h-8 w-8">
-            <X className="w-5 h-5" />
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onClose} 
+            aria-label={language === 'bn' ? 'বন্ধ করুন' : 'Close'} 
+            className="text-gray-400 hover:text-white h-8 w-8"
+          >
+            <X className="w-5 h-5" aria-hidden="true" />
           </Button>
         </div>
 
         {/* Scrollable Content */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-5">
+        <div className="p-4 sm:p-6 overflow-y-auto overscroll-contain flex-1 space-y-5">
           {loading ? (
             <div className="py-12 flex flex-col items-center justify-center gap-2 text-gray-400">
               <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
-              <p className="text-xs">{language === 'bn' ? 'আজকের আর্থিক হিসাব হিসাব করা হচ্ছে...' : 'Calculating today\'s financial records...'}</p>
+              <p className="text-xs">{language === 'bn' ? 'আজকের আর্থিক হিসাব হিসাব করা হচ্ছে…' : 'Calculating today\'s financial records…'}</p>
             </div>
           ) : (
             <>
@@ -384,7 +390,7 @@ export function DayEndClosingModal({ isOpen, onClose, onSuccess }: DayEndClosing
                             placeholder={language === 'bn' ? "০" : "0"}
                             value={counts[denom] || ''}
                             onChange={(e) => handleDenominationChange(denom, e.target.value)}
-                            className="w-full bg-transparent text-right text-xs font-bold text-amber-400 focus:outline-none"
+                            className="w-full bg-transparent text-right text-xs font-bold text-amber-400 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-400 rounded px-1"
                           />
                         </div>
                       ))}
@@ -438,7 +444,7 @@ export function DayEndClosingModal({ isOpen, onClose, onSuccess }: DayEndClosing
                 <Input
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  placeholder={language === 'bn' ? "যেমন: কাল সকালের খুচরার জন্য ড্রয়ারে ৫০০ টাকা রাখা হয়েছে..." : "e.g., Kept 500 in drawer for morning change..."}
+                  placeholder={language === 'bn' ? "যেমন: কাল সকালের খুচরার জন্য ড্রয়ারে ৫০০ টাকা রাখা হয়েছে…" : "e.g., Kept 500 in drawer for morning change…"}
                   className="bg-secondary border-gray-700 text-white text-xs h-9"
                 />
               </div>
@@ -485,8 +491,8 @@ export function DayEndClosingModal({ isOpen, onClose, onSuccess }: DayEndClosing
           >
             {saving ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>{language === 'bn' ? 'সংরক্ষণ হচ্ছে...' : 'Saving...'}</span>
+                <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                <span>{language === 'bn' ? 'সংরক্ষণ হচ্ছে…' : 'Saving…'}</span>
               </>
             ) : (
               <>

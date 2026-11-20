@@ -286,7 +286,7 @@ export default function MechanicsPage() {
           <div className="relative flex-1 max-w-md">
             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <Input 
-              placeholder={language === 'bn' ? 'নাম, মোবাইল বা ঠিকানা দিয়ে খুঁজুন...' : 'Search by name, phone or address...'} 
+              placeholder={language === 'bn' ? 'নাম, মোবাইল বা ঠিকানা দিয়ে খুঁজুন…' : 'Search by name, phone or address…'} 
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-9 bg-popover/80 border-gray-800 h-9 sm:h-10 text-xs sm:text-sm rounded-xl focus:border-blue-500"

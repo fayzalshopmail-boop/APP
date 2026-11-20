@@ -41,6 +41,7 @@ interface TrackData {
   deviceBrand: string;
   deviceType: string;
   deviceProblem: string;
+  displayAction?: string;
   deviceDetails: string;
   serialNumber: string;
   status: string;
@@ -135,7 +136,7 @@ function TrackContent() {
   const [isRestricted, setIsRestricted] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loadProgress, setLoadProgress] = useState(20);
-  const [loadStepText, setLoadStepText] = useState('নিরাপদ সিক্রেট কোড যাচাই হচ্ছে...');
+  const [loadStepText, setLoadStepText] = useState('নিরাপদ সিক্রেট কোড যাচাই হচ্ছে…');
 
   const fetchTrack = async (idToSearch: string, keyToSearch?: string, isRefresh = false) => {
     let cleanId = idToSearch.trim();
@@ -170,21 +171,21 @@ function TrackContent() {
       } else {
         setLoading(true);
         setLoadProgress(15);
-        setLoadStepText('নিরাপদ সিক্রেট কোড যাচাই হচ্ছে...');
+        setLoadStepText('নিরাপদ সিক্রেট কোড যাচাই হচ্ছে…');
 
         pTimer1 = setTimeout(() => {
           setLoadProgress(45);
-          setLoadStepText('সার্ভিস সেন্টারের ডাটা সিঙ্ক হচ্ছে...');
+          setLoadStepText('সার্ভিস সেন্টারের ডাটা সিঙ্ক হচ্ছে…');
         }, 450);
 
         pTimer2 = setTimeout(() => {
           setLoadProgress(75);
-          setLoadStepText('ডিভাইসের বর্তমান অবস্থা পরীক্ষা করা হচ্ছে...');
+          setLoadStepText('ডিভাইসের বর্তমান অবস্থা পরীক্ষা করা হচ্ছে…');
         }, 950);
 
         pTimer3 = setTimeout(() => {
           setLoadProgress(95);
-          setLoadStepText('তথ্য প্রস্তুত, পেজ ওপেন হচ্ছে...');
+          setLoadStepText('তথ্য প্রস্তুত, পেজ ওপেন হচ্ছে…');
         }, 1450);
       }
       setError(null);
@@ -423,8 +424,8 @@ function TrackContent() {
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>যাচাই হচ্ছে...</span>
+                      <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                      <span>যাচাই হচ্ছে…</span>
                     </>
                   ) : (
                     <>
@@ -501,7 +502,10 @@ function TrackContent() {
 
                   <p className="text-xs text-gray-400 flex items-center gap-1.5">
                     <span>সমস্যা:</span>
-                    <span className="text-amber-400 font-bold truncate">{trackData.deviceProblem}</span>
+                    <span className="text-amber-400 font-bold truncate">
+                      {trackData.deviceProblem}
+                      {trackData.displayAction ? ` (${trackData.displayAction})` : ''}
+                    </span>
                   </p>
                 </div>
 
@@ -1036,8 +1040,8 @@ export default function TrackPage() {
     <Suspense
       fallback={
         <div className="w-full min-h-screen bg-[#06080e] flex flex-col items-center justify-center text-gray-400 gap-3">
-          <Loader2 className="w-9 h-9 text-blue-500 animate-spin" />
-          <p className="text-xs sm:text-sm font-medium">সুরক্ষিত পোর্টাল লোড হচ্ছে...</p>
+          <Loader2 className="w-9 h-9 text-blue-500 animate-spin" aria-hidden="true" />
+          <p className="text-xs sm:text-sm font-medium">সুরক্ষিত পোর্টাল লোড হচ্ছে…</p>
         </div>
       }
     >

@@ -332,7 +332,7 @@ export function RevenueChart({ timeFilter: propTimeFilter }: RevenueChartProps) 
       <div className="flex-1 min-h-[220px] w-full">
         {loading ? (
           <div className="w-full h-full flex items-center justify-center text-gray-500 text-sm">
-            {isBangla ? 'চার্ট ডেটা লোড হচ্ছে...' : 'Loading chart data...'}
+            {isBangla ? 'চার্ট ডেটা লোড হচ্ছে…' : 'Loading chart data…'}
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">

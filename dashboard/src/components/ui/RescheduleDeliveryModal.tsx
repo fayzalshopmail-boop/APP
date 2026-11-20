@@ -234,8 +234,8 @@ export function RescheduleDeliveryModal({
               type="text"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder={isBangla ? 'যেমন: কাস্টমার বাইরে আছেন, রবিবার সন্ধ্যায় নেবেন...' : 'e.g. Customer out of town, will collect Sunday...'}
-              className="w-full bg-[#1b1f30] border border-gray-800 text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition-colors"
+              placeholder={isBangla ? 'যেমন: কাস্টমার বাইরে আছেন, রবিবার সন্ধ্যায় নেবেন…' : 'e.g. Customer out of town, will collect Sunday…'}
+              className="w-full bg-[#1b1f30] border border-gray-800 text-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus:border-blue-500 transition-colors"
             />
           </div>
 

@@ -241,7 +241,7 @@ export default function LoyaltyPage() {
             >
               <Save className="w-3.5 h-3.5 mr-1.5" />
               {saving 
-                ? (language === 'bn' ? 'সংরক্ষণ হচ্ছে...' : 'Saving...') 
+                ? (language === 'bn' ? 'সংরক্ষণ হচ্ছে…' : 'Saving…') 
                 : (language === 'bn' ? 'সেভ রুলস' : 'Save Rules')}
             </Button>
           </form>
@@ -269,7 +269,7 @@ export default function LoyaltyPage() {
               <div className="relative w-full sm:w-48 lg:w-56">
                 <Search className="w-3.5 h-3.5 text-gray-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
                 <Input 
-                  placeholder={language === 'bn' ? 'খুঁজুন (নাম বা ফোন)...' : 'Search (name or phone)...'}
+                  placeholder={language === 'bn' ? 'খুঁজুন (নাম বা ফোন)…' : 'Search (name or phone)…'}
                   value={searchTerm}
                   onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                   className="pl-8 h-8 text-xs bg-background/80 border-gray-800 rounded-lg focus:border-blue-500"

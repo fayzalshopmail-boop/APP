@@ -234,18 +234,27 @@ export function OwnerBottomNav() {
               : 'translateY(0)',
           transition: isDragging ? 'none' : 'transform 240ms cubic-bezier(0.16, 1, 0.3, 1)',
         }}
-        className={`fixed bottom-0 left-0 right-0 z-50 bg-[#121523] border-t border-gray-800 rounded-t-3xl shadow-2xl max-h-[85dvh] overflow-y-auto md:hidden pb-8 will-change-transform ${
+        className={`fixed bottom-0 left-0 right-0 z-50 bg-[#121523] border-t border-gray-800 rounded-t-3xl shadow-2xl max-h-[85dvh] overflow-y-auto overscroll-contain md:hidden pb-8 will-change-transform ${
           isMoreOpen ? 'pointer-events-auto' : 'pointer-events-none'
         }`}
         aria-hidden={!isMoreOpen}
       >
         {/* Grab Handle (Touch here and drag down to close) */}
         <div 
-          className="pt-3.5 pb-2.5 px-12 flex flex-col items-center justify-center cursor-grab active:cursor-grabbing touch-none select-none w-full" 
+          role="button"
+          tabIndex={0}
+          aria-label={isBangla ? "মেনু বন্ধ করুন" : "Close menu"}
+          className="pt-3.5 pb-2.5 px-12 flex flex-col items-center justify-center cursor-grab active:cursor-grabbing touch-none select-none w-full focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 rounded-t-3xl" 
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onClick={handleCloseMenu}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+              e.preventDefault();
+              handleCloseMenu();
+            }
+          }}
           title={isBangla ? "নিচে টেনে বন্ধ করুন" : "Drag down to close"}
         >
           <div className="w-14 h-1.5 bg-gray-500/80 hover:bg-gray-400 active:bg-gray-300 rounded-full transition-colors" />

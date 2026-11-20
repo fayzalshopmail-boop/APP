@@ -113,12 +113,12 @@ export function BarcodeScannerModal({ isOpen, onClose, onScan }: BarcodeScannerM
       }
 
       setIsOcrProcessing(true);
-      setOcrProgress('Reading text...');
+      setOcrProgress('Reading text…');
 
       const result = await Tesseract.recognize(dataUrl, 'eng', {
         logger: m => {
           if (m.status === 'recognizing text') {
-            setOcrProgress(`Reading... ${Math.round(m.progress * 100)}%`);
+            setOcrProgress(`Reading… ${Math.round(m.progress * 100)}%`);
           }
         }
       });
@@ -198,14 +198,14 @@ export function BarcodeScannerModal({ isOpen, onClose, onScan }: BarcodeScannerM
             <div className="mt-6 flex flex-col items-center w-full p-4 bg-gray-800/50 rounded-xl border border-gray-700">
               <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-3" />
               <p className="text-white font-medium">{ocrProgress}</p>
-              <p className="text-xs text-gray-400 mt-1">Please wait, analyzing image...</p>
+              <p className="text-xs text-gray-400 mt-1">Please wait, analyzing image…</p>
             </div>
           )}
 
           {ocrCandidates.length > 0 && (
             <div className="mt-6 w-full space-y-3">
               <h4 className="text-sm font-semibold text-gray-300">Found possible numbers:</h4>
-              <div className="max-h-[200px] overflow-y-auto space-y-2 pr-2">
+              <div className="max-h-[200px] overflow-y-auto overscroll-contain space-y-2 pr-2">
                 {ocrCandidates.map((c, i) => (
                   <button
                     key={i}

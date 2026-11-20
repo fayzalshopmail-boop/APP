@@ -204,7 +204,7 @@ export function SetBillModal({ isOpen, onClose, customer, onSave, smsSettings }:
                 href={`https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(getWhatsAppMessage())}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 py-2 px-3 bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/30 text-emerald-400 rounded-xl text-xs font-semibold transition-all"
+                className="flex items-center justify-center gap-2 py-2 px-3 bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/30 text-emerald-400 rounded-xl text-xs font-semibold transition-colors"
               >
                 <MessageCircle className="w-4 h-4" />
                 <span>{language === 'bn' ? 'কাস্টমারকে হোয়াটসঅ্যাপে বিল পাঠান' : 'Share Bill via WhatsApp'}</span>

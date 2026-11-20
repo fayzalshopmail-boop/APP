@@ -206,7 +206,8 @@ export default function DuePage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             <Input 
               type="text" 
-              placeholder={language === 'bn' ? 'কাস্টমারের নাম বা ফোন নম্বর...' : 'Customer name or phone number...'} 
+              aria-label={language === 'bn' ? 'বাকি কাস্টমার খুঁজুন' : 'Search due customers'}
+              placeholder={language === 'bn' ? 'কাস্টমারের নাম বা ফোন নম্বর…' : 'Customer name or phone number…'} 
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-9 bg-popover/80 border-gray-800 h-9 sm:h-10 text-xs sm:text-sm rounded-xl focus:border-blue-500"

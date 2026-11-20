@@ -183,7 +183,7 @@ export function VaultDoorLock({
           genRef.current++;
           const myGen = genRef.current;
           clearAllTimers();
-          setStatusMessage(isBangla ? 'পিন সফলভাবে সেট হয়েছে! ভল্ট খুলছে...' : 'PIN set successfully! Opening vault...');
+          setStatusMessage(isBangla ? 'পিন সফলভাবে সেট হয়েছে! ভল্ট খুলছে…' : 'PIN set successfully! Opening vault…');
           inputRef.current?.blur();
 
           rootRef.current.classList.add('is-playing');
@@ -233,7 +233,7 @@ export function VaultDoorLock({
       genRef.current++;
       const myGen = genRef.current;
       clearAllTimers();
-      setStatusMessage(isBangla ? 'কোড সঠিক! ভল্ট ডোর খোলা হচ্ছে...' : 'Code correct! Opening vault door...');
+      setStatusMessage(isBangla ? 'কোড সঠিক! ভল্ট ডোর খোলা হচ্ছে…' : 'Code correct! Opening vault door…');
       inputRef.current?.blur();
 
       rootRef.current.classList.add('is-playing');

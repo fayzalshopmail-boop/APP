@@ -95,17 +95,18 @@ export function PaginationControl({
             type="button"
             onClick={() => handlePageClick(currentPage - 1)}
             disabled={currentPage <= 1}
-            className="h-8 w-8 inline-flex items-center justify-center bg-card border border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors"
+            className="h-8 w-8 inline-flex items-center justify-center bg-card border border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
             title={language === 'bn' ? 'পূর্ববর্তী পৃষ্ঠা' : 'Previous Page'}
+            aria-label={language === 'bn' ? 'পূর্ববর্তী পৃষ্ঠা' : 'Previous Page'}
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-4 h-4" aria-hidden="true" />
           </button>
 
           {getPageNumbers(false).map((pageNum, idx) => {
             if (pageNum === '...') {
               return (
                 <span key={`desktop-ellipsis-${idx}`} className="px-1 text-gray-500 text-xs select-none">
-                  ...
+                  …
                 </span>
               );
             }
@@ -116,7 +117,7 @@ export function PaginationControl({
                 key={`desktop-page-${page}`}
                 type="button"
                 onClick={() => handlePageClick(page)}
-                className={`h-8 min-w-[32px] px-2 rounded-lg text-xs font-medium transition-all ${
+                className={`h-8 min-w-[32px] px-2 rounded-lg text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 ${
                   isActive
                     ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 font-bold'
                     : 'bg-card border border-gray-800 text-gray-300 hover:text-white hover:bg-secondary hover:border-gray-700'
@@ -131,10 +132,11 @@ export function PaginationControl({
             type="button"
             onClick={() => handlePageClick(currentPage + 1)}
             disabled={currentPage >= totalPages}
-            className="h-8 w-8 inline-flex items-center justify-center bg-card border border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors"
+            className="h-8 w-8 inline-flex items-center justify-center bg-card border border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
             title={language === 'bn' ? 'পরবর্তী পৃষ্ঠা' : 'Next Page'}
+            aria-label={language === 'bn' ? 'পরবর্তী পৃষ্ঠা' : 'Next Page'}
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -146,17 +148,18 @@ export function PaginationControl({
             type="button"
             onClick={() => handlePageClick(currentPage - 1)}
             disabled={currentPage <= 1}
-            className="h-8 w-8 inline-flex items-center justify-center bg-card border border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors"
+            className="h-8 w-8 inline-flex items-center justify-center bg-card border border-gray-800 text-gray-300 hover:text-white hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
             title={language === 'bn' ? 'পূর্ববর্তী পৃষ্ঠা' : 'Previous Page'}
+            aria-label={language === 'bn' ? 'পূর্ববর্তী পৃষ্ঠা' : 'Previous Page'}
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-4 h-4" aria-hidden="true" />
           </button>
 
           {getPageNumbers(true).map((pageNum, idx) => {
             if (pageNum === '...') {
               return (
                 <span key={`mobile-ellipsis-${idx}`} className="px-1 text-gray-500 text-xs select-none">
-                  ...
+                  …
                 </span>
               );
             }
@@ -167,7 +170,7 @@ export function PaginationControl({
                 key={`mobile-page-${page}`}
                 type="button"
                 onClick={() => handlePageClick(page)}
-                className={`h-8 min-w-[32px] px-2 rounded-lg text-xs font-medium transition-all ${
+                className={`h-8 min-w-[32px] px-2 rounded-lg text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 ${
                   isActive
                     ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 font-bold'
                     : 'bg-card border border-gray-800 text-gray-300 hover:text-white hover:bg-secondary hover:border-gray-700'

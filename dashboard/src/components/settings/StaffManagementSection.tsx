@@ -265,7 +265,7 @@ export function StaffManagementSection({
       setCheckingIn(true);
 
       // Verify GPS & Wi-Fi Security
-      toast.loading('হাজিরা অবস্থান ও Wi-Fi যাচাই করা হচ্ছে...', { id: 'security-check' });
+      toast.loading('হাজিরা অবস্থান ও Wi-Fi যাচাই করা হচ্ছে…', { id: 'security-check' });
       const verification = await attendanceSecurityService.verifyAttendanceAccess(currentUser.role);
       
       if (!verification.allowed) {
@@ -306,7 +306,7 @@ export function StaffManagementSection({
       setCheckingOut(true);
 
       // Verify GPS & Wi-Fi Security for Checkout
-      toast.loading('প্রস্থান অবস্থান ও Wi-Fi যাচাই করা হচ্ছে...', { id: 'security-check' });
+      toast.loading('প্রস্থান অবস্থান ও Wi-Fi যাচাই করা হচ্ছে…', { id: 'security-check' });
       const verification = await attendanceSecurityService.verifyAttendanceAccess(currentUser.role);
       
       if (!verification.allowed) {
@@ -1653,8 +1653,8 @@ export function StaffManagementSection({
               <Button type="submit" disabled={submittingAttendance} className="bg-blue-600 hover:bg-blue-500 text-white text-xs flex items-center gap-1.5">
                 {submittingAttendance ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    সংরক্ষণ হচ্ছে...
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                    সংরক্ষণ হচ্ছে…
                   </>
                 ) : (
                   'সংরক্ষণ করুন'
@@ -1767,8 +1767,8 @@ export function StaffManagementSection({
               <Button type="submit" disabled={submittingPayment} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5">
                 {submittingPayment ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    পেমেন্ট হচ্ছে...
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                    পেমেন্ট হচ্ছে…
                   </>
                 ) : (
                   'পেমেন্ট নিশ্চিত করুন'
@@ -1840,8 +1840,8 @@ export function StaffManagementSection({
               <Button type="submit" disabled={submittingSalaryConfig} className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5">
                 {submittingSalaryConfig ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    সংরক্ষণ হচ্ছে...
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                    সংরক্ষণ হচ্ছে…
                   </>
                 ) : (
                   'সংরক্ষণ করুন'

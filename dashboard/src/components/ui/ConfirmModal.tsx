@@ -79,7 +79,7 @@ export function ConfirmModal({
  <div className="p-6">
  <div className="flex flex-col items-center text-center space-y-4">
  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isDanger ? 'bg-red-500/10' : 'bg-orange-500/10'}`}>
- <AlertTriangle className={`w-6 h-6 ${isDanger ? 'text-red-500' : 'text-orange-500'}`} />
+ <AlertTriangle aria-hidden="true" className={`w-6 h-6 ${isDanger ? 'text-red-500' : 'text-orange-500'}`} />
  </div>
  
  <div className="space-y-2">
@@ -121,14 +121,14 @@ export function ConfirmModal({
  <Button 
  onClick={handleConfirm}
  disabled={isLoading || !canConfirm}
- className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-white transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed
+ className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-white transition-colors shadow-lg flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed
  ${isDanger 
  ? 'bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 shadow-red-500/20' 
  : 'bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 shadow-orange-500/20'
  }`}
  >
- {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
- {isLoading ? (language === 'bn' ? 'প্রক্রিয়াধীন...' : 'Processing...') : displayConfirmText}
+ {isLoading && <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />}
+ {isLoading ? (language === 'bn' ? 'প্রক্রিয়াধীন…' : 'Processing…') : displayConfirmText}
  </Button>
  </div>
  </div>

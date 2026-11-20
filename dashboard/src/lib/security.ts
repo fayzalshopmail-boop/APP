@@ -56,11 +56,23 @@ const VAULT_LAST_ACTIVE_KEY = 'vsc_vault_last_active';
 const VAULT_SIG_KEY = 'vsc_vault_signature';
 
 async function computeVaultSignature(pinHash: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(`vsc_session_${pinHash}_${PIN_SALT}`);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  if (typeof crypto !== 'undefined' && crypto?.subtle) {
+    try {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(`vsc_session_${pinHash}_${PIN_SALT}`);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch {}
+  }
+  // Safe fallback for non-secure HTTP / LAN environments
+  let hash = 0;
+  const str = `vsc_session_${pinHash}_${PIN_SALT}`;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return `fb_${Math.abs(hash).toString(16)}`;
 }
 
 /**

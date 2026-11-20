@@ -49,8 +49,14 @@ export function InvoiceModal({ isOpen, onClose, customer }: InvoiceModalProps) {
               <Printer className="w-4 h-4" />
               {language === 'bn' ? 'প্রিন্ট' : 'Print'}
             </Button>
-            <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-400 hover:text-white h-9 w-9">
-              <X className="w-5 h-5" />
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onClose} 
+              aria-label={language === 'bn' ? 'বন্ধ করুন' : 'Close'} 
+              className="text-gray-400 hover:text-white h-9 w-9"
+            >
+              <X className="w-5 h-5" aria-hidden="true" />
             </Button>
           </div>
         </div>
@@ -58,7 +64,7 @@ export function InvoiceModal({ isOpen, onClose, customer }: InvoiceModalProps) {
         {/* Printable Area */}
         <div 
           ref={printRef}
-          className="p-4 sm:p-8 md:p-12 bg-white text-black min-h-[400px] overflow-y-auto overflow-x-auto flex-1 print:p-0 print:min-h-0 print:overflow-visible"
+          className="p-4 sm:p-8 md:p-12 bg-white text-black min-h-[400px] overflow-y-auto overscroll-contain overflow-x-auto flex-1 print:p-0 print:min-h-0 print:overflow-visible"
         >
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-gray-200 pb-4 sm:pb-6 mb-6 sm:mb-8 gap-4">
@@ -118,7 +124,10 @@ export function InvoiceModal({ isOpen, onClose, customer }: InvoiceModalProps) {
                 </p>
               )}
               <p className="text-sm text-gray-600 mb-1">
-                {language === 'bn' ? 'সমস্যা:' : 'Problem:'} <span className="font-medium text-orange-600">{customer.deviceProblem || 'N/A'}</span>
+                {language === 'bn' ? 'সমস্যা:' : 'Problem:'} <span className="font-medium text-orange-600">
+                  {customer.deviceProblem || 'N/A'}
+                  {customer.displayAction ? ` (${customer.displayAction})` : ''}
+                </span>
               </p>
               {customer.deviceDetails && (
                 <p className="text-xs text-gray-500 mb-1">{customer.deviceDetails}</p>

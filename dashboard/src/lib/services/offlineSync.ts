@@ -29,7 +29,7 @@ class OfflineSyncService {
 
     window.addEventListener('online', () => {
       window.dispatchEvent(new CustomEvent('app:network-status', { detail: { online: true } }));
-      toast.success('📶 ইন্টারনেট সংযুক্ত হয়েছে! অফলাইন ডাটা ক্লাউডে সিঙ্ক হচ্ছে...', { id: 'network-status', duration: 4000 });
+      toast.success('📶 ইন্টারনেট সংযুক্ত হয়েছে! অফলাইন ডাটা ক্লাউডে সিঙ্ক হচ্ছে…', { id: 'network-status', duration: 4000 });
       this.syncPendingQueue();
     });
 

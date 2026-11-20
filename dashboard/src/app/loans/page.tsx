@@ -415,7 +415,7 @@ export default function LoansPage() {
               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <Input
                 type="text"
-                placeholder={language === 'bn' ? 'নাম, ফোন বা নোট খুঁজুন...' : 'Search name, phone or notes...'}
+                placeholder={language === 'bn' ? 'নাম, ফোন বা নোট খুঁজুন…' : 'Search name, phone or notes…'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-8 h-8 sm:h-9 bg-secondary/80 border-gray-800 text-white rounded-lg sm:rounded-xl text-xs sm:text-sm focus:border-blue-500 w-full"
@@ -479,7 +479,7 @@ export default function LoansPage() {
         {loading ? (
           <div className="bg-card rounded-xl border border-gray-800 p-8 text-center text-gray-500 text-xs">
             <div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-2" />
-            <p>{language === 'bn' ? 'রেকর্ড লোড হচ্ছে...' : 'Loading records...'}</p>
+            <p>{language === 'bn' ? 'রেকর্ড লোড হচ্ছে…' : 'Loading records…'}</p>
           </div>
         ) : filteredLoans.length === 0 ? (
           <div className="bg-card rounded-xl border border-gray-800 p-8 text-center text-gray-500 text-xs">
@@ -658,7 +658,7 @@ export default function LoansPage() {
         {loading ? (
           <div className="text-center py-12 text-gray-500">
             <div className="w-7 h-7 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-2" />
-            <p className="text-xs">{language === 'bn' ? 'রেকর্ড লোড হচ্ছে...' : 'Loading records...'}</p>
+            <p className="text-xs">{language === 'bn' ? 'রেকর্ড লোড হচ্ছে…' : 'Loading records…'}</p>
           </div>
         ) : filteredLoans.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
@@ -735,8 +735,9 @@ export default function LoansPage() {
                                   onClick={() => { setPaymentModalData(l); setNextDate(''); setPaymentNote(''); }} 
                                   className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10" 
                                   title={language === 'bn' ? 'পরিশোধ যোগ করুন' : 'Add Payment'}
+                                  aria-label={language === 'bn' ? 'পরিশোধ যোগ করুন' : 'Add Payment'}
                                 >
-                                  <Coins className="w-4 h-4" />
+                                  <Coins className="w-4 h-4" aria-hidden="true" />
                                 </Button>
                                 <Button 
                                   variant="ghost" 
@@ -745,8 +746,9 @@ export default function LoansPage() {
                                   disabled={sendingSmsId === l.id} 
                                   className="h-8 w-8 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-400/10" 
                                   title={language === 'bn' ? 'SMS রিমাইন্ডার পাঠান' : 'Send SMS Reminder'}
+                                  aria-label={language === 'bn' ? 'SMS রিমাইন্ডার পাঠান' : 'Send SMS Reminder'}
                                 >
-                                  <MessageSquare className="w-4 h-4" />
+                                  <MessageSquare className="w-4 h-4" aria-hidden="true" />
                                 </Button>
                               </>
                             )}
@@ -756,8 +758,9 @@ export default function LoansPage() {
                               onClick={() => setHistoryModalData(l)} 
                               className="h-8 w-8 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-400/10" 
                               title={language === 'bn' ? 'হিস্ট্রি দেখুন' : 'View History'}
+                              aria-label={language === 'bn' ? 'হিস্ট্রি দেখুন' : 'View History'}
                             >
-                              <History className="w-4 h-4" />
+                              <History className="w-4 h-4" aria-hidden="true" />
                             </Button>
                             <Button 
                               variant="ghost" 
@@ -765,8 +768,9 @@ export default function LoansPage() {
                               onClick={() => handleOpenModal(l)} 
                               className="h-8 w-8 text-gray-400 hover:text-white" 
                               title={language === 'bn' ? 'এডিট করুন' : 'Edit'}
+                              aria-label={language === 'bn' ? 'এডিট করুন' : 'Edit'}
                             >
-                              <Edit2 className="w-4 h-4" />
+                              <Edit2 className="w-4 h-4" aria-hidden="true" />
                             </Button>
                             <Button 
                               variant="ghost" 
@@ -774,8 +778,9 @@ export default function LoansPage() {
                               onClick={() => setDeleteId(l.id)} 
                               className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-400/10" 
                               title={language === 'bn' ? 'ডিলিট করুন' : 'Delete'}
+                              aria-label={language === 'bn' ? 'ডিলিট করুন' : 'Delete'}
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-4 h-4" aria-hidden="true" />
                             </Button>
                           </div>
                         </td>
@@ -898,8 +903,9 @@ export default function LoansPage() {
                           onClick={() => setHistoryModalData(l)} 
                           className="h-8 w-8 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-400/10 rounded-lg" 
                           title={language === 'bn' ? 'হিস্ট্রি দেখুন' : 'View History'}
+                          aria-label={language === 'bn' ? 'হিস্ট্রি দেখুন' : 'View History'}
                         >
-                          <History className="w-4 h-4" />
+                          <History className="w-4 h-4" aria-hidden="true" />
                         </Button>
                         <Button 
                           variant="ghost" 
@@ -907,8 +913,9 @@ export default function LoansPage() {
                           onClick={() => handleOpenModal(l)} 
                           className="h-8 w-8 text-gray-400 hover:text-white rounded-lg" 
                           title={language === 'bn' ? 'এডিট করুন' : 'Edit'}
+                          aria-label={language === 'bn' ? 'এডিট করুন' : 'Edit'}
                         >
-                          <Edit2 className="w-4 h-4" />
+                          <Edit2 className="w-4 h-4" aria-hidden="true" />
                         </Button>
                         <Button 
                           variant="ghost" 
@@ -916,8 +923,9 @@ export default function LoansPage() {
                           onClick={() => setDeleteId(l.id)} 
                           className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg" 
                           title={language === 'bn' ? 'ডিলিট করুন' : 'Delete'}
+                          aria-label={language === 'bn' ? 'ডিলিট করুন' : 'Delete'}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4" aria-hidden="true" />
                         </Button>
                       </div>
                     </div>
@@ -970,7 +978,7 @@ export default function LoansPage() {
                 max={paymentModalData ? (paymentModalData.amount - (paymentModalData.paidAmount || 0)) : undefined}
                 value={paymentAmount || ''}
                 onChange={(e) => setPaymentAmount(parseInt(e.target.value) || 0)}
-                placeholder={language === 'bn' ? 'টাকার পরিমাণ...' : 'Amount...'}
+                placeholder={language === 'bn' ? 'টাকার পরিমাণ…' : 'Amount…'}
               />
             </div>
 
@@ -979,7 +987,7 @@ export default function LoansPage() {
               <Input 
                 value={paymentNote}
                 onChange={(e) => setPaymentNote(e.target.value)}
-                placeholder={language === 'bn' ? 'ক্যাশ / বিকাশ / মন্তব্য...' : 'Cash / bKash / remarks...'}
+                placeholder={language === 'bn' ? 'ক্যাশ / বিকাশ / মন্তব্য…' : 'Cash / bKash / remarks…'}
               />
             </div>
             
@@ -1037,7 +1045,7 @@ export default function LoansPage() {
                 required
                 value={formData.personName}
                 onChange={(e) => setFormData({...formData, personName: e.target.value})}
-                placeholder={language === 'bn' ? 'নাম...' : 'Name...'}
+                placeholder={language === 'bn' ? 'নাম…' : 'Name…'}
               />
             </div>
             
@@ -1145,7 +1153,7 @@ export default function LoansPage() {
               <Input 
                 value={formData.notes}
                 onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                placeholder={language === 'bn' ? 'কারণ বা বিবরণ...' : 'Reason or details...'}
+                placeholder={language === 'bn' ? 'কারণ বা বিবরণ…' : 'Reason or details…'}
               />
             </div>
 

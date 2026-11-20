@@ -111,10 +111,10 @@ export function Sidebar() {
         {isSyncing ? (
           <div 
             className="flex items-center gap-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 animate-pulse"
-            title={isBangla ? "অফলাইন ডাটা ক্লাউডে সিঙ্ক হচ্ছে..." : "Syncing offline data to cloud..."}
+            title={isBangla ? "অফলাইন ডাটা ক্লাউডে সিঙ্ক হচ্ছে…" : "Syncing offline data to cloud…"}
           >
-            <RefreshCw className="w-2.5 h-2.5 animate-spin text-blue-400" />
-            <span>{isBangla ? "সিঙ্ক হচ্ছে" : "Syncing..."}</span>
+            <RefreshCw className="w-2.5 h-2.5 animate-spin text-blue-400" aria-hidden="true" />
+            <span>{isBangla ? "সিঙ্ক হচ্ছে…" : "Syncing…"}</span>
           </div>
         ) : isOnline ? (
           <div 

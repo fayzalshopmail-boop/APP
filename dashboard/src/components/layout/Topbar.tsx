@@ -330,7 +330,7 @@ export function Topbar() {
             phone: data.phone,
             brand: data.deviceBrand,
             type: data.deviceType,
-            problem: data.deviceProblem,
+            problem: data.deviceProblem ? `${data.deviceProblem}${(data as any).displayAction ? ` (${(data as any).displayAction})` : ''}` : '',
             total: (data as any).isBillPending ? 'চেক করে জানানো হবে' : `${data.totalBill || 0}`,
             advance: `${data.advance || 0}`,
             due: (data as any).isBillPending ? 'পেন্ডিং' : `${data.due || 0}`,
@@ -431,7 +431,9 @@ export function Topbar() {
 
         <div className="relative" ref={notifRef}>
           <button 
+            type="button"
             onClick={() => setIsNotifOpen(!isNotifOpen)}
+            aria-label={isBangla ? "বিজ্ঞপ্তি" : "Notifications"}
             className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors relative ${isNotifOpen ? 'bg-gray-800 text-white' : 'bg-secondary text-gray-400 hover:text-white hover:bg-gray-800'}`}
           >
             <Bell className="w-5 h-5" />
@@ -445,6 +447,7 @@ export function Topbar() {
           <AnimatePresence>
             {isNotifOpen && (
               <motion.div
+                key="topbar-notifications-dropdown"
                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -474,7 +477,7 @@ export function Topbar() {
                   </div>
                 </div>
 
-                <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                <div className="max-h-[400px] overflow-y-auto overscroll-contain custom-scrollbar">
                   {notifications.length === 0 ? (
                     <div className="p-8 text-center text-gray-500">
                       <Bell className="w-8 h-8 mx-auto mb-3 opacity-20" />
@@ -485,8 +488,16 @@ export function Topbar() {
                       {notifications.map((notif) => (
                         <div 
                           key={notif.id} 
+                          role="button"
+                          tabIndex={0}
                           onClick={() => handleNotificationClick(notif)}
-                          className={`p-4 transition-colors flex gap-3 group relative cursor-pointer ${notif.read ? 'opacity-60 hover:bg-gray-800/20' : 'bg-blue-500/5 hover:bg-blue-500/10'}`}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              handleNotificationClick(notif);
+                            }
+                          }}
+                          className={`p-4 transition-colors flex gap-3 group relative cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 ${notif.read ? 'opacity-60 hover:bg-gray-800/20' : 'bg-blue-500/5 hover:bg-blue-500/10'}`}
                         >
                           <div className="shrink-0 mt-1">
                             {getIcon(notif.type)}
@@ -502,11 +513,13 @@ export function Topbar() {
                             <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-r-full" />
                           )}
                           <button 
+                            type="button"
                             onClick={(e) => handleDeleteNotification(notif.id!, e)}
-                            className="absolute right-3 top-4 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute right-3 top-4 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-400"
                             title={isBangla ? "নোটিফিকেশন মুছুন" : "Clear notification"}
+                            aria-label={isBangla ? "নোটিফিকেশন মুছুন" : "Clear notification"}
                           >
-                            <X className="w-4 h-4" />
+                            <X className="w-4 h-4" aria-hidden="true" />
                           </button>
                         </div>
                       ))}

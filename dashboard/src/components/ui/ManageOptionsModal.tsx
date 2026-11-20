@@ -74,8 +74,8 @@ export function ManageOptionsModal({ isOpen, onClose, category, title, parentKey
               <input
                 value={newValue}
                 onChange={(e) => setNewValue(e.target.value)}
-                placeholder={language === 'bn' ? 'নতুন অপশন লিখুন...' : 'Add new option...'}
-                className="flex-1 bg-secondary border border-gray-800 text-gray-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500/50"
+                placeholder={language === 'bn' ? 'নতুন অপশন লিখুন…' : 'Add new option…'}
+                className="flex-1 bg-secondary border border-gray-800 text-gray-100 rounded-lg px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus:border-blue-500/50"
               />
               <Button 
                 type="submit"
@@ -86,11 +86,11 @@ export function ManageOptionsModal({ isOpen, onClose, category, title, parentKey
               </Button>
             </form>
 
-            <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+            <div className="space-y-2 max-h-[300px] overflow-y-auto overscroll-contain custom-scrollbar pr-1">
               {options.map((opt) => (
                 <div key={opt} className="flex items-center justify-between bg-secondary border border-gray-800 rounded-lg p-3">
                   <span className="text-sm text-gray-200">{opt}</span>
-                  <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-gray-500 hover:text-red-400" onClick={() => handleDeleteRequest(opt)}>
+                  <Button type="button" variant="ghost" size="icon" aria-label={language === 'bn' ? `${opt} মুছে ফেলুন` : `Delete ${opt}`} className="h-6 w-6 text-gray-500 hover:text-red-400" onClick={() => handleDeleteRequest(opt)}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>

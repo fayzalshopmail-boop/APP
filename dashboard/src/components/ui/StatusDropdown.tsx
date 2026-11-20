@@ -139,7 +139,10 @@ export function StatusDropdown({ status, onChange }: StatusDropdownProps) {
           }}
           disabled={isFinalState}
           title={isFinalState ? "Status locked (Cannot be changed)" : "Change status"}
-          className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border text-xs font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${currentConfig.bg} ${currentConfig.text} ${currentConfig.border} ${isFinalState ? 'cursor-not-allowed opacity-80 bg-opacity-50' : 'cursor-pointer hover:brightness-110'}`}
+          aria-label={isFinalState ? "Status locked" : "Change status"}
+          aria-haspopup="listbox"
+          aria-expanded={isOpen}
+          className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${currentConfig.bg} ${currentConfig.text} ${currentConfig.border} ${isFinalState ? 'cursor-not-allowed opacity-80 bg-opacity-50' : 'cursor-pointer hover:brightness-110'}`}
         >
           {currentConfig.icon}
           <span className="hidden sm:inline">{getStatusLabel(status)}</span>
@@ -155,6 +158,7 @@ export function StatusDropdown({ status, onChange }: StatusDropdownProps) {
       {isOpen && typeof document !== 'undefined' && createPortal(
         <AnimatePresence>
           <motion.div
+            key="status-dropdown-panel"
             ref={dropdownRef}
             initial={{ opacity: 0, y: -5, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}

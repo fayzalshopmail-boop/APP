@@ -64,7 +64,7 @@ export function InventoryManageModal({ isOpen, onClose, title, options, onAdd, o
  </DialogHeader>
 
  <form onSubmit={handleAdd} className="flex gap-2 mb-4">
- <Input value={newValue} onChange={(e) => setNewValue(e.target.value)} placeholder={language === 'bn' ? 'নতুন অপশন লিখুন...' : 'Add new option...'} className="flex-1"
+ <Input value={newValue} onChange={(e) => setNewValue(e.target.value)} aria-label={language === 'bn' ? 'নতুন অপশন' : 'New option'} placeholder={language === 'bn' ? 'নতুন অপশন লিখুন…' : 'Add new option…'} className="flex-1"
  />
  <Button 
  type="submit"
@@ -75,12 +75,12 @@ export function InventoryManageModal({ isOpen, onClose, title, options, onAdd, o
  </Button>
  </form>
 
- <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+ <div className="space-y-2 max-h-[300px] overflow-y-auto overscroll-contain custom-scrollbar pr-1">
  {options.map((opt) => (
  <div key={opt} className="flex items-center justify-between bg-secondary border border-gray-800 rounded-lg p-3">
  <span className="text-sm text-gray-200">{opt}</span>
- <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-gray-500 hover:text-red-400" onClick={() => handleDeleteRequest(opt)}>
- <Trash2 className="w-4 h-4" />
+ <Button type="button" variant="ghost" size="icon" aria-label={language === 'bn' ? `${opt} মুছে ফেলুন` : `Delete ${opt}`} className="h-6 w-6 text-gray-500 hover:text-red-400" onClick={() => handleDeleteRequest(opt)}>
+ <Trash2 className="w-4 h-4" aria-hidden="true" />
  </Button>
  </div>
  ))}

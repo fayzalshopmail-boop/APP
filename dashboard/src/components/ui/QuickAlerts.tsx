@@ -16,7 +16,7 @@ export function QuickAlerts() {
     {
       id: 1,
       title: isBangla ? 'কম স্টক সতর্কতা' : 'Low Stock Warning',
-      desc: isBangla ? 'লোড হচ্ছে...' : 'Loading...',
+      desc: isBangla ? 'লোড হচ্ছে…' : 'Loading…',
       icon: AlertCircle,
       count: 0,
       color: 'text-gray-400',
@@ -27,7 +27,7 @@ export function QuickAlerts() {
     {
       id: 2,
       title: isBangla ? 'গ্রাহকদের বকেয়া' : 'Customer Dues',
-      desc: isBangla ? 'লোড হচ্ছে...' : 'Loading...',
+      desc: isBangla ? 'লোড হচ্ছে…' : 'Loading…',
       icon: Coins,
       count: 0,
       color: 'text-gray-400',
@@ -38,7 +38,7 @@ export function QuickAlerts() {
     {
       id: 3,
       title: isBangla ? 'ডেলিভারি প্রস্তুত' : 'Ready for Delivery',
-      desc: isBangla ? 'লোড হচ্ছে...' : 'Loading...',
+      desc: isBangla ? 'লোড হচ্ছে…' : 'Loading…',
       icon: CheckCircle,
       count: 0,
       color: 'text-gray-400',

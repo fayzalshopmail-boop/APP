@@ -354,7 +354,7 @@ export default function SmsMarketingPage() {
           <div className="flex justify-between text-xs sm:text-sm text-blue-400 font-semibold">
             <span className="flex items-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin text-blue-400" /> 
-              {language === 'bn' ? 'SMS পাঠানো হচ্ছে...' : 'Sending SMS in progress...'}
+              {language === 'bn' ? 'SMS পাঠানো হচ্ছে…' : 'Sending SMS in progress…'}
             </span>
             <span>{sendProgress.current} / {sendProgress.total}</span>
           </div>
@@ -430,7 +430,7 @@ export default function SmsMarketingPage() {
                     value={settings.senderId}
                     onChange={(e) => setSettings({ ...settings, senderId: e.target.value })}
                     className="w-full bg-popover border border-gray-800 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all" 
-                    placeholder="e.g. 88096..."
+                    placeholder="e.g. 88096…"
                   />
                 </div>
               </div>
@@ -439,13 +439,14 @@ export default function SmsMarketingPage() {
             <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
                 <button 
+                  type="button"
                   onClick={handleCheckBalance}
                   disabled={checkingBalance || !settings.apiKey}
-                  className="w-full sm:w-auto justify-center bg-popover hover:bg-gray-800 border border-gray-700 text-gray-300 px-5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 disabled:opacity-50"
+                  className="w-full sm:w-auto justify-center bg-popover hover:bg-gray-800 border border-gray-700 text-gray-300 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 flex items-center gap-2 disabled:opacity-50"
                 >
-                  {checkingBalance ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wallet className="w-4 h-4" />}
+                  {checkingBalance ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Wallet className="w-4 h-4" aria-hidden="true" />}
                   {checkingBalance 
-                    ? (language === 'bn' ? 'ব্যালেন্স যাচাই হচ্ছে...' : 'Checking...') 
+                    ? (language === 'bn' ? 'ব্যালেন্স যাচাই হচ্ছে…' : 'Checking…') 
                     : (language === 'bn' ? 'ব্যালেন্স দেখুন' : 'Check Balance')}
                 </button>
                 {balance && (
@@ -455,13 +456,14 @@ export default function SmsMarketingPage() {
                 )}
               </div>
               <button 
+                type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="w-full md:w-auto justify-center bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl text-sm font-medium transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2 disabled:opacity-70"
+                className="w-full md:w-auto justify-center bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 shadow-lg shadow-blue-500/20 flex items-center gap-2 disabled:opacity-70"
               >
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Save className="w-4 h-4" aria-hidden="true" />}
                 {saving 
-                  ? (language === 'bn' ? 'সংরক্ষণ হচ্ছে...' : 'Saving...') 
+                  ? (language === 'bn' ? 'সংরক্ষণ হচ্ছে…' : 'Saving…') 
                   : (language === 'bn' ? 'API সেটিংস সেভ করুন' : 'Save API Settings')}
               </button>
             </div>
@@ -695,7 +697,7 @@ export default function SmsMarketingPage() {
                 className="w-full md:w-auto justify-center bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl text-sm font-medium transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2 disabled:opacity-70"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                {saving ? (language === 'bn' ? 'সংরক্ষণ হচ্ছে...' : 'Saving...') : (language === 'bn' ? 'টেমপ্লেট সেভ করুন' : 'Save Templates')}
+                {saving ? (language === 'bn' ? 'সংরক্ষণ হচ্ছে…' : 'Saving…') : (language === 'bn' ? 'টেমপ্লেট সেভ করুন' : 'Save Templates')}
               </button>
             </div>
           </motion.div>
@@ -768,7 +770,7 @@ export default function SmsMarketingPage() {
               <textarea 
                 value={bulkMessage}
                 onChange={(e) => setBulkMessage(e.target.value)}
-                placeholder={language === 'bn' ? 'আপনার অফার, ঈদের শুভেচ্ছা ইত্যাদির মেসেজ লিখুন...' : 'Write your promotional offer, Eid greetings, etc. here...'}
+                placeholder={language === 'bn' ? 'আপনার অফার, ঈদের শুভেচ্ছা ইত্যাদির মেসেজ লিখুন…' : 'Write your promotional offer, Eid greetings, etc. here…'}
                 className="w-full bg-popover border border-gray-800 text-gray-200 rounded-xl p-4 text-sm focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all min-h-[160px] resize-none leading-relaxed"
               />
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-gray-500">
@@ -847,7 +849,7 @@ export default function SmsMarketingPage() {
               <textarea 
                 value={followupMessage}
                 onChange={(e) => setFollowupMessage(e.target.value)}
-                placeholder={language === 'bn' ? 'আপনার ফলো-আপ মেসেজ লিখুন...' : 'Write your follow-up message...'}
+                placeholder={language === 'bn' ? 'আপনার ফলো-আপ মেসেজ লিখুন…' : 'Write your follow-up message…'}
                 className="w-full bg-popover border border-gray-800 text-gray-200 rounded-xl p-4 text-sm focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all min-h-[120px] resize-none leading-relaxed"
               />
               <p className="text-xs text-gray-500 text-right">

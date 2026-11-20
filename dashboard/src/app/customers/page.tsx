@@ -305,7 +305,7 @@ export default function CustomersPage() {
               phone: data.phone,
               brand: data.deviceBrand,
               type: data.deviceType,
-              problem: data.deviceProblem,
+              problem: data.deviceProblem ? `${data.deviceProblem}${data.displayAction ? ` (${data.displayAction})` : ''}` : '',
               total: data.isBillPending ? 'চেক করে জানানো হবে' : `${data.totalBill || 0}`,
               advance: `${data.advance || 0}`,
               due: data.isBillPending ? 'পেন্ডিং' : `${data.due || 0}`,
@@ -453,7 +453,7 @@ export default function CustomersPage() {
                   phone: mergedCustomer.phone,
                   brand: mergedCustomer.deviceBrand,
                   type: mergedCustomer.deviceType,
-                  problem: mergedCustomer.deviceProblem,
+                  problem: mergedCustomer.deviceProblem ? `${mergedCustomer.deviceProblem}${mergedCustomer.displayAction ? ` (${mergedCustomer.displayAction})` : ''}` : '',
                   total: `${mergedCustomer.totalBill || 0}`,
                   advance: `${mergedCustomer.advance || 0}`,
                   due: `${mergedCustomer.due || 0}`,
@@ -809,22 +809,24 @@ export default function CustomersPage() {
                 placeholder={t('customers.searchPlaceholder')} 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="!h-10 sm:!h-10 !bg-card dark:!bg-card border border-gray-800 hover:border-gray-700 text-gray-200 text-xs sm:text-sm !rounded-xl pl-9 pr-8 focus:outline-none focus:!border-blue-500 focus:!ring-1 focus:!ring-blue-500/50 transition-all w-full placeholder:text-gray-500 shadow-sm"
+                className="!h-10 sm:!h-10 !bg-card dark:!bg-card border border-gray-800 hover:border-gray-700 text-gray-200 text-xs sm:text-sm !rounded-xl pl-9 pr-8 focus-visible:outline-none focus-visible:!border-blue-500 focus-visible:!ring-1 focus-visible:!ring-blue-500/50 transition-colors w-full placeholder:text-gray-500 shadow-sm"
               />
               {search && (
                 <button 
+                  type="button"
                   onClick={() => setSearch('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 p-0.5 transition-colors"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 p-0.5 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 rounded"
                   title={isBangla ? 'সার্চ মুছুন' : 'Clear search'}
+                  aria-label={isBangla ? 'সার্চ মুছুন' : 'Clear search'}
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-3.5 h-3.5" aria-hidden="true" />
                 </button>
               )}
             </div>
 
             {/* Status Filter Dropdown */}
             <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val as CustomerStatus | 'All')}>
-              <SelectTrigger className="!h-10 sm:!h-10 w-28 sm:w-36 !bg-card dark:!bg-card border border-gray-800 hover:border-gray-700 text-gray-200 text-xs sm:text-sm !rounded-xl px-2.5 sm:px-3 focus:outline-none focus:!border-blue-500 focus:!ring-1 focus:!ring-blue-500/50 transition-all shadow-sm shrink-0 flex items-center justify-between">
+              <SelectTrigger className="!h-10 sm:!h-10 w-28 sm:w-36 !bg-card dark:!bg-card border border-gray-800 hover:border-gray-700 text-gray-200 text-xs sm:text-sm !rounded-xl px-2.5 sm:px-3 focus-visible:outline-none focus-visible:!border-blue-500 focus-visible:!ring-1 focus-visible:!ring-blue-500/50 transition-colors shadow-sm shrink-0 flex items-center justify-between">
                 <span className="flex items-center gap-1.5 sm:gap-2 truncate">
                   <Filter className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 transition-colors ${statusFilter !== 'All' ? 'text-blue-400' : 'text-gray-400'}`} />
                   <SelectValue placeholder={t('customers.allStatus')} />
@@ -878,10 +880,12 @@ export default function CustomersPage() {
               <tbody className="divide-y divide-gray-800/50">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-gray-500">Loading customers...</td>
+                    <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
+                      {isBangla ? 'কাস্টমার তালিকা লোড হচ্ছে…' : 'Loading customers…'}
+                    </td>
                   </tr>
-                ) : paginatedCustomers.map((customer) => (
-                <tr key={customer.id} className="hover:bg-gray-800/20 transition-colors group">
+                ) : paginatedCustomers.map((customer, idx) => (
+                <tr key={customer.id || `cust-${customer.customId || ''}-${idx}`} className="hover:bg-gray-800/20 transition-colors group">
                   <td className="px-4 py-3.5">
                     <div className="space-y-0.5">
                       <Button variant="link" onClick={() => setProfileSidebarCustomer(customer)} className="p-0 h-auto font-semibold text-gray-200 hover:text-blue-400 transition-colors text-left block hover:no-underline"
@@ -958,7 +962,14 @@ export default function CustomersPage() {
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-orange-400/80 mt-0.5">{customer.deviceProblem || 'N/A'}</div>
+                    <div className="text-xs text-orange-400/80 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                      <span>{customer.deviceProblem || 'N/A'}</span>
+                      {customer.displayAction && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-blue-500/15 text-blue-400 border border-blue-500/25">
+                          {customer.displayAction}
+                        </span>
+                      )}
+                    </div>
                     {customer.deviceDetails && <div className="text-[10px] text-gray-500 mt-0.5 truncate max-w-[150px]">{customer.deviceDetails}</div>}
                     {customer.warrantyMonths ? (() => {
                       const w = getWarrantyStatus(customer.warrantyMonths, customer.deliveredAt || customer.completedAt, customer.status);
@@ -1047,8 +1058,9 @@ export default function CustomersPage() {
                         onClick={() => setRescheduleCustomer(customer)} 
                         className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-colors h-8 w-8" 
                         title={isBangla ? "ডেলিভারি রিসিডিউল / তারিখ পরিবর্তন" : "Reschedule Delivery Date"}
+                        aria-label={isBangla ? "ডেলিভারি রিসিডিউল / তারিখ পরিবর্তন" : "Reschedule Delivery Date"}
                       >
-                        <CalendarClock className="w-4 h-4" />
+                        <CalendarClock className="w-4 h-4" aria-hidden="true" />
                       </Button>
                       {/* Copy Secret Tracking Link Button */}
                       <Button 
@@ -1063,30 +1075,35 @@ export default function CustomersPage() {
                         }} 
                         className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors h-8 w-8" 
                         title={isBangla ? "সিক্রেট ট্র্যাকিং লিংক কপি করুন" : "Copy Secret Tracking Link"}
+                        aria-label={isBangla ? "সিক্রেট ট্র্যাকিং লিংক কপি করুন" : "Copy Secret Tracking Link"}
                       >
-                        <Link2 className="w-4 h-4" />
+                        <Link2 className="w-4 h-4" aria-hidden="true" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => setInvoiceModalCustomer(customer)} className="text-gray-400 hover:text-white hover:bg-gray-800 transition-colors h-8 w-8" 
                         title={isBangla ? "ইনভয়েস প্রিন্ট" : "Print Invoice"}
+                        aria-label={isBangla ? "ইনভয়েস প্রিন্ট" : "Print Invoice"}
                       >
-                        <FileText className="w-4 h-4" />
+                        <FileText className="w-4 h-4" aria-hidden="true" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => setProfileSidebarCustomer(customer)} className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors h-8 w-8" 
                         title={isBangla ? "ইতিহাস ও প্রোফাইল" : "View History & Profile"}
+                        aria-label={isBangla ? "ইতিহাস ও প্রোফাইল" : "View History & Profile"}
                       >
-                        <Eye className="w-4 h-4" />
+                        <Eye className="w-4 h-4" aria-hidden="true" />
                       </Button>
                       {hasFullAccess && (
                         <>
                           <Button variant="ghost" size="icon" onClick={() => openEditModal(customer)} className="text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 transition-colors h-8 w-8" 
                             title={isBangla ? "সম্পাদনা" : "Edit"}
+                            aria-label={isBangla ? "সম্পাদনা" : "Edit"}
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="w-4 h-4" aria-hidden="true" />
                           </Button>
                           <Button variant="ghost" size="icon" onClick={() => handleDeleteRequest(customer.id)} className="text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors h-8 w-8" 
                             title={isBangla ? "মুছে ফেলুন" : "Delete"}
+                            aria-label={isBangla ? "মুছে ফেলুন" : "Delete"}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4" aria-hidden="true" />
                           </Button>
                         </>
                       )}
@@ -1121,12 +1138,12 @@ export default function CustomersPage() {
       <div className="block md:hidden space-y-2.5 pb-8">
         {loading ? (
           <div className="bg-card rounded-xl border border-gray-800 p-8 text-center text-gray-500 text-sm">
-            Loading customers...
+            {isBangla ? 'কাস্টমার তালিকা লোড হচ্ছে…' : 'Loading customers…'}
           </div>
-        ) : paginatedCustomers.map((customer) => (
+        ) : paginatedCustomers.map((customer, idx) => (
           <div 
-            key={customer.id}
-            className="bg-card border border-gray-800/80 rounded-xl p-3 shadow-sm space-y-2 hover:border-gray-700/80 transition-all"
+            key={customer.id || `cust-m-${customer.customId || ''}-${idx}`}
+            className="bg-card border border-gray-800/80 rounded-xl p-3 shadow-sm space-y-2 hover:border-gray-700/80 transition-colors"
           >
             {/* Header: Customer Name & Contact on Left | Status Badge on Right */}
             <div className="flex items-start justify-between gap-2">
@@ -1197,8 +1214,9 @@ export default function CustomersPage() {
                     </span>
                   )}
                 </div>
-                <span className="text-orange-400 bg-orange-500/10 border border-orange-500/20 px-1.5 py-0.5 rounded text-[10px] font-medium truncate max-w-[130px] shrink-0">
+                <span className="text-orange-400 bg-orange-500/10 border border-orange-500/20 px-1.5 py-0.5 rounded text-[10px] font-medium truncate max-w-[170px] shrink-0">
                   {customer.deviceProblem || 'Checkup'}
+                  {customer.displayAction ? ` (${customer.displayAction})` : ''}
                 </span>
               </div>
 
@@ -1362,8 +1380,9 @@ export default function CustomersPage() {
                   }} 
                   className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 h-6.5 w-6.5 rounded-md p-0"
                   title={isBangla ? "সিক্রেট ট্র্যাকিং লিংক কপি করুন" : "Copy Secret Tracking Link"}
+                  aria-label={isBangla ? "সিক্রেট ট্র্যাকিং লিংক কপি করুন" : "Copy Secret Tracking Link"}
                 >
-                  <Link2 className="w-3.5 h-3.5" />
+                  <Link2 className="w-3.5 h-3.5" aria-hidden="true" />
                 </Button>
 
                 <Button 
@@ -1372,8 +1391,9 @@ export default function CustomersPage() {
                   onClick={() => setInvoiceModalCustomer(customer)} 
                   className="text-gray-400 hover:text-white hover:bg-gray-800 h-6.5 w-6.5 rounded-md p-0"
                   title={isBangla ? "ইনভয়েস প্রিন্ট" : "Print Invoice"}
+                  aria-label={isBangla ? "ইনভয়েস প্রিন্ট" : "Print Invoice"}
                 >
-                  <FileText className="w-3.5 h-3.5" />
+                  <FileText className="w-3.5 h-3.5" aria-hidden="true" />
                 </Button>
 
                 <Button 
@@ -1382,8 +1402,9 @@ export default function CustomersPage() {
                   onClick={() => setProfileSidebarCustomer(customer)} 
                   className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 h-6.5 w-6.5 rounded-md p-0"
                   title={isBangla ? "ইতিহাস ও প্রোফাইল" : "View History & Profile"}
+                  aria-label={isBangla ? "ইতিহাস ও প্রোফাইল" : "View History & Profile"}
                 >
-                  <Eye className="w-3.5 h-3.5" />
+                  <Eye className="w-3.5 h-3.5" aria-hidden="true" />
                 </Button>
 
                 {hasFullAccess && (
@@ -1394,8 +1415,9 @@ export default function CustomersPage() {
                       onClick={() => openEditModal(customer)} 
                       className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 h-6.5 w-6.5 rounded-md p-0"
                       title={isBangla ? "সম্পাদনা" : "Edit Customer"}
+                      aria-label={isBangla ? "সম্পাদনা" : "Edit Customer"}
                     >
-                      <Edit className="w-3.5 h-3.5" />
+                      <Edit className="w-3.5 h-3.5" aria-hidden="true" />
                     </Button>
                     <Button 
                       variant="ghost" 
@@ -1403,8 +1425,9 @@ export default function CustomersPage() {
                       onClick={() => handleDeleteRequest(customer.id)} 
                       className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 h-6.5 w-6.5 rounded-md p-0"
                       title={isBangla ? "মুছে ফেলুন" : "Delete Customer"}
+                      aria-label={isBangla ? "মুছে ফেলুন" : "Delete Customer"}
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                     </Button>
                   </>
                 )}
@@ -1530,7 +1553,7 @@ export default function CustomersPage() {
       <button
         type="button"
         onClick={openAddModal}
-        className="sm:hidden fixed bottom-24 right-4 z-40 w-13 h-13 bg-gradient-to-tr from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 active:scale-90 text-white rounded-full flex items-center justify-center shadow-2xl shadow-blue-600/50 border border-blue-400/30 transition-all focus:outline-none"
+        className="sm:hidden fixed bottom-24 right-4 z-40 w-13 h-13 bg-gradient-to-tr from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 active:scale-90 text-white rounded-full flex items-center justify-center shadow-2xl shadow-blue-600/50 border border-blue-400/30 transition-transform transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         title={t('topbar.addCustomer')}
         aria-label={t('topbar.addCustomer')}
       >

@@ -474,7 +474,8 @@ export default function InventoryPage() {
           <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <Input 
             type="text" 
-            placeholder={language === 'bn' ? 'পার্টসের নাম দিয়ে খুঁজুন...' : 'Search parts by name...'} 
+            aria-label={language === 'bn' ? 'পার্টস খুঁজুন' : 'Search parts'}
+            placeholder={language === 'bn' ? 'পার্টসের নাম দিয়ে খুঁজুন…' : 'Search parts by name…'} 
             value={searchTerm}
             onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-9 h-9 sm:h-11 text-xs sm:text-sm rounded-xl bg-popover/80 border-gray-800 focus:border-blue-500"
@@ -560,8 +561,9 @@ export default function InventoryPage() {
                             onClick={() => handleOpenSell(item)} 
                             className="h-8 w-8 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 hover:text-blue-400 rounded-lg transition-colors"
                             title={language === 'bn' ? 'সরাসরি বিক্রয়' : 'Direct Sell'}
+                            aria-label={language === 'bn' ? 'সরাসরি বিক্রয়' : 'Direct Sell'}
                           >
-                            <ShoppingCart className="w-4 h-4" />
+                            <ShoppingCart className="w-4 h-4" aria-hidden="true" />
                           </Button>
                           <Button 
                             variant="ghost" 
@@ -569,8 +571,9 @@ export default function InventoryPage() {
                             onClick={() => handleOpenRestock(item)} 
                             className="h-8 w-8 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 hover:text-emerald-400 rounded-lg transition-colors"
                             title={language === 'bn' ? 'আইটেম রিস্টক করুন' : 'Restock Item'}
+                            aria-label={language === 'bn' ? 'আইটেম রিস্টক করুন' : 'Restock Item'}
                           >
-                            <PlusCircle className="w-4 h-4" />
+                            <PlusCircle className="w-4 h-4" aria-hidden="true" />
                           </Button>
                           {hasFullAccess && (
                             <>
@@ -580,8 +583,9 @@ export default function InventoryPage() {
                                 onClick={() => handleOpenModal(item)} 
                                 className="h-8 w-8 bg-gray-800/50 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg transition-colors"
                                 title={language === 'bn' ? 'এডিট করুন' : 'Edit Part'}
+                                aria-label={language === 'bn' ? 'এডিট করুন' : 'Edit Part'}
                               >
-                                <Edit2 className="w-4 h-4" />
+                                <Edit2 className="w-4 h-4" aria-hidden="true" />
                               </Button>
                               <Button 
                                 variant="ghost" 
@@ -589,8 +593,9 @@ export default function InventoryPage() {
                                 onClick={() => handleDeleteRequest(item.id)} 
                                 className="h-8 w-8 bg-red-500/10 hover:bg-red-500/20 text-red-500 hover:text-red-400 rounded-lg transition-colors"
                                 title={language === 'bn' ? 'মুছে ফেলুন' : 'Delete Part'}
+                                aria-label={language === 'bn' ? 'মুছে ফেলুন' : 'Delete Part'}
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-4 h-4" aria-hidden="true" />
                               </Button>
                             </>
                           )}
@@ -736,13 +741,20 @@ export default function InventoryPage() {
                   : (language === 'bn' ? 'ইনভেন্টরিতে নতুন পণ্য যোগ করতে বিবরণ লিখুন।' : 'Enter details to add a new product to inventory.')}
               </DialogDescription>
             </div>
-            <Button onClick={() => closeInvModal()} className="p-2 rounded-full bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-gray-200 transition-colors relative z-10 focus:outline-none">
-              <X className="w-4 h-4" />
+            <Button 
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => closeInvModal()} 
+              aria-label={language === 'bn' ? 'বন্ধ করুন' : 'Close'}
+              className="p-2 rounded-full bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-gray-200 transition-colors relative z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              <X className="w-4 h-4" aria-hidden="true" />
             </Button>
           </div>
           
           {/* Content */}
-          <form onSubmit={handleSave} className="p-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
+          <form onSubmit={handleSave} className="p-6 max-h-[75vh] overflow-y-auto overscroll-contain custom-scrollbar">
             <div className="space-y-6">
               
               {/* 1. Basic Info */}
@@ -764,15 +776,23 @@ export default function InventoryPage() {
                           { label: language === 'bn' ? 'কোন সাপ্লায়ার নেই' : 'No Supplier', value: '' },
                           ...suppliers.map(s => ({ label: s.name + (s.company ? ` (${s.company})` : ''), value: s.id }))
                         ]}
-                        placeholder={language === 'bn' ? 'সাপ্লায়ার নির্বাচন করুন...' : 'Select a supplier...'}
+                        placeholder={language === 'bn' ? 'সাপ্লায়ার নির্বাচন করুন…' : 'Select a supplier…'}
                       />
                     </div>
                     {/* Category Field */}
                   <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">{language === 'bn' ? 'ক্যাটাগরি' : 'Category'} <span className="text-red-400">*</span></label>
-                        <Button variant="ghost" size="icon" type="button" onClick={handleManageCategories} className="h-6 w-6 text-gray-500 hover:text-blue-400">
-                          <Settings2 className="w-3.5 h-3.5" />
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          type="button" 
+                          onClick={handleManageCategories} 
+                          className="h-6 w-6 text-gray-500 hover:text-blue-400"
+                          title={language === 'bn' ? 'ক্যাটাগরি পরিচালনা করুন' : 'Manage categories'}
+                          aria-label={language === 'bn' ? 'ক্যাটাগরি পরিচালনা করুন' : 'Manage categories'}
+                        >
+                          <Settings2 className="w-3.5 h-3.5" aria-hidden="true" />
                         </Button>
                       </div>
                       <CustomSelect 
@@ -788,8 +808,16 @@ export default function InventoryPage() {
                   <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">{language === 'bn' ? 'পণ্যের নাম' : 'Product Name'} <span className="text-red-400">*</span></label>
-                        <Button variant="ghost" size="icon" type="button" onClick={handleManageProducts} className="h-6 w-6 text-gray-500 hover:text-blue-400">
-                          <Settings2 className="w-3.5 h-3.5" />
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          type="button" 
+                          onClick={handleManageProducts} 
+                          className="h-6 w-6 text-gray-500 hover:text-blue-400"
+                          title={language === 'bn' ? 'পণ্য পরিচালনা করুন' : 'Manage products'}
+                          aria-label={language === 'bn' ? 'পণ্য পরিচালনা করুন' : 'Manage products'}
+                        >
+                          <Settings2 className="w-3.5 h-3.5" aria-hidden="true" />
                         </Button>
                       </div>
                       <CustomSelect 
@@ -884,7 +912,7 @@ export default function InventoryPage() {
                         placeholder="0.00"
                         value={formData.sellingPrice === 0 ? '' : formData.sellingPrice}
                         onChange={e => setFormData({...formData, sellingPrice: parseFloat(e.target.value) || 0})}
-                        className={`w-full bg-secondary border rounded-lg pl-8 pr-4 py-2.5 text-sm focus:outline-none transition-all ${
+                        className={`w-full bg-secondary border rounded-lg pl-8 pr-4 py-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 transition-colors ${
                           formData.purchasePrice > 0 && formData.sellingPrice > 0 && formData.sellingPrice < formData.purchasePrice
                             ? 'border-red-500 text-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-500'
                             : 'border-gray-800 text-gray-100 focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/50'
@@ -959,8 +987,15 @@ export default function InventoryPage() {
                 {language === 'bn' ? 'স্টক যোগ করুন এবং গড় ক্রয়মূল্য হিসাব করুন।' : 'Add stock and recalculate average cost price.'}
               </DialogDescription>
             </div>
-            <Button onClick={() => closeRestockModal()} className="p-2 rounded-full bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-gray-200 transition-colors relative z-10 focus:outline-none">
-              <X className="w-4 h-4" />
+            <Button 
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => closeRestockModal()} 
+              aria-label={language === 'bn' ? 'বন্ধ করুন' : 'Close'}
+              className="p-2 rounded-full bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-gray-200 transition-colors relative z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+            >
+              <X className="w-4 h-4" aria-hidden="true" />
             </Button>
           </div>
           
@@ -989,7 +1024,7 @@ export default function InventoryPage() {
                         { label: language === 'bn' ? 'কোন সাপ্লায়ার নেই' : 'No Supplier', value: '' },
                         ...suppliers.map(s => ({ label: s.name + (s.company ? ` (${s.company})` : ''), value: s.id }))
                       ]}
-                      placeholder={language === 'bn' ? 'সাপ্লায়ার নির্বাচন করুন...' : 'Select a supplier...'}
+                      placeholder={language === 'bn' ? 'সাপ্লায়ার নির্বাচন করুন…' : 'Select a supplier…'}
                     />
                   </div>
                   <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">{language === 'bn' ? 'পরিমাণ যোগ করুন' : 'Add Quantity'} <span className="text-red-400">*</span></label>
@@ -1077,7 +1112,7 @@ export default function InventoryPage() {
     
       {/* Direct Sell Modal */}
       <Dialog open={isSellModalOpen} onOpenChange={(v) => !v && closeSellModal()}>
-        <DialogContent className="w-[95vw] sm:max-w-[500px] max-h-[92vh] overflow-y-auto bg-popover text-gray-100 border-gray-800 p-0 shadow-2xl shadow-black rounded-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-[500px] max-h-[92vh] overflow-y-auto overscroll-contain bg-popover text-gray-100 border-gray-800 p-0 shadow-2xl shadow-black rounded-2xl">
           <div className="bg-gradient-to-r from-blue-900/20 to-indigo-900/10 p-6 border-b border-gray-800 flex items-center justify-between relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             <div className="relative">
@@ -1089,8 +1124,15 @@ export default function InventoryPage() {
                 {language === 'bn' ? 'সার্ভিসিং জব ছাড়াই সরাসরি এই আইটেমটি বিক্রি করুন।' : 'Sell this item directly without a repair job.'}
               </DialogDescription>
             </div>
-            <Button onClick={() => closeSellModal()} className="p-2 rounded-full bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-gray-200 transition-colors relative z-10 focus:outline-none">
-              <X className="w-4 h-4" />
+            <Button 
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => closeSellModal()} 
+              aria-label={language === 'bn' ? 'বন্ধ করুন' : 'Close'}
+              className="p-2 rounded-full bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-gray-200 transition-colors relative z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              <X className="w-4 h-4" aria-hidden="true" />
             </Button>
           </div>
           

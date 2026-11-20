@@ -439,7 +439,7 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
  <Input
  type="text"
- placeholder={language === 'bn' ? 'ইনভেন্টরি থেকে পার্টস খুঁজুন...' : 'Search replacement parts in inventory...'}
+ placeholder={language === 'bn' ? 'ইনভেন্টরি থেকে পার্টস খুঁজুন…' : 'Search replacement parts in inventory…'}
  value={search}
  onChange={(e) => setSearch(e.target.value)}
  className="pl-9 h-10 bg-[#0d0f17]"
@@ -447,10 +447,10 @@ export function PartsUsedModal({ isOpen, onClose, onConfirm, customer, pendingSt
  </div>
  
  {/* Available Parts List */}
- <div className="h-[140px] sm:h-[160px] overflow-y-auto space-y-1.5 pr-1 scrollbar-thin scrollbar-thumb-gray-800 border border-gray-800/40 rounded-lg p-2 bg-[#0d0f17]/50 mb-4">
+ <div className="h-[140px] sm:h-[160px] overflow-y-auto overscroll-contain space-y-1.5 pr-1 scrollbar-thin scrollbar-thumb-gray-800 border border-gray-800/40 rounded-lg p-2 bg-[#0d0f17]/50 mb-4">
  {loading ? (
  <div className="text-center py-6 text-gray-500 text-xs">
-   {language === 'bn' ? 'ইনভেন্টরি লোড হচ্ছে...' : 'Loading available inventory...'}
+ {language === 'bn' ? 'ইনভেন্টরি লোড হচ্ছে…' : 'Loading available inventory…'}
  </div>
  ) : filteredInventory.length === 0 ? (
  <div className="text-center py-5 text-gray-500 text-xs space-y-2">

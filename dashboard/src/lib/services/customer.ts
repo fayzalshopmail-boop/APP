@@ -18,6 +18,7 @@ export interface RepairRecord {
   deviceBrand?: string;
   deviceType?: string;
   deviceProblem?: string;
+  displayAction?: 'Change' | 'Replace' | 'Repair' | 'Repair in Shop' | 'Repair in Workshop' | 'Repair in Outside' | string;
   deviceDetails?: string;
   serialNumber?: string;
   totalBill: number;
@@ -56,6 +57,7 @@ export interface Customer {
   deviceBrand?: string;
   deviceType?: string;
   deviceProblem?: string;
+  displayAction?: 'Change' | 'Replace' | 'Repair' | 'Repair in Shop' | 'Repair in Workshop' | 'Repair in Outside' | string;
   deviceDetails?: string;
   serialNumber?: string;
   totalBill: number;

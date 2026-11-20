@@ -17,8 +17,22 @@ export function MobileDataCard({
   return (
     <div
       onClick={onClick}
-      className={`bg-card border border-gray-800/80 rounded-2xl p-3.5 sm:p-4 shadow-sm space-y-3 hover:border-gray-700/80 transition-all ${
-        onClick ? 'cursor-pointer active:scale-[0.99]' : ''
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
+      className={`bg-card border border-gray-800/80 rounded-2xl p-3.5 sm:p-4 shadow-sm space-y-3 hover:border-gray-700/80 transition-colors ${
+        onClick
+          ? 'cursor-pointer active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500'
+          : ''
       } ${className}`}
     >
       {children}

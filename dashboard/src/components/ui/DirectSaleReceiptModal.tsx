@@ -58,8 +58,14 @@ export function DirectSaleReceiptModal({ isOpen, onClose, receiptData }: DirectS
               <Printer className="w-4 h-4" />
               {language === 'bn' ? 'রসিদ প্রিন্ট' : 'Print Receipt'}
             </Button>
-            <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-400 hover:text-white">
-              <X className="w-5 h-5" />
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onClose} 
+              aria-label={language === 'bn' ? 'বন্ধ করুন' : 'Close'} 
+              className="text-gray-400 hover:text-white"
+            >
+              <X className="w-5 h-5" aria-hidden="true" />
             </Button>
           </div>
         </div>

@@ -19,7 +19,7 @@ interface CustomSelectProps {
   disabled?: boolean;
 }
 
-export function CustomSelect({ value, onChange, options, placeholder = "Select...", icon, disabled }: CustomSelectProps) {
+export function CustomSelect({ value, onChange, options, placeholder = "Select…", icon, disabled }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -89,7 +89,7 @@ export function CustomSelect({ value, onChange, options, placeholder = "Select..
         type="button"
         disabled={disabled}
         onClick={toggleOpen}
-        className={`w-full flex items-center justify-between bg-secondary border ${isOpen ? 'border-blue-500/50 ring-1 ring-blue-500/50' : 'border-gray-800'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} text-gray-100 rounded-lg ${icon ? 'pl-10' : 'pl-4'} pr-4 py-2.5 text-sm focus:outline-none transition-all`}
+        className={`w-full flex items-center justify-between bg-secondary border ${isOpen ? 'border-blue-500/50 ring-1 ring-blue-500/50' : 'border-gray-800'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} text-gray-100 rounded-lg ${icon ? 'pl-10' : 'pl-4'} pr-4 py-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500/50 transition-colors`}
       >
         <div className="flex items-center gap-2 truncate">
           {icon && <div className="absolute left-3 text-gray-500">{icon}</div>}
@@ -121,6 +121,7 @@ export function CustomSelect({ value, onChange, options, placeholder = "Select..
           <AnimatePresence>
             {isOpen && (
               <motion.div
+                key="custom-select-menu"
                 initial={{ opacity: 0, y: -5, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -5, scale: 0.98 }}

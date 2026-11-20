@@ -245,7 +245,7 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
     return (
       <div className="fixed inset-0 z-50 min-h-screen w-full bg-[#0b0e14] flex flex-col items-center justify-center gap-3 text-gray-400">
         <div className="w-9 h-9 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs sm:text-sm text-gray-400 font-medium">অ্যাপ লোড হচ্ছে...</p>
+        <p className="text-xs sm:text-sm text-gray-400 font-medium">অ্যাপ লোড হচ্ছে…</p>
       </div>
     );
   }
