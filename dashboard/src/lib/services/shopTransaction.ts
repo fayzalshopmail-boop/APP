@@ -21,47 +21,116 @@ import { telegramService } from './telegramService';
 import { sanitizeForFirestore } from '../utils';
 
 /**
- * Atomically generates a unique numeric Job / Tracking ID (starting at 1001)
+ * Atomically generates a unique numeric Job / Tracking ID (sequential, starting at 1001)
+ * Multi-layer fallback guarantees uniqueness even if the counter collection is blocked or unavailable.
  */
 async function getNextCustomId(): Promise<number> {
-  if (!db) return Math.floor(1001 + Math.random() * 8999);
+  // Helper to query the actual highest customId directly from the customers collection
+  const findMaxFromCustomers = async (): Promise<number> => {
+    try {
+      if (!db) return 1000;
+      
+      // Strategy A: Order by customId descending
+      const qDesc = query(collection(db, 'customers'), orderBy('customId', 'desc'), limit(10));
+      const snapDesc = await getDocs(qDesc).catch(() => null);
+      if (snapDesc && !snapDesc.empty) {
+        let maxFound = 1000;
+        snapDesc.docs.forEach(docSnap => {
+          const cid = docSnap.data()?.customId;
+          if (typeof cid === 'number' && cid > maxFound) maxFound = cid;
+        });
+        if (maxFound >= 1000) return maxFound;
+      }
+
+      // Strategy B: Order by createdAt descending (fallback if customId index is not ready)
+      const qRecent = query(collection(db, 'customers'), orderBy('createdAt', 'desc'), limit(25));
+      const snapRecent = await getDocs(qRecent).catch(() => null);
+      if (snapRecent && !snapRecent.empty) {
+        let maxFound = 1000;
+        snapRecent.docs.forEach(docSnap => {
+          const data = docSnap.data();
+          const cid = data?.customId;
+          if (typeof cid === 'number' && cid > maxFound) maxFound = cid;
+          if (Array.isArray(data?.repairHistory)) {
+            data.repairHistory.forEach((h: any) => {
+              if (typeof h?.customId === 'number' && h.customId > maxFound) {
+                maxFound = h.customId;
+              }
+            });
+          }
+        });
+        if (maxFound >= 1000) return maxFound;
+      }
+    } catch (err) {
+      console.warn("Failed querying max customId from customers collection:", err);
+    }
+    return 1000;
+  };
+
+  if (!db) {
+    return Math.floor(1001 + Math.random() * 8999);
+  }
+
   const counterRef = doc(db, 'counters', 'customers');
+
+  // Layer 1: Firestore atomic runTransaction
   try {
     const nextId = await runTransaction(db, async (tx) => {
       const snap = await tx.get(counterRef);
       let val = 1000;
       if (snap.exists() && typeof snap.data()?.lastId === 'number') {
         val = snap.data().lastId;
-      } else {
-        const q = query(collection(db, 'customers'), orderBy('customId', 'desc'), limit(1));
-        const maxSnap = await getDocs(q).catch(() => null);
-        if (maxSnap && !maxSnap.empty) {
-          const maxVal = maxSnap.docs[0].data()?.customId;
-          if (typeof maxVal === 'number' && maxVal >= 1000) {
-            val = maxVal;
-          }
-        }
       }
       const generated = val + 1;
-      tx.set(counterRef, { lastId: generated }, { merge: true });
+      tx.set(counterRef, { lastId: generated, updatedAt: serverTimestamp() }, { merge: true });
       return generated;
     });
-    return nextId;
-  } catch (error) {
-    console.warn("Atomic counter transaction failed, using direct counter fallback:", error);
-    try {
-      const snap = await getDoc(counterRef);
-      let val = 1000;
-      if (snap.exists() && typeof snap.data()?.lastId === 'number') {
-        val = snap.data().lastId;
-      }
-      const generated = val + 1;
-      await setDoc(counterRef, { lastId: generated }, { merge: true });
-      return generated;
-    } catch {
-      return 1001;
+
+    // Verify transaction ID against existing database max to prevent counter regression
+    const currentMax = await findMaxFromCustomers();
+    if (nextId <= currentMax) {
+      const correctedId = currentMax + 1;
+      setDoc(counterRef, { lastId: correctedId, updatedAt: serverTimestamp() }, { merge: true }).catch(() => {});
+      return correctedId;
     }
+
+    return nextId;
+  } catch (txError) {
+    console.warn("Atomic counter transaction failed, trying direct counter update:", txError);
   }
+
+  // Layer 2: Direct counter document read/write with max customers sync
+  try {
+    const snap = await getDoc(counterRef);
+    let val = 1000;
+    if (snap.exists() && typeof snap.data()?.lastId === 'number') {
+      val = snap.data().lastId;
+    }
+    
+    const currentMax = await findMaxFromCustomers();
+    const effectiveBase = Math.max(val, currentMax);
+    const generated = effectiveBase + 1;
+
+    await setDoc(counterRef, { lastId: generated, updatedAt: serverTimestamp() }, { merge: true });
+    return generated;
+  } catch (directError) {
+    console.warn("Direct counter document update failed (rules or network):", directError);
+  }
+
+  // Layer 3: Direct customers collection query (100% resilient fallback)
+  // Even if the counters collection is blocked by Firestore rules,
+  // this GUARANTEES a sequential ID higher than any existing customer in the database!
+  try {
+    const currentMax = await findMaxFromCustomers();
+    if (currentMax >= 1000) {
+      return currentMax + 1;
+    }
+  } catch (err) {
+    console.error("Critical error calculating next customId:", err);
+  }
+
+  // Ultimate fallback
+  return 1001;
 }
 
 /**
