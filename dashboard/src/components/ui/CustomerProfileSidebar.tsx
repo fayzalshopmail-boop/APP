@@ -1,7 +1,7 @@
 'use client';
 
 import { Customer, RepairRecord, normalizePhone } from '@/lib/services/customer';
-import { X, User, Phone, PhoneCall, MapPin, Tv, Shield, History, Coins, UserCheck, Calendar, CalendarClock, TrendingUp, Link2, Copy } from 'lucide-react';
+import { X, User, Phone, PhoneCall, MapPin, Tv, Shield, History, Coins, UserCheck, Calendar, CalendarClock, TrendingUp, Link2, Copy, MessageCircle } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
@@ -10,6 +10,7 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
 import { useAppStore } from '@/store/useAppStore';
 import { getWarrantyStatus } from '@/lib/warranty';
 import { RescheduleDeliveryModal } from '@/components/ui/RescheduleDeliveryModal';
+import { getTrackingUrl } from '@/lib/trackingToken';
 import toast from 'react-hot-toast';
 
 interface CustomerProfileSidebarProps {
@@ -165,21 +166,21 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
                     )}
                   </div>
 
-                  {/* Public Tracking Link Button */}
+                  {/* Secret Tracking Link Button */}
                   <button
                     type="button"
                     onClick={() => {
                       if (typeof window !== 'undefined') {
-                        const trackUrl = `${window.location.origin}/track?id=${activeCust.customId || activeCust.id}`;
+                        const trackUrl = getTrackingUrl(window.location.origin, activeCust);
                         navigator.clipboard.writeText(trackUrl);
-                        toast.success(language === 'bn' ? 'অনলাইন ট্র্যাকিং লিংক কপি হয়েছে!' : 'Tracking link copied!');
+                        toast.success(language === 'bn' ? 'সিক্রেট ট্র্যাকিং লিংক কপি হয়েছে!' : 'Secret tracking link copied!');
                       }
                     }}
                     className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 text-xs font-semibold transition-colors shadow-sm"
-                    title={language === 'bn' ? 'কাস্টমারের ট্র্যাকিং লিংক কপি করুন' : 'Copy Customer Tracking Link'}
+                    title={language === 'bn' ? 'কাস্টমারের সিক্রেট ট্র্যাকিং লিংক কপি করুন' : 'Copy Customer Secret Tracking Link'}
                   >
                     <Link2 className="w-3.5 h-3.5" />
-                    <span>{language === 'bn' ? 'ট্র্যাকিং লিংক' : 'Track Link'}</span>
+                    <span>{language === 'bn' ? 'সিক্রেট লিংক' : 'Secret Link'}</span>
                   </button>
                 </div>
                 <div className="space-y-3">
@@ -194,7 +195,7 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
                         {activeCust.phone}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
                       <a 
                         href={`tel:${activeCust.phone}`}
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
@@ -203,6 +204,25 @@ export function CustomerProfileSidebar({ isOpen, onClose, customer, allCustomers
                         <PhoneCall className="w-3.5 h-3.5" />
                         <span>{language === 'bn' ? 'কল' : 'Call'}</span>
                       </a>
+                      {(() => {
+                        const trackUrl = getTrackingUrl(
+                          typeof window !== 'undefined' ? window.location.origin : '',
+                          activeCust
+                        );
+                        const waText = `হ্যালো ${activeCust.name || 'গ্রাহক'}, VISC তে আপনার ${activeCust.deviceBrand || ''} ${activeCust.deviceType || 'ডিভাইস'} (আইডি: #${activeCust.customId || ''}) মেরামতের লাইভ অবস্থা ও ইনভয়েস দেখতে নিচের লিংকে ক্লিক করুন:\n${trackUrl}`;
+                        return (
+                          <a
+                            href={`https://wa.me/${activeCust.phone.replace(/\D/g, '')}?text=${encodeURIComponent(waText)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-semibold shadow-sm transition-colors"
+                            title={language === 'bn' ? 'হোয়াটসঅ্যাপে ট্র্যাকিং পাঠান' : 'Send WhatsApp Tracking'}
+                          >
+                            <MessageCircle className="w-3.5 h-3.5" />
+                            <span>WA</span>
+                          </a>
+                        );
+                      })()}
                       <button
                         type="button"
                         onClick={() => setIsRescheduleOpen(true)}

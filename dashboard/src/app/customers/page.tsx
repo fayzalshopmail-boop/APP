@@ -35,8 +35,9 @@ const PartsUsedModal = dynamic(
 import { customerService, Customer, CustomerStatus, normalizePhone, RepairRecord } from '@/lib/services/customer';
 import { shopTransactionService } from '@/lib/services/shopTransaction';
 import { telegramService } from '@/lib/services/telegramService';
-import { sendSMS } from '@/lib/sms';
+import { sendSMS, formatSmsMessage } from '@/lib/sms';
 import { smsConfigService } from '@/lib/services/smsConfig';
+import { getTrackingUrl } from '@/lib/trackingToken';
 import toast from 'react-hot-toast';
 
 export default function CustomersPage() {
@@ -290,25 +291,27 @@ export default function CustomersPage() {
 
         // Send Welcome SMS
         const smsSettings = await smsConfigService.getSettings();
-        if (smsSettings.enabled && smsSettings.apiKey && smsSettings.senderId) {
-          let msg = smsSettings.welcomeTemplate
-            .replace(/{id}/g, `${generatedCustomId}`)
-            .replace(/{name}/g, data.name || '')
-            .replace(/{phone}/g, data.phone || '')
-            .replace(/{brand}/g, data.deviceBrand || '')
-            .replace(/{type}/g, data.deviceType || '')
-            .replace(/{problem}/g, data.deviceProblem || '')
-            .replace(/{total}/g, data.isBillPending ? 'চেক করে জানানো হবে' : `${data.totalBill || 0}`)
-            .replace(/{advance}/g, `${data.advance || 0}`)
-            .replace(/{due}/g, data.isBillPending ? 'পেন্ডিং' : `${data.due || 0}`);
+        if (smsSettings.enabled && smsSettings.apiKey && smsSettings.senderId && data.phone) {
+          const trackUrl = getTrackingUrl(
+            typeof window !== 'undefined' ? window.location.origin : '',
+            { id: newId, customId: generatedCustomId }
+          );
 
-          if (!smsSettings.welcomeTemplate.includes('{id}')) {
-            if (msg.includes('হয়েছে।')) {
-              msg = msg.replace('হয়েছে।', `হয়েছে। সার্ভিস আইডি: #${generatedCustomId}।`);
-            } else {
-              msg = `[আইডি: #${generatedCustomId}] ` + msg;
-            }
-          }
+          const msg = formatSmsMessage(
+            smsSettings.welcomeTemplate,
+            {
+              id: generatedCustomId,
+              name: data.name,
+              phone: data.phone,
+              brand: data.deviceBrand,
+              type: data.deviceType,
+              problem: data.deviceProblem,
+              total: data.isBillPending ? 'চেক করে জানানো হবে' : `${data.totalBill || 0}`,
+              advance: `${data.advance || 0}`,
+              due: data.isBillPending ? 'পেন্ডিং' : `${data.due || 0}`,
+            },
+            trackUrl
+          );
             
           sendSMS(data.phone, msg, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
         }
@@ -430,16 +433,33 @@ export default function CustomersPage() {
             else if (newStatus === 'Waiting for Parts') template = smsSettings.waitingForPartsTemplate || '';
 
             if (template) {
-              const msg = template
-                .replace(/{id}/g, `${mergedCustomer.customId || ''}`)
-                .replace(/{name}/g, mergedCustomer.name || '')
-                .replace(/{phone}/g, mergedCustomer.phone || '')
-                .replace(/{brand}/g, mergedCustomer.deviceBrand || '')
-                .replace(/{type}/g, mergedCustomer.deviceType || '')
-                .replace(/{problem}/g, mergedCustomer.deviceProblem || '')
-                .replace(/{total}/g, `${mergedCustomer.totalBill || 0}`)
-                .replace(/{advance}/g, `${mergedCustomer.advance || 0}`)
-                .replace(/{due}/g, `${mergedCustomer.due || 0}`);
+              const shouldIncludeLink = (
+                newStatus === 'Ready for Delivery' || 
+                newStatus === 'Waiting for Parts' || 
+                newStatus === 'Returned (Unrepaired)' ||
+                template.includes('{link}') ||
+                template.includes('{track_url}')
+              );
+
+              const trackUrl = shouldIncludeLink
+                ? getTrackingUrl(typeof window !== 'undefined' ? window.location.origin : '', mergedCustomer)
+                : undefined;
+
+              const msg = formatSmsMessage(
+                template,
+                {
+                  id: mergedCustomer.customId || '',
+                  name: mergedCustomer.name,
+                  phone: mergedCustomer.phone,
+                  brand: mergedCustomer.deviceBrand,
+                  type: mergedCustomer.deviceType,
+                  problem: mergedCustomer.deviceProblem,
+                  total: `${mergedCustomer.totalBill || 0}`,
+                  advance: `${mergedCustomer.advance || 0}`,
+                  due: `${mergedCustomer.due || 0}`,
+                },
+                trackUrl
+              );
                 
               sendSMS(mergedCustomer.phone, msg, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
             }
@@ -627,16 +647,22 @@ export default function CustomersPage() {
       if (smsSettings.enabled && smsSettings.apiKey && smsSettings.senderId && c?.phone) {
         const template = smsSettings.returnedTemplate;
         if (template) {
-          const msg = template
-            .replace(/{id}/g, `${c.customId || ''}`)
-            .replace(/{name}/g, c.name || '')
-            .replace(/{phone}/g, c.phone || '')
-            .replace(/{brand}/g, c.deviceBrand || '')
-            .replace(/{type}/g, c.deviceType || '')
-            .replace(/{problem}/g, c.deviceProblem || '')
-            .replace(/{total}/g, `${c.totalBill || 0}`)
-            .replace(/{advance}/g, `${c.advance || 0}`)
-            .replace(/{due}/g, `${c.due || 0}`);
+          const trackUrl = getTrackingUrl(typeof window !== 'undefined' ? window.location.origin : '', c);
+          const msg = formatSmsMessage(
+            template,
+            {
+              id: c.customId || '',
+              name: c.name,
+              phone: c.phone,
+              brand: c.deviceBrand,
+              type: c.deviceType,
+              problem: c.deviceProblem,
+              total: `${c.totalBill || 0}`,
+              advance: `${c.advance || 0}`,
+              due: `${c.due || 0}`,
+            },
+            trackUrl
+          );
           await sendSMS(c.phone, msg, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
         } else {
           await sendSMS(c.phone, `Your device has been returned unrepaired. Please collect it from shop.`, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
@@ -890,23 +916,37 @@ export default function CustomersPage() {
                       >
                         <Phone className="w-3.5 h-3.5" />
                       </a>
-                      <a 
-                        href={`https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
-                          (smsSettings?.whatsappTemplate || '')
-                            .replace(/{name}/g, customer.name || '')
-                            .replace(/{brand}/g, customer.deviceBrand || '')
-                            .replace(/{type}/g, customer.deviceType || '')
-                            .replace(/{total}/g, `${customer.totalBill || 0}`)
-                            .replace(/{advance}/g, `${customer.advance || 0}`)
-                            .replace(/{due}/g, `${customer.due || 0}`)
-                        )}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-green-500 hover:text-green-400 p-1 bg-green-500/10 hover:bg-green-500/20 rounded-md transition-colors"
-                        title={isBangla ? "হোয়াটসঅ্যাপে ইনভয়েস পাঠান" : "Send Invoice on WhatsApp"}
-                      >
-                        <MessageCircle className="w-3.5 h-3.5" />
-                      </a>
+                      {(() => {
+                        const trackUrl = getTrackingUrl(
+                          typeof window !== 'undefined' ? window.location.origin : '',
+                          customer
+                        );
+                        let waText = (smsSettings?.whatsappTemplate || '')
+                          .replace(/{id}/g, `${customer.customId || ''}`)
+                          .replace(/{name}/g, customer.name || '')
+                          .replace(/{brand}/g, customer.deviceBrand || '')
+                          .replace(/{type}/g, customer.deviceType || '')
+                          .replace(/{total}/g, customer.isBillPending ? (isBangla ? 'চেক করে জানানো হবে' : 'Pending Review') : `${customer.totalBill || 0}`)
+                          .replace(/{advance}/g, `${customer.advance || 0}`)
+                          .replace(/{due}/g, customer.isBillPending ? (isBangla ? 'পেন্ডিং' : 'Pending') : `${customer.due || 0}`)
+                          .replace(/{link}|{track_url}/g, trackUrl);
+
+                        if (!waText.includes(trackUrl)) {
+                          waText += `\n\nলাইভ ট্র্যাকিং লিংক:\n${trackUrl}`;
+                        }
+
+                        return (
+                          <a 
+                            href={`https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(waText)}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-green-500 hover:text-green-400 p-1 bg-green-500/10 hover:bg-green-500/20 rounded-md transition-colors"
+                            title={isBangla ? "হোয়াটসঅ্যাপে ইনভয়েস ও ট্র্যাকিং পাঠান" : "Send Invoice & Tracking on WhatsApp"}
+                          >
+                            <MessageCircle className="w-3.5 h-3.5" />
+                          </a>
+                        );
+                      })()}
                     </div>
                   </td>
                   <td className="px-4 py-3.5">
@@ -1010,19 +1050,19 @@ export default function CustomersPage() {
                       >
                         <CalendarClock className="w-4 h-4" />
                       </Button>
-                      {/* Copy Tracking Link Button */}
+                      {/* Copy Secret Tracking Link Button */}
                       <Button 
                         variant="ghost" 
                         size="icon" 
                         onClick={() => {
                           if (typeof window !== 'undefined') {
-                            const url = `${window.location.origin}/track?id=${customer.customId || customer.id}`;
+                            const url = getTrackingUrl(window.location.origin, customer);
                             navigator.clipboard.writeText(url);
-                            toast.success(isBangla ? 'অনলাইন ট্র্যাকিং লিংক কপি হয়েছে!' : 'Tracking link copied!');
+                            toast.success(isBangla ? 'সিক্রেট ট্র্যাকিং লিংক কপি হয়েছে!' : 'Secret tracking link copied!');
                           }
                         }} 
                         className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors h-8 w-8" 
-                        title={isBangla ? "অনলাইন ট্র্যাকিং লিংক কপি করুন" : "Copy Online Tracking Link"}
+                        title={isBangla ? "সিক্রেট ট্র্যাকিং লিংক কপি করুন" : "Copy Secret Tracking Link"}
                       >
                         <Link2 className="w-4 h-4" />
                       </Button>
@@ -1239,25 +1279,39 @@ export default function CustomersPage() {
                   <span>{isBangla ? "কল" : "Call"}</span>
                 </a>
 
-                {/* WhatsApp Button */}
-                <a 
-                  href={`https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
-                    (smsSettings?.whatsappTemplate || '')
-                      .replace(/{name}/g, customer.name || '')
-                      .replace(/{brand}/g, customer.deviceBrand || '')
-                      .replace(/{type}/g, customer.deviceType || '')
-                      .replace(/{total}/g, customer.isBillPending ? (isBangla ? 'চেক করে জানানো হবে' : 'Pending Review') : `${customer.totalBill || 0}`)
-                      .replace(/{advance}/g, `${customer.advance || 0}`)
-                      .replace(/{due}/g, customer.isBillPending ? (isBangla ? 'পেন্ডিং' : 'Pending') : `${customer.due || 0}`)
-                  )}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1 py-1 px-2 bg-emerald-600/15 hover:bg-emerald-600/25 active:scale-95 text-emerald-400 border border-emerald-500/30 rounded-lg text-[11px] font-semibold transition-all"
-                  title={isBangla ? "হোয়াটসঅ্যাপে পাঠান" : "Send on WhatsApp"}
-                >
-                  <MessageCircle className="w-3 h-3" />
-                  <span>WA</span>
-                </a>
+                {/* WhatsApp Button with Secret Tracking Link */}
+                {(() => {
+                  const trackUrl = getTrackingUrl(
+                    typeof window !== 'undefined' ? window.location.origin : '',
+                    customer
+                  );
+                  let waText = (smsSettings?.whatsappTemplate || '')
+                    .replace(/{id}/g, `${customer.customId || ''}`)
+                    .replace(/{name}/g, customer.name || '')
+                    .replace(/{brand}/g, customer.deviceBrand || '')
+                    .replace(/{type}/g, customer.deviceType || '')
+                    .replace(/{total}/g, customer.isBillPending ? (isBangla ? 'চেক করে জানানো হবে' : 'Pending Review') : `${customer.totalBill || 0}`)
+                    .replace(/{advance}/g, `${customer.advance || 0}`)
+                    .replace(/{due}/g, customer.isBillPending ? (isBangla ? 'পেন্ডিং' : 'Pending') : `${customer.due || 0}`)
+                    .replace(/{link}|{track_url}/g, trackUrl);
+
+                  if (!waText.includes(trackUrl)) {
+                    waText += `\n\nলাইভ ট্র্যাকিং লিংক:\n${trackUrl}`;
+                  }
+
+                  return (
+                    <a 
+                      href={`https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(waText)}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 py-1 px-2 bg-emerald-600/15 hover:bg-emerald-600/25 active:scale-95 text-emerald-400 border border-emerald-500/30 rounded-lg text-[11px] font-semibold transition-all"
+                      title={isBangla ? "হোয়াটসঅ্যাপে ইনভয়েস ও ট্র্যাকিং পাঠান" : "Send on WhatsApp"}
+                    >
+                      <MessageCircle className="w-3 h-3" />
+                      <span>WA</span>
+                    </a>
+                  );
+                })()}
 
                 {/* Reschedule Button */}
                 <button
@@ -1301,13 +1355,13 @@ export default function CustomersPage() {
                   size="icon" 
                   onClick={() => {
                     if (typeof window !== 'undefined') {
-                      const url = `${window.location.origin}/track?id=${customer.customId || customer.id}`;
+                      const url = getTrackingUrl(window.location.origin, customer);
                       navigator.clipboard.writeText(url);
-                      toast.success(isBangla ? 'অনলাইন ট্র্যাকিং লিংক কপি হয়েছে!' : 'Tracking link copied!');
+                      toast.success(isBangla ? 'সিক্রেট ট্র্যাকিং লিংক কপি হয়েছে!' : 'Secret tracking link copied!');
                     }
                   }} 
                   className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 h-6.5 w-6.5 rounded-md p-0"
-                  title={isBangla ? "অনলাইন ট্র্যাকিং লিংক কপি করুন" : "Copy Online Tracking Link"}
+                  title={isBangla ? "সিক্রেট ট্র্যাকিং লিংক কপি করুন" : "Copy Secret Tracking Link"}
                 >
                   <Link2 className="w-3.5 h-3.5" />
                 </Button>

@@ -9,7 +9,8 @@ import { motion } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import { smsConfigService, SmsSettings, defaultSmsSettings } from '@/lib/services/smsConfig';
 import { customerService, Customer } from '@/lib/services/customer';
-import { sendSMS } from '@/lib/sms';
+import { sendSMS, formatSmsMessage } from '@/lib/sms';
+import { getTrackingUrl } from '@/lib/trackingToken';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import toast from 'react-hot-toast';
 
@@ -178,15 +179,26 @@ export default function SmsMarketingPage() {
           const c = validCustomers[i];
           setSendProgress({ current: i + 1, total: validCustomers.length });
           
-          const personalizedMsg = bulkMessage
-            .replace(/{id}/g, c.customId ? String(c.customId) : '')
-            .replace(/{name}/g, c.name || '')
-            .replace(/{brand}/g, c.deviceBrand || '')
-            .replace(/{type}/g, c.deviceType || '')
-            .replace(/{problem}/g, c.deviceProblem || '')
-            .replace(/{total}/g, c.totalBill?.toString() || '0')
-            .replace(/{advance}/g, c.advance?.toString() || '0')
-            .replace(/{due}/g, c.due?.toString() || '0');
+          const hasLink = /{link}|{track_url}/i.test(bulkMessage);
+          const trackUrl = hasLink
+            ? getTrackingUrl(typeof window !== 'undefined' ? window.location.origin : '', c)
+            : undefined;
+
+          const personalizedMsg = formatSmsMessage(
+            bulkMessage,
+            {
+              id: c.customId ? String(c.customId) : '',
+              name: c.name || '',
+              phone: c.phone || '',
+              brand: c.deviceBrand || '',
+              type: c.deviceType || '',
+              problem: c.deviceProblem || '',
+              total: c.totalBill?.toString() || '0',
+              advance: c.advance?.toString() || '0',
+              due: c.due?.toString() || '0',
+            },
+            trackUrl
+          );
 
           const result = await sendSMS(c.phone, personalizedMsg, settings.apiKey, settings.senderId, settings.apiUrl, true);
           if (result.success) successCount++; else console.error("Bulk SMS individual error:", result.error);
@@ -482,6 +494,7 @@ export default function SmsMarketingPage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 pt-1">
                 {[
                   { tag: '{id}', desc: language === 'bn' ? 'সার্ভিস আইডি (যেমন: 1001)' : 'Job / Service ID (1001)', highlight: true },
+                  { tag: '{link}', desc: language === 'bn' ? 'সিক্রেট ট্র্যাকিং লিংক (কাস্টমারের জন্য)' : 'Secret Tracking Link', highlight: true },
                   { tag: '{name}', desc: language === 'bn' ? 'কাস্টমারের নাম' : 'Customer Name' },
                   { tag: '{brand}', desc: language === 'bn' ? 'ডিভাইসের ব্র্যান্ড (Samsung)' : 'Device Brand' },
                   { tag: '{type}', desc: language === 'bn' ? 'ডিভাইসের ধরন (LED TV)' : 'Device Type' },
@@ -517,6 +530,15 @@ export default function SmsMarketingPage() {
                     </p>
                   </button>
                 ))}
+              </div>
+
+              <div className="mt-3 px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center gap-2 text-xs text-blue-300">
+                <Sparkles className="w-4 h-4 text-blue-400 shrink-0" />
+                <span>
+                  {language === 'bn' 
+                    ? 'টিপস: ট্র্যাকিং লিংক {link} স্বয়ংক্রিয়ভাবে মেসেজের একদম নিচে আলাদা লাইনে সুন্দরভাবে সাজিয়ে পাঠানো হবে।' 
+                    : 'Tip: The tracking link {link} is automatically formatted at the very bottom of each message on its own line.'}
+                </span>
               </div>
             </div>
 

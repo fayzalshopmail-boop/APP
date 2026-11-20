@@ -1,5 +1,5 @@
 // Service Worker for VSC POS - 100% Offline-First PWA
-const CACHE_NAME = 'vsc-pos-cache-v9';
+const CACHE_NAME = 'vsc-pos-cache-v10';
 
 // Pre-cache core application shell routes and assets
 const PRECACHE_ASSETS = [
@@ -124,24 +124,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 4. Next.js Static Chunks (/_next/static/...) -> Cache First (Immutable with Content Hashes)
-  // CRITICAL FIX: Next.js 16 production Turbopack chunks contain 'turbopack-' in their filename.
-  // They MUST be intercepted and served from cache offline!
+  // 4. Next.js Static Chunks (/_next/static/...) -> Network First with Offline Fallback
   if (url.pathname.startsWith('/_next/static/')) {
     event.respondWith(
-      caches.match(request).then((cached) => {
-        if (cached) return cached;
-
-        return fetch(request)
-          .then((res) => {
-            if (res && res.status === 200) {
-              const clone = res.clone();
-              caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-            }
-            return res;
-          })
-          .catch(() => caches.match(request));
-      })
+      fetch(request)
+        .then((res) => {
+          if (res && res.status === 200) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return res;
+        })
+        .catch(() => caches.match(request))
     );
     return;
   }

@@ -254,7 +254,7 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
 
   // Public Routes (Allow customer self-tracking without authentication or dashboard layout)
   if (pathname.startsWith('/track')) {
-    return <>{children}</>;
+    return <div className="w-full min-h-screen flex flex-col flex-1">{children}</div>;
   }
 
   // If not logged in AT ALL, show AuthScreen (email/password login).

@@ -7,6 +7,7 @@ import { formatEnglishCurrency } from '@/lib/currency';
 import { useAppStore } from '@/store/useAppStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { getWarrantyStatus } from '@/lib/warranty';
+import { getTrackingUrl } from '@/lib/trackingToken';
 import { Printer, X, Tv, Phone, MapPin, Link2 } from 'lucide-react';
 import { useRef } from 'react';
 
@@ -134,22 +135,20 @@ export function InvoiceModal({ isOpen, onClose, customer }: InvoiceModalProps) {
             </div>
           </div>
 
-          {/* Online Tracking Link Box (No QR Code as requested) */}
+          {/* Secret Live Tracking Link Box */}
           <div className="mb-6 p-3 bg-gray-50 border border-gray-200 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
             <div>
               <div className="flex items-center gap-1.5 font-bold text-gray-800">
                 <Link2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                <span>{language === 'bn' ? 'অনলাইন লাইভ ট্র্যাকিং লিংক:' : 'Online Live Tracking Link:'}</span>
+                <span>{language === 'bn' ? 'সিক্রেট লাইভ ট্র্যাকিং লিংক:' : 'Secret Live Tracking Link:'}</span>
               </div>
-              <p className="text-[11px] text-blue-700 font-mono mt-0.5 select-all break-all">
-                {typeof window !== 'undefined' 
-                  ? `${window.location.origin}/track?id=${customer.customId || customer.id}` 
-                  : `/track?id=${customer.customId || customer.id}`}
+              <p className="text-[11px] text-blue-700 font-mono mt-0.5 select-all break-all font-semibold">
+                {getTrackingUrl(typeof window !== 'undefined' ? window.location.origin : '', customer)}
               </p>
             </div>
             <p className="text-[10px] text-gray-500 sm:max-w-[200px] sm:text-right">
               {language === 'bn' 
-                ? 'মোবাইলে লিংকটি লিখে যেকোনো সময় কাজের লাইভ আপডেট দেখুন' 
+                ? 'মোবাইলে লিংকটি ওপেন করে যেকোনো সময় কাজের লাইভ আপডেট দেখুন' 
                 : 'Browse this link anytime to check live repair status'}
             </p>
           </div>

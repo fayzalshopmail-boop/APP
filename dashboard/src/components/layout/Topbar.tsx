@@ -312,28 +312,31 @@ export function Topbar() {
       
       // Send Welcome SMS
       const { smsConfigService } = await import('@/lib/services/smsConfig');
-      const { sendSMS } = await import('@/lib/sms');
+      const { sendSMS, formatSmsMessage } = await import('@/lib/sms');
+      const { getTrackingUrl } = await import('@/lib/trackingToken');
       
       const smsSettings = await smsConfigService.getSettings();
       if (smsSettings.enabled && smsSettings.apiKey && smsSettings.senderId && data.phone) {
-        let msg = smsSettings.welcomeTemplate
-          .replace(/{id}/g, `${generatedCustomId}`)
-          .replace(/{name}/g, data.name || '')
-          .replace(/{phone}/g, data.phone || '')
-          .replace(/{brand}/g, data.deviceBrand || '')
-          .replace(/{type}/g, data.deviceType || '')
-          .replace(/{problem}/g, data.deviceProblem || '')
-          .replace(/{total}/g, (data as any).isBillPending ? 'চেক করে জানানো হবে' : `${data.totalBill || 0}`)
-          .replace(/{advance}/g, `${data.advance || 0}`)
-          .replace(/{due}/g, (data as any).isBillPending ? 'পেন্ডিং' : `${data.due || 0}`);
-          
-        if (!smsSettings.welcomeTemplate.includes('{id}')) {
-          if (msg.includes('হয়েছে।')) {
-            msg = msg.replace('হয়েছে।', `হয়েছে। সার্ভিস আইডি: #${generatedCustomId}।`);
-          } else {
-            msg = `[আইডি: #${generatedCustomId}] ` + msg;
-          }
-        }
+        const trackUrl = getTrackingUrl(
+          typeof window !== 'undefined' ? window.location.origin : '',
+          { id: res.id, customId: generatedCustomId }
+        );
+
+        const msg = formatSmsMessage(
+          smsSettings.welcomeTemplate,
+          {
+            id: generatedCustomId,
+            name: data.name,
+            phone: data.phone,
+            brand: data.deviceBrand,
+            type: data.deviceType,
+            problem: data.deviceProblem,
+            total: (data as any).isBillPending ? 'চেক করে জানানো হবে' : `${data.totalBill || 0}`,
+            advance: `${data.advance || 0}`,
+            due: (data as any).isBillPending ? 'পেন্ডিং' : `${data.due || 0}`,
+          },
+          trackUrl
+        );
 
         await sendSMS(data.phone, msg, smsSettings.apiKey, smsSettings.senderId, smsSettings.apiUrl);
       }

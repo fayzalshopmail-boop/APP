@@ -192,6 +192,8 @@ export async function POST(request: Request) {
     const isUnicode = /[\u0980-\u09FF]/.test(message) || /[^\u0000-\u007F]/.test(message);
     const smsType = isUnicode ? 'unicode' : 'text';
 
+    console.log('>>> [SMS OUTGOING TO GATEWAY]', { targetNumbers, smsType, messageLength: message.length, message });
+
     const url = `${baseUrl}?api_key=${encodeURIComponent(apiKey)}&type=${smsType}&number=${targetNumbers}&senderid=${encodeURIComponent(senderId)}&message=${encodeURIComponent(message)}`;
 
     // 5. Send with safe timeout
@@ -210,6 +212,8 @@ export async function POST(request: Request) {
     try {
       result = JSON.parse(resultText);
     } catch {}
+
+    console.log('>>> [SMS GATEWAY RESPONSE]', result);
 
     const responseHeaders: Record<string, string> = {};
     if (rateLimitResult) {

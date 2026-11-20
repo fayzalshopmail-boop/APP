@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 import { getWarrantyStatus } from '@/lib/warranty';
+import { verifyTrackingKey, parseTrackingInput } from '@/lib/trackingToken';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -25,12 +26,36 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const query = searchParams.get('id') || searchParams.get('q') || '';
+    const rawId = searchParams.get('id') || searchParams.get('q') || '';
+    const rawKey = searchParams.get('key') || searchParams.get('token') || searchParams.get('t') || '';
 
-    if (!query || query.trim().length === 0) {
+    // Parse potential combined input (e.g. "1013-trk_xxx" or URL)
+    let searchId = rawId;
+    let providedKey = rawKey;
+
+    if (!providedKey && searchId) {
+      const parsed = parseTrackingInput(searchId);
+      if (parsed.key) {
+        providedKey = parsed.key;
+        if (parsed.id) searchId = parsed.id;
+      }
+    }
+
+    // Require both ID and Secret Key for access (Option 2: Secret Link System)
+    if (!searchId || searchId.trim().length === 0) {
       return NextResponse.json(
         { error: 'অনুগ্রহ করে সঠিক সার্ভিস বা জব আইডি দিন।' },
         { status: 400 }
+      );
+    }
+
+    if (!providedKey || providedKey.trim().length === 0) {
+      return NextResponse.json(
+        { 
+          error: 'গোপনীয়তা ও নিরাপত্তার স্বার্থে সরাসরি আইডি লিখে অনুসন্ধান বন্ধ রয়েছে। আপনার ইনভয়েস বা মেসেজে থাকা সিক্রেট ট্র্যাকিং লিংকটি ব্যবহার করুন।',
+          isRestricted: true 
+        },
+        { status: 403 }
       );
     }
 
@@ -41,11 +66,10 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const { customIdNum, cleanStr } = normalizeSearchQuery(query);
-
+    const { customIdNum, cleanStr } = normalizeSearchQuery(searchId);
     let customerDoc: any = null;
 
-    // 1. Search by customId (numeric ID e.g. 1001)
+    // 1. Search by customId (numeric ID e.g. 1013)
     if (customIdNum !== null && customIdNum > 0) {
       const snapByCustomId = await adminDb
         .collection('customers')
@@ -70,38 +94,27 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 3. Search by Phone number (matches last 10 digits)
-    if (!customerDoc && cleanStr.length >= 10) {
-      const phoneDigits = cleanStr.replace(/\D/g, '');
-      const snapByPhone = await adminDb
-        .collection('customers')
-        .where('phone', '==', phoneDigits)
-        .limit(1)
-        .get();
-
-      if (!snapByPhone.empty) {
-        customerDoc = snapByPhone.docs[0];
-      } else {
-        // Try formatted variants e.g. +880
-        const snapByPhoneWithPlus = await adminDb
-          .collection('customers')
-          .where('phone', '==', `+88${phoneDigits}`)
-          .limit(1)
-          .get();
-        if (!snapByPhoneWithPlus.empty) {
-          customerDoc = snapByPhoneWithPlus.docs[0];
-        }
-      }
-    }
-
     if (!customerDoc) {
       return NextResponse.json(
-        { error: 'প্রদত্ত আইডি দিয়ে কোনো সার্ভিসের তথ্য পাওয়া যায়নি। অনুগ্রহ করে সঠিক আইডি দিয়ে চেষ্টা করুন।' },
+        { error: 'প্রদত্ত আইডি দিয়ে কোনো সার্ভিসের তথ্য পাওয়া যায়নি। অনুগ্রহ করে সঠিক লিংক ব্যবহার করুন।' },
         { status: 404 }
       );
     }
 
-    const cData = customerDoc.data();
+    const cData = { id: customerDoc.id, ...customerDoc.data() };
+
+    // SEC-TRACK: Validate Secret Encrypted Key against the customer record
+    const isValidKey = verifyTrackingKey(cData, providedKey);
+
+    if (!isValidKey) {
+      return NextResponse.json(
+        { 
+          error: 'সিক্রেট ট্র্যাকিং লিংকটি সঠিক নয়। অন্যের প্রোফাইল দেখার অনুমতি নেই।',
+          isRestricted: true 
+        },
+        { status: 403 }
+      );
+    }
 
     // Fetch Shop public profile
     let shopInfo = {
@@ -154,19 +167,32 @@ export async function GET(req: NextRequest) {
       cData.status
     );
 
-    // Public Safe Payload (Strictly excludes internal technician costs, profit, private notes, full other records)
+    // Filter parts used (exclude internal technician costs, show item name & quantity for customer transparency)
+    const sanitizedParts = Array.isArray(cData.partsUsed)
+      ? cData.partsUsed.map((p: any) => ({
+          name: p.name || 'যন্ত্রাংশ',
+          quantity: Number(p.quantity) || 1
+        }))
+      : [];
+
+    // Authenticated Secret Link Payload (Full customer details unmasked for the verified customer)
     const publicData = {
       id: customerDoc.id,
       customId: cData.customId || null,
-      customerNameMasked: cData.name ? `${cData.name.slice(0, 1)}***${cData.name.slice(-1)}` : 'Customer',
+      customerName: cData.name || 'সম্মানিত গ্রাহক',
+      customerPhone: cData.phone || '',
+      customerAddress: cData.address || '',
       deviceBrand: cData.deviceBrand || 'Device',
       deviceType: cData.deviceType || 'TV',
       deviceProblem: cData.deviceProblem || 'N/A',
+      deviceDetails: cData.deviceDetails || '',
+      serialNumber: cData.serialNumber || '',
       status: cData.status || 'Received',
       isBillPending: Boolean(cData.isBillPending),
       totalBill: cData.isBillPending ? null : (Number(cData.totalBill) || 0),
       advance: Number(cData.advance) || 0,
       due: Number(cData.due) || 0,
+      discount: Number(cData.discount) || 0,
       createdAt: createdAtIso,
       deliveredAt: deliveredAtIso,
       completedAt: completedAtIso,
@@ -174,6 +200,7 @@ export async function GET(req: NextRequest) {
       isRescheduled: Boolean(cData.isRescheduled),
       rescheduleCount: Number(cData.rescheduleCount) || 0,
       rescheduleNote: cData.rescheduleNote || null,
+      partsUsed: sanitizedParts,
       warranty: warrantyStatus,
       shop: shopInfo
     };
